@@ -43,6 +43,7 @@ Current prototype systems:
 - mobile virtual joystick;
 - mobile sprint and jump buttons;
 - mobile right-side camera drag;
+- ProBuilder environment blockout inspired by a Roblox-style yard from the local reference video;
 - PlayerPrefs save baseline;
 - soft and hard currency wallet;
 - settings values for music, SFX, and language;
@@ -100,6 +101,19 @@ Next localization step should define:
 ## WebGL Notes
 
 This game is intended to be the current WebGL mechanics validation target.
+
+## ProBuilder Notes
+
+The scene contains `PB_VideoInspiredArena`, a game-local ProBuilder blockout with:
+
+- studded green baseplate;
+- tall tan checker walls with green caps and drips;
+- wooden walkway and spawn pad;
+- shop/reward/run-upgrade stalls;
+- blocky trees and pet display statues;
+- reward question cube.
+
+Do not promote this scene geometry into `GameKit`; extract only reusable level-building tools or prefabs later if another game needs them.
 
 ## Mobile Notes
 

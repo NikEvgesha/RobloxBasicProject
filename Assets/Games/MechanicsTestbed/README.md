@@ -12,6 +12,7 @@ Keep experiments game-local until at least two games need the same behavior.
 - Hold right mouse button to rotate the camera behind the character.
 - Mobile: left virtual joystick, sprint/jump buttons, right-side drag camera zone.
 - Prototype HUD for soft currency, hard currency, settings, shop, wheel, and timed rewards.
+- ProBuilder video-inspired arena blockout with checker walls, studs, stalls, trees, pets, and reward cube.
 
 ## UI Style
 
@@ -28,3 +29,9 @@ Use a compact Roblox-like game HUD:
 The scripts under `Assets/Games/MechanicsTestbed/Scripts` are game-specific prototypes.
 
 Do not reference this folder from `Assets/GameKit` or another game.
+
+## ProBuilder Arena
+
+`PB_VideoInspiredArena` in the main scene is a game-local environment art/blockout test.
+
+It intentionally stays in this game until we decide what, if anything, should become reusable level-kit tooling.
