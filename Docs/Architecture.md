@@ -8,17 +8,46 @@ The repository is organized as a single Unity project with multiple games and on
 Assets/
   GameKit/
     Runtime/
+      Input/
     Mechanics/
     Editor/
     Tests/
   Games/
     _Template/
+    StarterSandbox/
     {GameName}/
   SharedArt/
+    UI/
+      Sprites/
   SharedAudio/
 Docs/
 Tools/
 ```
+
+## Prepared Working Layout
+
+The project is currently prepared for work with these concrete areas:
+
+```text
+Assets/GameKit/Runtime/Input/
+  InputSystem_Actions.inputactions
+
+Assets/Games/StarterSandbox/
+  Scenes/
+    Loading.unity
+    Evgesha.unity
+  Art/
+  Audio/
+  Configs/
+  Prefabs/
+  Scripts/
+  UI/
+
+Assets/SharedArt/UI/Sprites/
+  shared UI frames, icons, language flags, and currency sprites
+```
+
+`StarterSandbox` contains the scenes imported from the original `Assets/Scenes` root. Use it as the first editable sandbox game, not as reusable kit code.
 
 ## GameKit
 
@@ -50,6 +79,11 @@ Assets/Igrodelnya
 Assets/OpalStudio
 Assets/Plugin
 Assets/Plugins
+Assets/Resources
+Assets/Settings
+Assets/TextMesh Pro
+Assets/TutorialInfo
+Assets/ProBuilder Data
 ```
 
 Do not move these folders just to fit the new structure. Move or wrap them only during a focused migration when the dependency direction is clear.
