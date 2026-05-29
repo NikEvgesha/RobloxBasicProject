@@ -26,7 +26,11 @@ Assets/Games/MechanicsTestbed/Configs/MechanicsTestbedGame.asset
 
 ## Used GameKit Mechanics
 
-No promoted `GameKit` mechanics are registered yet.
+Hold Interaction:
+
+```text
+Assets/GameKit/Runtime/Interaction
+```
 
 Shared input action asset:
 
@@ -53,6 +57,7 @@ Current prototype systems:
 - shop prototype grants;
 - wheel prototype reward;
 - timed hard-currency reward.
+- interaction test actions: raycast pickup cube, trigger drop zone, and trigger shop opener.
 
 These stay in:
 
@@ -69,6 +74,7 @@ Desktop:
 - `WASD` / arrows: move;
 - `Shift`: sprint;
 - `Space`: jump;
+- hold `E`: complete the active interaction prompt;
 - hold right mouse button: rotate camera;
 - mouse wheel: zoom camera in and out.
 
@@ -80,6 +86,21 @@ Mobile:
 - drag the right side of the screen: rotate camera.
 
 Mobile controls are hidden on desktop by `MechanicsTestbedMobileControlsVisibility` and are shown on mobile or handheld platforms. Use the component's `forceVisible` option only for editor testing.
+
+## Interaction Test Flow
+
+The scene contains `MT_InteractionTests` to validate the shared `GameKit` hold-interaction system:
+
+- look at `MT_InteractionPickupCube` and hold `E` to pick it up;
+- the cube is parented to `MT_Player/CarryAnchor`, colliders are disabled, and the player arms are held up while carrying;
+- step into `MT_InteractionDropZone` while carrying and hold `E` to place the cube;
+- approach `MT_InteractionShopKiosk` and hold `E` to open the existing shop panel.
+
+Detection sources are intentionally separate from the prompt/input driver:
+
+- pickup cube uses `GameKitInteractionRaycastSource` from `MT_ThirdPersonCamera`;
+- drop zone and shop use `GameKitInteractionTriggerSource`;
+- all three actions resolve through `GameKitInteractionDriver` on `MT_Player`.
 
 ## Character Animation
 

@@ -9,12 +9,14 @@ Keep experiments game-local until at least two games need the same behavior.
 - Third-person desktop movement with `WASD` / arrows.
 - `Shift` sprint.
 - `Space` jump.
+- Hold `E` to complete the active interaction prompt.
 - Hold right mouse button to smoothly rotate the camera behind the character.
 - Mouse wheel zooms the third-person camera in and out.
 - Mobile: left virtual joystick, sprint/jump buttons, right-side drag camera zone.
 - Mobile controls hide automatically on desktop and show on mobile/handheld platforms.
 - Generic block-character Animator with idle, move, walk, and run states.
 - Prototype HUD for soft currency, hard currency, settings, shop, wheel, and timed rewards.
+- Interaction test flow: look at a cube to pick it up, carry it above the player, place it in a green zone, and open the shop from a kiosk.
 - ProBuilder video-inspired arena blockout with checker walls, studs, stalls, trees, pets, and reward cube.
 
 ## UI Style

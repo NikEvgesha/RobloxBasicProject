@@ -24,9 +24,21 @@ Known limits:
 
 ## Current Mechanics
 
-No reusable mechanics have been registered yet.
+Name: Hold Interaction
+Path: `Assets/GameKit/Runtime/Interaction`
+Status: draft
+Owner: Shared GameKit
+Used by: `Assets/Games/MechanicsTestbed`
+Purpose: Provide a reusable Roblox-style interaction contract where independent sources nominate interaction targets and a central driver handles prompt display, hold progress, and invocation.
+Public API: `GameKitInteractionTarget`, `GameKitInteractionCondition`, `GameKitInteractionDriver`, `GameKitInteractionPromptView`, `GameKitInteractionTriggerSource`, `GameKitInteractionRaycastSource`.
+Required prefabs: none yet.
+Required ScriptableObjects: none.
+Input requirements: keyboard `E` through the active Input System path, with old-input fallback only when legacy input is enabled.
+WebGL notes: uses frame-based raycast/trigger checks and unscaled hold progress; no platform-specific APIs.
+Mobile notes: `GameKitInteractionDriver.SetExternalHold` can be wired to a virtual button when mobile interaction input is added.
+Known limits: first draft only supports one selected target at a time; prompt view is UGUI-specific; no generated prefab yet.
 
-`Assets/Games/MechanicsTestbed` contains game-local prototypes for desktop/mobile movement, camera, wallet, settings, UI, wheel, and timed rewards. They are intentionally not registered here until they are decoupled and promoted to `Assets/GameKit`.
+`Assets/Games/MechanicsTestbed` still contains game-local prototypes for desktop/mobile movement, camera, wallet, settings, UI, wheel, timed rewards, and the concrete pickup/drop/shop test actions. They are intentionally not registered here until they are decoupled and promoted to `Assets/GameKit`.
 
 ## Foundation Candidates
 
