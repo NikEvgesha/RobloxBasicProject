@@ -73,3 +73,12 @@ Expected MCP URL:
 ```text
 https://ai-game.dev/mcp
 ```
+
+If the AI Game Developer window regenerates `.codex/config.toml`, verify it did not replace the project-specific entry with:
+
+```toml
+[mcp_servers.ai-game-developer]
+bearer_token_env_var = "GAME_DEV_AUTH_TOKEN"
+```
+
+For this repository, restore the project-specific entry shown above before restarting Codex.
