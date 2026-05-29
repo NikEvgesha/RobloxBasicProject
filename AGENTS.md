@@ -1,0 +1,68 @@
+# Agent Rules
+
+These rules are mandatory for automated agents and recommended for human contributors.
+
+## Repository Model
+
+This is a Unity monorepo:
+
+- Shared reusable code goes in `Assets/GameKit`.
+- Concrete games go in `Assets/Games/{GameName}`.
+- Shared assets go in `Assets/SharedArt` or `Assets/SharedAudio`.
+- Build and automation helpers go in `Tools`.
+- Project and mechanic documentation goes in `Docs`.
+
+## Dependency Rules
+
+- `Assets/GameKit` must never reference files, scripts, prefabs, scenes, or configs from `Assets/Games`.
+- `Assets/Games/{GameName}` may reference `Assets/GameKit`.
+- One game folder should not reference another game folder.
+- If two games need the same behavior, extract that behavior into `Assets/GameKit`.
+- If a mechanic is generic, document it in `Docs/GameKit/MechanicsIndex.md`.
+- If a mechanic is game-specific, document it in `Docs/Games/{GameName}.md`.
+
+## Branch Rules
+
+- `master` stays empty except for its initial empty commit.
+- Work happens on `develop` or short-lived branches created from `develop`.
+- Use `feature/{mechanic-or-system}` for reusable systems.
+- Use `game/{game-name}-{task}` for game-specific work.
+- Use `fix/{issue}` for focused fixes.
+- Do not create a long-lived branch per game.
+
+## Unity Rules
+
+- Keep Unity serialization in text mode.
+- Commit `.meta` files together with their assets.
+- Avoid editing unrelated scenes, prefabs, and ProjectSettings.
+- Prefer prefabs, ScriptableObjects, and additive scenes over large monolithic scenes.
+- Avoid hard references from `GameKit` to concrete game content.
+- Before moving a game-specific system into `GameKit`, remove direct dependencies on game scenes, UI, and assets.
+
+## Documentation Rules
+
+Update documentation in the same change when adding or changing:
+
+- a reusable mechanic;
+- a game-specific mechanic;
+- a build workflow;
+- input behavior;
+- WebGL or mobile behavior;
+- repository structure.
+
+## Expected Change Shape
+
+For a new reusable mechanic:
+
+1. Add runtime code under `Assets/GameKit`.
+2. Add optional editor tools under `Assets/GameKit/Editor`.
+3. Add tests or test notes under `Assets/GameKit/Tests`.
+4. Update `Docs/GameKit/MechanicsIndex.md`.
+
+For a new game:
+
+1. Copy `Assets/Games/_Template` to `Assets/Games/{GameName}`.
+2. Add game scenes under `Assets/Games/{GameName}/Scenes`.
+3. Add game scripts under `Assets/Games/{GameName}/Scripts`.
+4. Add game configs under `Assets/Games/{GameName}/Configs`.
+5. Add documentation under `Docs/Games/{GameName}.md`.
