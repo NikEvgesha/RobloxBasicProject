@@ -12,6 +12,7 @@ Keep experiments game-local until at least two games need the same behavior.
 - Hold right mouse button to smoothly rotate the camera behind the character.
 - Mouse wheel zooms the third-person camera in and out.
 - Mobile: left virtual joystick, sprint/jump buttons, right-side drag camera zone.
+- Mobile controls hide automatically on desktop and show on mobile/handheld platforms.
 - Generic block-character Animator with idle, move, walk, and run states.
 - Prototype HUD for soft currency, hard currency, settings, shop, wheel, and timed rewards.
 - ProBuilder video-inspired arena blockout with checker walls, studs, stalls, trees, pets, and reward cube.
@@ -20,9 +21,10 @@ Keep experiments game-local until at least two games need the same behavior.
 
 Use a compact Roblox-like game HUD:
 
-- dark translucent panels: `#111827` / `#1F2937`;
-- bright readable accents: soft `#22C55E`, hard `#38BDF8`, action `#F59E0B`;
-- white text on dark surfaces;
+- shared art source: `Assets/SharedArt/UI/RobloxCasual`;
+- dark top bar with bright currency badges;
+- blue, green, yellow, purple, and red button sprites from the casual UI kit;
+- coin and diamond icons for soft and hard currency;
 - small top bar for persistent state;
 - square-ish buttons and panels, no oversized marketing hero layout.
 

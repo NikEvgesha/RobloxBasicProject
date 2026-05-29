@@ -1,0 +1,17 @@
+Contents (Список содержимого)
+
+1. Demo (Сцены)
+ChestCard_Canvas - Сцена с примерами лутбоксов (Интерактивные);
+Wheel_Shop_Canvas - Сцена с примером магазина (Интерактивная) и "Колесо фортуны";
+Win_Dif_Canvas - Сцена с примерами окон "Победа" и "Поражение"
+
+2. Prefabs (Префабы):
+
+1) Chest_card - UI_ChestCard_Common,  UI_ChestCard_Epic, UI_ChestCard_Legendary, UI_ChestCard_Mega, UI_ChestCard_Rare;
+2) Level End - Defeat, Win;
+3) LuckyWheel - Lucky_Wheel;
+4) Shop - Shop_Item_slot.
+
+ 
+3. UI - Baner_Defeat, Baner_Victory, Chest_common, Chest_common_opened, Chest_epic, Chest_epic_opened, Chest_legendary, Chest_legendary_opened Chest_mega Chest_mega_opened Chest_rare Chest_rare_opened, Chests, Coins_large, Coins_medium, Coins_mega, Coins_mini, Coins_small, Components,
+Diamonds_large, Diamonds_medium, Diamonds_mega, Diamonds_mini, Diamonds_small, Lucky wheel_background, Lucky wheel_Button, Lucky wheel_foreground, ShopStuff.

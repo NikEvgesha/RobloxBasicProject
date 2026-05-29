@@ -44,6 +44,7 @@ Current prototype systems:
 - mobile virtual joystick;
 - mobile sprint and jump buttons;
 - mobile right-side camera drag;
+- desktop-hidden mobile controls with runtime mobile/handheld visibility;
 - generic block-character Animator with idle, move, walk, and run clips;
 - ProBuilder environment blockout inspired by a Roblox-style yard from the local reference video;
 - PlayerPrefs save baseline;
@@ -78,6 +79,8 @@ Mobile:
 - `JUMP`: jump;
 - drag the right side of the screen: rotate camera.
 
+Mobile controls are hidden on desktop by `MechanicsTestbedMobileControlsVisibility` and are shown on mobile or handheld platforms. Use the component's `forceVisible` option only for editor testing.
+
 ## Character Animation
 
 The prototype player uses a game-local Generic Animator controller:
@@ -100,16 +103,18 @@ Current clips are simple block-rig placeholders for validating state flow:
 - `MechanicsTestbedWalk.anim`;
 - `MechanicsTestbedRun.anim`.
 
+All four clips use `loopTime = true` and `WrapMode.Loop` so Mecanim states can repeat continuously.
+
 Keep these under `Assets/Games/MechanicsTestbed` until the shared block-character rig and animation contract are stable enough to promote into `Assets/GameKit`.
 
 ## UI Style
 
 Current test style:
 
-- compact dark top HUD and side panel;
-- soft currency accent: green;
-- hard currency accent: cyan;
-- action accent: amber;
+- shared sprite source: `Assets/SharedArt/UI/RobloxCasual`;
+- compact dark top HUD with coin and diamond currency badges;
+- casual blue, green, yellow, purple, and red button sprites;
+- light status/action panels with dark readable text;
 - no nested cards or decorative background-only elements.
 
 This style is game-local until we decide whether to promote it into a shared `GameKit` UI theme.
