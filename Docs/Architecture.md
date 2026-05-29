@@ -48,6 +48,14 @@ Assets/Games/StarterSandbox/
   Scripts/
   UI/
 
+Assets/Games/MechanicsTestbed/
+  Configs/
+    MechanicsTestbedGame.asset
+  Scenes/
+    MechanicsTestbed.unity
+  Scripts/
+    game-local prototypes for movement, camera, wallet, settings, HUD, rewards
+
 Assets/SharedArt/UI/Sprites/
   shared UI frames, icons, language flags, and currency sprites
 ```
@@ -181,6 +189,12 @@ The first baseline config is:
 
 ```text
 Assets/Games/StarterSandbox/Configs/StarterSandboxGame.asset
+```
+
+The current mechanics validation config is:
+
+```text
+Assets/Games/MechanicsTestbed/Configs/MechanicsTestbedGame.asset
 ```
 
 ## Promotion Rule

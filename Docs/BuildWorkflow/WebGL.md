@@ -1,13 +1,15 @@
 # WebGL Baseline
 
-`StarterSandbox` is the default WebGL validation target until a concrete game becomes the active target.
+`MechanicsTestbed` is the current WebGL mechanics validation target.
+
+`StarterSandbox` remains the imported starter-scene baseline.
 
 ## Game Definition
 
-The baseline game config lives at:
+The active game config lives at:
 
 ```text
-Assets/Games/StarterSandbox/Configs/StarterSandboxGame.asset
+Assets/Games/MechanicsTestbed/Configs/MechanicsTestbedGame.asset
 ```
 
 It describes:
@@ -22,17 +24,16 @@ It describes:
 ## Current Baseline
 
 ```text
-Game: Starter Sandbox
-Game id: starter-sandbox
-Build output: Builds/WebGL/StarterSandbox
+Game: Mechanics Testbed
+Game id: mechanics-testbed
+Build output: Builds/WebGL/MechanicsTestbed
 Template: APPLICATION:Default
 Compression: Disabled
 Data caching: Enabled
 Target size: 960x600
-Start scene: Assets/Games/StarterSandbox/Scenes/Loading.unity
+Start scene: Assets/Games/MechanicsTestbed/Scenes/MechanicsTestbed.unity
 Scenes:
-  Assets/Games/StarterSandbox/Scenes/Loading.unity
-  Assets/Games/StarterSandbox/Scenes/Evgesha.unity
+  Assets/Games/MechanicsTestbed/Scenes/MechanicsTestbed.unity
 ```
 
 ## Applying Build Settings
@@ -40,7 +41,7 @@ Scenes:
 In Unity, select:
 
 ```text
-Assets/Games/StarterSandbox/Configs/StarterSandboxGame.asset
+Assets/Games/MechanicsTestbed/Configs/MechanicsTestbedGame.asset
 ```
 
 Then run:
