@@ -40,7 +40,7 @@ Docs/Reviews/FoundationSystemsAudit.md
 
 Current promotion priority:
 
-1. Fix WebGL build blockers in imported runtime scripts.
-2. Fix inventory initialization before item rewards are used.
-3. Promote isolated UI helpers first, starting with `DynamicGridSpawner`.
-4. Define `GameKit` input/save/currency contracts before moving larger systems.
+1. Promote isolated UI helpers first, starting with `DynamicGridSpawner`.
+2. Define `GameKit` input/save/currency contracts before moving larger systems.
+3. Wrap legacy `G` access behind game/foundation adapters.
+4. Migrate input adapters because desktop/mobile control is central to the project goal.

@@ -134,6 +134,26 @@ Assets/GameKit          -> Assets/Games/ObbyRunner
 Assets/Games/ObbyRunner -> Assets/Games/PetTycoon
 ```
 
+## Global Access
+
+`Assets/Igrodelnya/G.cs` is a legacy service locator for the imported foundation. Keep it working while the foundation is being audited, but do not treat it as the long-term architecture for new reusable systems.
+
+Do not create a large shared `G` that contains every game. That would make the monorepo compile-time coupled across products.
+
+Rules:
+
+- `Assets/GameKit` must not depend on `G`, `StarterSandboxG`, or any other game/global facade.
+- `Assets/Igrodelnya` may keep using the current `G` until each system is migrated or wrapped.
+- `Assets/Games/{GameName}` may define a small `{GameName}G` facade only for game-local scene/UI composition.
+- A game-local facade must not reference another game folder.
+- Shared behavior should move behind `GameKit` interfaces or ScriptableObject config instead of becoming another static global.
+
+Preferred migration path:
+
+```text
+Legacy G -> game/foundation adapter -> GameKit interface -> reusable implementation
+```
+
 ## Game Definition
 
 Each game should eventually have a `GameDefinition` ScriptableObject under:

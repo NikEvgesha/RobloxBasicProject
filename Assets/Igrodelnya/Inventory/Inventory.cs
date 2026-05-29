@@ -3,7 +3,10 @@ using UnityEngine;
 
 public class Inventory : MonoBehaviour
 {
-    private List<Item> _items;
+    private readonly List<Item> _items = new();
+
+    public int Count => _items.Count;
+
     void Awake()
     {
         if (G.Inventory == null)
@@ -17,11 +20,17 @@ public class Inventory : MonoBehaviour
 
     public void Add(Item item)
     {
+        if (item == null)
+            return;
+
         _items.Add(item);
     }
 
     public void Remove(Item item)
     {
+        if (item == null)
+            return;
+
         _items.Remove(item);
     }
 }

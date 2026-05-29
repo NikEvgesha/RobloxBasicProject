@@ -1,6 +1,9 @@
 using UnityEngine;
-using UnityEditor;
+
+#if UNITY_EDITOR
 using System.Linq;
+using UnityEditor;
+#endif
 
 public class SceneSelectorAttribute : PropertyAttribute { }
 

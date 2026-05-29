@@ -42,6 +42,8 @@ Systems that should stay as foundation or game-specific until they are decoupled
 
 Risk: WebGL/player builds can fail because `UnityEditor` is unavailable outside the editor.
 
+Status: fixed on 2026-05-29. `LoadingManager` no longer imports `UnityEditor`, and `SceneSelectorAttribute` keeps editor-only imports behind `#if UNITY_EDITOR`.
+
 Recommended fix:
 
 - remove the unused `UnityEditor` import from `LoadingManager`;
@@ -59,6 +61,8 @@ Known callers:
 - `Assets/Igrodelnya/SpecialShop/SpecialShop.cs:141`.
 
 Risk: any item reward from roulette or shop can throw `NullReferenceException`.
+
+Status: fixed on 2026-05-29. `Inventory` now initializes its internal item list and ignores null add/remove requests.
 
 Recommended fix:
 
@@ -79,6 +83,8 @@ Risk: systems cannot be safely reused per game or tested in isolation.
 Recommended migration shape:
 
 - keep `G` only inside imported foundation for now;
+- do not add one shared `G` that contains every game;
+- if a concrete game needs convenience access, keep a small `{GameName}G` facade under `Assets/Games/{GameName}` only;
 - introduce GameKit interfaces per system, for example `ICurrencyWallet`, `IInputReader`, `ISaveStore`;
 - write adapters from old managers to new interfaces before moving code into `GameKit`.
 
