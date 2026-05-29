@@ -58,4 +58,5 @@ Read the detailed rules:
 - `AGENTS.md`
 - `Docs/Architecture.md`
 - `Docs/GitWorkflow.md`
+- `Docs/MCP.md`
 - `Docs/GameKit/MechanicsIndex.md`

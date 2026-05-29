@@ -13,6 +13,13 @@ This is a Unity monorepo:
 - Build and automation helpers go in `Tools`.
 - Project and mechanic documentation goes in `Docs`.
 
+## MCP Rules
+
+- This repository uses `.codex/config.toml` for the Unity MCP connection.
+- Use `ROBLOX_BASIC_PROJECT_GAME_DEV_AUTH_TOKEN` for this project.
+- Do not use the shared `GAME_DEV_AUTH_TOKEN` variable here.
+- Never commit MCP auth tokens or credentials.
+
 ## Dependency Rules
 
 - `Assets/GameKit` must never reference files, scripts, prefabs, scenes, or configs from `Assets/Games`.
