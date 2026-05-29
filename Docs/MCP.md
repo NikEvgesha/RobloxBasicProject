@@ -8,6 +8,19 @@ The server is configured in:
 .codex/config.toml
 ```
 
+Project-local MCP entry:
+
+```toml
+[mcp_servers."ai-game-developer-roblox-basic-project"]
+bearer_token_env_var = "ROBLOX_BASIC_PROJECT_GAME_DEV_AUTH_TOKEN"
+enabled = true
+startup_timeout_sec = 30
+tool_timeout_sec = 300
+url = "https://ai-game.dev/mcp"
+```
+
+Do not rename this entry to the generic `ai-game-developer`; that name is already used by other Unity projects on this workstation.
+
 ## Project-Specific Token
 
 Use a project-specific environment variable:

@@ -1,4 +1,4 @@
-[mcp_servers.ai-game-developer]
+[mcp_servers."ai-game-developer-roblox-basic-project"]
 bearer_token_env_var = "ROBLOX_BASIC_PROJECT_GAME_DEV_AUTH_TOKEN"
 enabled = true
 startup_timeout_sec = 30
