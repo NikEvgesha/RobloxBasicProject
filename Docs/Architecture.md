@@ -35,6 +35,25 @@ Tools/
 
 `GameKit` should be reusable by any game in this repository.
 
+## Imported Foundation
+
+The current Unity project was imported from:
+
+```text
+E:\GitFork\UnityBasicProject
+```
+
+Existing foundation, SDK, MCP, and vendor content may remain in folders such as:
+
+```text
+Assets/Igrodelnya
+Assets/OpalStudio
+Assets/Plugin
+Assets/Plugins
+```
+
+Do not move these folders just to fit the new structure. Move or wrap them only during a focused migration when the dependency direction is clear.
+
 ## Games
 
 Each concrete game lives in:

@@ -2,12 +2,22 @@
 
 Unity-monorepo for Roblox-style WebGL games.
 
+The Unity foundation was imported from `E:\GitFork\UnityBasicProject`.
+
+Unity editor version:
+
+```text
+6000.3.9f1
+```
+
 This repository uses one Git repository for a shared game constructor and many concrete games:
 
 ```text
 Assets/
   GameKit/        shared reusable systems and mechanics
   Games/          concrete games, one folder per game
+  Igrodelnya/     imported foundation systems from UnityBasicProject
+  Plugin*/        imported SDK/MCP/plugin folders
   SharedArt/      assets reused by multiple games
   SharedAudio/    audio reused by multiple games
 Docs/             architecture, workflow, mechanics, game notes
@@ -40,6 +50,8 @@ git switch develop
 ```
 
 Create a new game by copying the structure from `Assets/Games/_Template` into `Assets/Games/{GameName}` and adding game-specific documentation under `Docs/Games/{GameName}.md`.
+
+Do not move imported SDK, MCP, or vendor folders unless there is a focused migration task. New reusable gameplay systems should go into `Assets/GameKit`.
 
 Read the detailed rules:
 

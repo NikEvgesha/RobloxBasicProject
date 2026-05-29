@@ -9,6 +9,7 @@ This is a Unity monorepo:
 - Shared reusable code goes in `Assets/GameKit`.
 - Concrete games go in `Assets/Games/{GameName}`.
 - Shared assets go in `Assets/SharedArt` or `Assets/SharedAudio`.
+- Imported SDK, MCP, plugin, and vendor folders should stay where they are unless a task explicitly asks to migrate them.
 - Build and automation helpers go in `Tools`.
 - Project and mechanic documentation goes in `Docs`.
 
@@ -38,6 +39,8 @@ This is a Unity monorepo:
 - Prefer prefabs, ScriptableObjects, and additive scenes over large monolithic scenes.
 - Avoid hard references from `GameKit` to concrete game content.
 - Before moving a game-specific system into `GameKit`, remove direct dependencies on game scenes, UI, and assets.
+- Do not create assets without their `.meta` files.
+- Keep hidden `.gitkeep` files only for intentionally empty folders.
 
 ## Documentation Rules
 

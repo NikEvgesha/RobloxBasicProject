@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4488637591572742050
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1337909472738019208}
+  - component: {fileID: 6398660239281437250}
+  m_Layer: 0
+  m_Name: Bootstrap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1337909472738019208
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4488637591572742050}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0, y: -0, z: -0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6398660239281437250
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4488637591572742050}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a47b2d0b75285341bded767d69595ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  _gameLoader: {fileID: 3636252216441058601, guid: 6e324e302ce6aab459d697836d9d2748, type: 3}
+  _soundManager: {fileID: 778590491910633963, guid: c5211de716e47294897df6c1d092b411, type: 3}
+  _saveManager: {fileID: 6425979806564930591, guid: a6f40130739060843be497c9bde6fce3, type: 3}
+  _localizationManager: {fileID: 574860074532688226, guid: 7ce9488fd6a2f594e9399ea72f5e7aa9, type: 3}
+  _settings: {fileID: 5204208716483565748, guid: 1594dcd6a0c7ffe4590aa9c2870d589e, type: 3}
+  _input: {fileID: 4008846713859497023, guid: a82c8ff28fce91742a081c10d193bd72, type: 3}
+  _gameManager: {fileID: 2729554649241604131, guid: 44319f15ca7634644884009e2bd4a82d, type: 3}
+  _controlManager: {fileID: 6636174751012146672, guid: 1937b693dc83e614e9b112c005b53b41, type: 3}
+  _cuurencyManager: {fileID: 6095531368551249289, guid: eb0dfefe08ab26e489043da03edea68a, type: 3}
+  _purchaseManager: {fileID: 9073542515389457150, guid: 16fd4717e03a96946bd4dcf7ab8a753d, type: 3}
+  _adsManager: {fileID: 6789713887882614748, guid: d926b627526a6aa41be5dd624c1ef262, type: 3}
+  _gameScene: 1
