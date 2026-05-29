@@ -40,6 +40,9 @@ Current prototype systems:
 
 - third-person character movement;
 - right-mouse third-person camera orbit;
+- mobile virtual joystick;
+- mobile sprint and jump buttons;
+- mobile right-side camera drag;
 - PlayerPrefs save baseline;
 - soft and hard currency wallet;
 - settings values for music, SFX, and language;
@@ -66,8 +69,10 @@ Desktop:
 
 Mobile:
 
-- not implemented yet;
-- expected future direction is a virtual joystick plus drag camera zone.
+- left virtual joystick: move;
+- `RUN`: hold sprint;
+- `JUMP`: jump;
+- drag the right side of the screen: rotate camera.
 
 ## UI Style
 
@@ -98,4 +103,4 @@ This game is intended to be the current WebGL mechanics validation target.
 
 ## Mobile Notes
 
-Keep mobile input experiments local to this game until the final input contract is stable.
+Mobile input is implemented as a game-local prototype. Keep it here until the final input contract is stable enough to promote into `Assets/GameKit`.

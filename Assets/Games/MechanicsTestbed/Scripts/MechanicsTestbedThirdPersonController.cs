@@ -10,6 +10,7 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
     public sealed class MechanicsTestbedThirdPersonController : MonoBehaviour
     {
         [SerializeField] private Transform cameraTransform;
+        [SerializeField] private MechanicsTestbedMobileInput mobileInput;
         [SerializeField] private float walkSpeed = 6f;
         [SerializeField] private float sprintSpeed = 9f;
         [SerializeField] private float acceleration = 24f;
@@ -32,12 +33,17 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
             {
                 cameraTransform = Camera.main.transform;
             }
+
+            if (mobileInput == null)
+            {
+                mobileInput = FindFirstObjectByType<MechanicsTestbedMobileInput>();
+            }
         }
 
         private void Update()
         {
-            MoveInput = ReadMoveInput();
-            IsSprinting = ReadSprintInput();
+            MoveInput = GetMoveInput();
+            IsSprinting = ReadSprintInput() || (mobileInput != null && mobileInput.SprintHeld);
 
             var targetSpeed = IsSprinting ? sprintSpeed : walkSpeed;
             var desiredVelocity = GetCameraRelativeMove(MoveInput) * targetSpeed;
@@ -48,7 +54,8 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
                 verticalVelocity = -2f;
             }
 
-            if (controller.isGrounded && ReadJumpPressed())
+            var jumpPressed = ReadJumpPressed() || (mobileInput != null && mobileInput.ConsumeJumpPressed());
+            if (controller.isGrounded && jumpPressed)
             {
                 verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
             }
@@ -104,6 +111,17 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
                 transform.rotation,
                 targetRotation,
                 1f - Mathf.Exp(-rotationSharpness * Time.deltaTime));
+        }
+
+        private Vector2 GetMoveInput()
+        {
+            var desktopInput = ReadMoveInput();
+            if (mobileInput == null || mobileInput.MoveInput.sqrMagnitude <= desktopInput.sqrMagnitude)
+            {
+                return desktopInput;
+            }
+
+            return mobileInput.MoveInput;
         }
 
         private static Vector2 ReadMoveInput()

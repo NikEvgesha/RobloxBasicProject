@@ -26,7 +26,7 @@ Known limits:
 
 No reusable mechanics have been registered yet.
 
-`Assets/Games/MechanicsTestbed` contains game-local prototypes for movement, camera, wallet, settings, UI, wheel, and timed rewards. They are intentionally not registered here until they are decoupled and promoted to `Assets/GameKit`.
+`Assets/Games/MechanicsTestbed` contains game-local prototypes for desktop/mobile movement, camera, wallet, settings, UI, wheel, and timed rewards. They are intentionally not registered here until they are decoupled and promoted to `Assets/GameKit`.
 
 ## Foundation Candidates
 

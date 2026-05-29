@@ -17,11 +17,20 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         [SerializeField] private float followSharpness = 18f;
         [SerializeField] private float yaw;
         [SerializeField] private float pitch = 18f;
+        [SerializeField] private MechanicsTestbedMobileInput mobileInput;
 
         public Transform Target
         {
             get => target;
             set => target = value;
+        }
+
+        private void Awake()
+        {
+            if (mobileInput == null)
+            {
+                mobileInput = FindFirstObjectByType<MechanicsTestbedMobileInput>();
+            }
         }
 
         private void Start()
@@ -39,7 +48,18 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
                 return;
             }
 
-            if (ReadOrbitDelta(out var delta))
+            var hasDelta = ReadOrbitDelta(out var delta);
+            if (mobileInput != null)
+            {
+                var mobileDelta = mobileInput.ConsumeCameraDelta();
+                if (mobileDelta.sqrMagnitude > 0f)
+                {
+                    delta += mobileDelta;
+                    hasDelta = true;
+                }
+            }
+
+            if (hasDelta)
             {
                 yaw += delta.x * sensitivity;
                 pitch = Mathf.Clamp(pitch - delta.y * sensitivity, minPitch, maxPitch);

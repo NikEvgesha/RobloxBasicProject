@@ -10,6 +10,7 @@ Keep experiments game-local until at least two games need the same behavior.
 - `Shift` sprint.
 - `Space` jump.
 - Hold right mouse button to rotate the camera behind the character.
+- Mobile: left virtual joystick, sprint/jump buttons, right-side drag camera zone.
 - Prototype HUD for soft currency, hard currency, settings, shop, wheel, and timed rewards.
 
 ## UI Style

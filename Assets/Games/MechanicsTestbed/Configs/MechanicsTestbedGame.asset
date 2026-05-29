@@ -30,6 +30,8 @@ MonoBehaviour:
   - game-local-shop-prototype
   - game-local-wheel-prototype
   - game-local-timed-rewards
+  - game-local-mobile-virtual-joystick
+  - game-local-mobile-camera-drag
   webGL:
     buildDirectory: Builds/WebGL/MechanicsTestbed
     template: APPLICATION:Default
@@ -43,5 +45,5 @@ MonoBehaviour:
     supportsTouch: 1
     defaultOrientation: Landscape
     requiresVirtualJoystick: 1
-    notes: Mobile input is planned as a virtual joystick plus camera drag zone after
-      desktop loop validation.
+    notes: Mobile prototype uses a left virtual joystick, sprint/jump buttons, and
+      a right-side camera drag area.
