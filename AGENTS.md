@@ -16,7 +16,9 @@ This is a Unity monorepo:
 ## MCP Rules
 
 - This repository uses `.codex/config.toml` for the Unity MCP connection.
-- Use `ROBLOX_BASIC_PROJECT_GAME_DEV_AUTH_TOKEN` for this project.
+- Prefer AI Game Developer `Custom` mode with the local MCP server at `http://localhost:26124`.
+- Custom mode with `Authorization Token: none` does not need an MCP bearer token.
+- If Cloud mode or required authorization is enabled, use `ROBLOX_BASIC_PROJECT_GAME_DEV_AUTH_TOKEN` for this project.
 - Do not use the shared `GAME_DEV_AUTH_TOKEN` variable here.
 - If Codex Desktop needs a user-level MCP entry, use a unique server name such as `ai-game-developer-roblox-basic-project`.
 - Do not overwrite existing `ai-game-developer` entries in the user-level Codex config.
