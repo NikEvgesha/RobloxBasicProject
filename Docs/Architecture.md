@@ -32,7 +32,12 @@ The project is currently prepared for work with these concrete areas:
 Assets/GameKit/Runtime/Input/
   InputSystem_Actions.inputactions
 
+Assets/GameKit/Runtime/Configuration/
+  GameDefinition.cs
+
 Assets/Games/StarterSandbox/
+  Configs/
+    StarterSandboxGame.asset
   Scenes/
     Loading.unity
     Evgesha.unity
@@ -151,6 +156,12 @@ It should describe:
 - version/build id.
 
 The goal is to let tools build a selected game without manually editing Unity Build Settings.
+
+The first baseline config is:
+
+```text
+Assets/Games/StarterSandbox/Configs/StarterSandboxGame.asset
+```
 
 ## Promotion Rule
 

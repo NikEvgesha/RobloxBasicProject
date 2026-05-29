@@ -21,6 +21,14 @@ Assets/Games/StarterSandbox/Scenes/Evgesha.unity
 
 These scenes are included in Unity Build Settings.
 
+## Config
+
+```text
+Assets/Games/StarterSandbox/Configs/StarterSandboxGame.asset
+```
+
+This `GameDefinition` is the source of truth for the sandbox scene list, baseline WebGL output path, and early desktop/mobile input expectations.
+
 ## Used GameKit Mechanics
 
 No promoted `GameKit` mechanics are registered yet.
@@ -58,3 +66,9 @@ Keep mobile-specific experiments local to this game until they become generic en
 ## Build Notes
 
 Unity Build Settings currently point to the `StarterSandbox` scenes.
+
+WebGL baseline notes live in:
+
+```text
+Docs/BuildWorkflow/WebGL.md
+```

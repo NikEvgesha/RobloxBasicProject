@@ -8,3 +8,9 @@ Preferred future direction:
 - apply WebGL build settings;
 - build into an ignored `Builds/` output folder;
 - keep build scripts deterministic and documented.
+
+Current baseline documentation:
+
+```text
+Docs/BuildWorkflow/WebGL.md
+```
