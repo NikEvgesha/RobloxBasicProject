@@ -11,6 +11,7 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
     {
         [SerializeField] private Transform cameraTransform;
         [SerializeField] private MechanicsTestbedMobileInput mobileInput;
+        [SerializeField] private Animator animator;
         [SerializeField] private float walkSpeed = 6f;
         [SerializeField] private float sprintSpeed = 9f;
         [SerializeField] private float acceleration = 24f;
@@ -21,6 +22,11 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         private CharacterController controller;
         private Vector3 horizontalVelocity;
         private float verticalVelocity;
+
+        private static readonly int MoveSpeedHash = Animator.StringToHash("MoveSpeed");
+        private static readonly int IsMovingHash = Animator.StringToHash("IsMoving");
+        private static readonly int IsSprintingHash = Animator.StringToHash("IsSprinting");
+        private static readonly int GroundedHash = Animator.StringToHash("Grounded");
 
         public Vector2 MoveInput { get; private set; }
         public bool IsSprinting { get; private set; }
@@ -37,6 +43,11 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
             if (mobileInput == null)
             {
                 mobileInput = FindFirstObjectByType<MechanicsTestbedMobileInput>();
+            }
+
+            if (animator == null)
+            {
+                animator = GetComponent<Animator>();
             }
         }
 
@@ -67,6 +78,7 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
             controller.Move(motion * Time.deltaTime);
 
             RotateToward(horizontalVelocity);
+            UpdateAnimator();
         }
 
         private Vector3 GetCameraRelativeMove(Vector2 input)
@@ -111,6 +123,24 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
                 transform.rotation,
                 targetRotation,
                 1f - Mathf.Exp(-rotationSharpness * Time.deltaTime));
+        }
+
+        private void UpdateAnimator()
+        {
+            if (animator == null)
+            {
+                return;
+            }
+
+            var flatVelocity = controller.velocity;
+            flatVelocity.y = 0f;
+            var moveSpeed = flatVelocity.magnitude;
+            var isMoving = moveSpeed > 0.12f;
+
+            animator.SetFloat(MoveSpeedHash, moveSpeed, 0.08f, Time.deltaTime);
+            animator.SetBool(IsMovingHash, isMoving);
+            animator.SetBool(IsSprintingHash, isMoving && IsSprinting);
+            animator.SetBool(GroundedHash, controller.isGrounded);
         }
 
         private Vector2 GetMoveInput()

@@ -9,8 +9,10 @@ Keep experiments game-local until at least two games need the same behavior.
 - Third-person desktop movement with `WASD` / arrows.
 - `Shift` sprint.
 - `Space` jump.
-- Hold right mouse button to rotate the camera behind the character.
+- Hold right mouse button to smoothly rotate the camera behind the character.
+- Mouse wheel zooms the third-person camera in and out.
 - Mobile: left virtual joystick, sprint/jump buttons, right-side drag camera zone.
+- Generic block-character Animator with idle, move, walk, and run states.
 - Prototype HUD for soft currency, hard currency, settings, shop, wheel, and timed rewards.
 - ProBuilder video-inspired arena blockout with checker walls, studs, stalls, trees, pets, and reward cube.
 
@@ -29,6 +31,9 @@ Use a compact Roblox-like game HUD:
 The scripts under `Assets/Games/MechanicsTestbed/Scripts` are game-specific prototypes.
 
 Do not reference this folder from `Assets/GameKit` or another game.
+
+The current character animation assets live under `Assets/Games/MechanicsTestbed/Animations`.
+Keep them game-local until a reusable Roblox-style block rig contract is defined in `Assets/GameKit`.
 
 ## ProBuilder Arena
 

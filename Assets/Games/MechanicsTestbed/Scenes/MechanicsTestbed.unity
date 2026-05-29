@@ -130803,10 +130803,16 @@ MonoBehaviour:
   target: {fileID: 1657457811}
   targetOffset: {x: 0, y: 1.45, z: 0}
   distance: 6
+  minDistance: 3.5
+  maxDistance: 11
+  zoomStep: 1.15
   minPitch: -12
   maxPitch: 62
   sensitivity: 0.18
+  mobileSensitivityMultiplier: 0.65
+  rotationSharpness: 22
   followSharpness: 18
+  zoomSharpness: 16
   yaw: 38
   pitch: 18
   mobileInput: {fileID: 313674551}
@@ -185665,6 +185671,7 @@ GameObject:
   - component: {fileID: 1657457811}
   - component: {fileID: 1657457813}
   - component: {fileID: 1657457812}
+  - component: {fileID: 1657457814}
   m_Layer: 0
   m_Name: MT_Player
   m_TagString: Untagged
@@ -185707,6 +185714,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.MechanicsTestbed.MechanicsTestbedThirdPersonController
   cameraTransform: {fileID: 1129737953}
   mobileInput: {fileID: 313674551}
+  animator: {fileID: 1657457814}
   walkSpeed: 6
   sprintSpeed: 9
   acceleration: 24
@@ -185738,6 +185746,28 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1.05, z: 0}
+--- !u!95 &1657457814
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1657457810}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 997c3b04e3c458e43b5a1c9a4fdbb5b7, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage:
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1658823458
 GameObject:
   m_ObjectHideFlags: 0

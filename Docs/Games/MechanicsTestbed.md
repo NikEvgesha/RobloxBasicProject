@@ -39,10 +39,12 @@ Assets/GameKit/Runtime/Input/InputSystem_Actions.inputactions
 Current prototype systems:
 
 - third-person character movement;
-- right-mouse third-person camera orbit;
+- smoothed right-mouse third-person camera orbit;
+- mouse wheel camera zoom;
 - mobile virtual joystick;
 - mobile sprint and jump buttons;
 - mobile right-side camera drag;
+- generic block-character Animator with idle, move, walk, and run clips;
 - ProBuilder environment blockout inspired by a Roblox-style yard from the local reference video;
 - PlayerPrefs save baseline;
 - soft and hard currency wallet;
@@ -66,7 +68,8 @@ Desktop:
 - `WASD` / arrows: move;
 - `Shift`: sprint;
 - `Space`: jump;
-- hold right mouse button: rotate camera.
+- hold right mouse button: rotate camera;
+- mouse wheel: zoom camera in and out.
 
 Mobile:
 
@@ -74,6 +77,30 @@ Mobile:
 - `RUN`: hold sprint;
 - `JUMP`: jump;
 - drag the right side of the screen: rotate camera.
+
+## Character Animation
+
+The prototype player uses a game-local Generic Animator controller:
+
+```text
+Assets/Games/MechanicsTestbed/Animations/MechanicsTestbedPlayer.controller
+```
+
+Animator parameters are driven by `MechanicsTestbedThirdPersonController`:
+
+- `MoveSpeed`;
+- `IsMoving`;
+- `IsSprinting`;
+- `Grounded`.
+
+Current clips are simple block-rig placeholders for validating state flow:
+
+- `MechanicsTestbedIdle.anim`;
+- `MechanicsTestbedMove.anim`;
+- `MechanicsTestbedWalk.anim`;
+- `MechanicsTestbedRun.anim`.
+
+Keep these under `Assets/Games/MechanicsTestbed` until the shared block-character rig and animation contract are stable enough to promote into `Assets/GameKit`.
 
 ## UI Style
 

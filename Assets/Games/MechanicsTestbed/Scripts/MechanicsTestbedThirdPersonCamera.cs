@@ -11,13 +11,23 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         [SerializeField] private Transform target;
         [SerializeField] private Vector3 targetOffset = new Vector3(0f, 1.45f, 0f);
         [SerializeField] private float distance = 6f;
+        [SerializeField] private float minDistance = 3.5f;
+        [SerializeField] private float maxDistance = 11f;
+        [SerializeField] private float zoomStep = 1.15f;
         [SerializeField] private float minPitch = -12f;
         [SerializeField] private float maxPitch = 62f;
         [SerializeField] private float sensitivity = 0.18f;
+        [SerializeField] private float mobileSensitivityMultiplier = 0.65f;
+        [SerializeField] private float rotationSharpness = 22f;
         [SerializeField] private float followSharpness = 18f;
+        [SerializeField] private float zoomSharpness = 16f;
         [SerializeField] private float yaw;
         [SerializeField] private float pitch = 18f;
         [SerializeField] private MechanicsTestbedMobileInput mobileInput;
+
+        private float targetYaw;
+        private float targetPitch;
+        private float targetDistance;
 
         public Transform Target
         {
@@ -39,6 +49,12 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
             {
                 yaw = transform.eulerAngles.y;
             }
+
+            distance = Mathf.Clamp(distance, minDistance, maxDistance);
+            pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+            targetYaw = yaw;
+            targetPitch = pitch;
+            targetDistance = distance;
         }
 
         private void LateUpdate()
@@ -48,22 +64,34 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
                 return;
             }
 
-            var hasDelta = ReadOrbitDelta(out var delta);
+            if (ReadOrbitDelta(out var desktopDelta))
+            {
+                targetYaw += desktopDelta.x * sensitivity;
+                targetPitch = Mathf.Clamp(targetPitch - desktopDelta.y * sensitivity, minPitch, maxPitch);
+            }
+
             if (mobileInput != null)
             {
                 var mobileDelta = mobileInput.ConsumeCameraDelta();
                 if (mobileDelta.sqrMagnitude > 0f)
                 {
-                    delta += mobileDelta;
-                    hasDelta = true;
+                    var mobileSensitivity = sensitivity * mobileSensitivityMultiplier;
+                    targetYaw += mobileDelta.x * mobileSensitivity;
+                    targetPitch = Mathf.Clamp(targetPitch - mobileDelta.y * mobileSensitivity, minPitch, maxPitch);
                 }
             }
 
-            if (hasDelta)
+            var zoomInput = ReadZoomInput();
+            if (Mathf.Abs(zoomInput) > 0.01f)
             {
-                yaw += delta.x * sensitivity;
-                pitch = Mathf.Clamp(pitch - delta.y * sensitivity, minPitch, maxPitch);
+                targetDistance = Mathf.Clamp(targetDistance - zoomInput * zoomStep, minDistance, maxDistance);
             }
+
+            var rotationBlend = 1f - Mathf.Exp(-rotationSharpness * Time.deltaTime);
+            var zoomBlend = 1f - Mathf.Exp(-zoomSharpness * Time.deltaTime);
+            yaw = Mathf.LerpAngle(yaw, targetYaw, rotationBlend);
+            pitch = Mathf.Lerp(pitch, targetPitch, rotationBlend);
+            distance = Mathf.Lerp(distance, targetDistance, zoomBlend);
 
             var rotation = Quaternion.Euler(pitch, yaw, 0f);
             var focusPoint = target.position + targetOffset;
@@ -94,6 +122,21 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
 
             delta = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) * 18f;
             return delta.sqrMagnitude > 0f;
+#endif
+        }
+
+        private static float ReadZoomInput()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var mouse = Mouse.current;
+            if (mouse == null)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp(mouse.scroll.ReadValue().y / 120f, -1f, 1f);
+#else
+            return Input.mouseScrollDelta.y;
 #endif
         }
     }
