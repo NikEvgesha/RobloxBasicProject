@@ -18,6 +18,8 @@ This is a Unity monorepo:
 - This repository uses `.codex/config.toml` for the Unity MCP connection.
 - Use `ROBLOX_BASIC_PROJECT_GAME_DEV_AUTH_TOKEN` for this project.
 - Do not use the shared `GAME_DEV_AUTH_TOKEN` variable here.
+- If Codex Desktop needs a user-level MCP entry, use a unique server name such as `ai-game-developer-roblox-basic-project`.
+- Do not overwrite existing `ai-game-developer` entries in the user-level Codex config.
 - Never commit MCP auth tokens or credentials.
 
 ## Dependency Rules
