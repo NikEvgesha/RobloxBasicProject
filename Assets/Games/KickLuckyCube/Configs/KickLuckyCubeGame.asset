@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46d23ef327797344b82205eb6af55144, type: 3}
+  m_Name: KickLuckyCubeGame
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.GameKit.GameDefinition
+  gameId: kick-lucky-cube
+  displayName: Kick Lucky Cube
+  version: 0.1.0
+  startScenePath: Assets/Games/KickLuckyCube/Scenes/KickLuckyCubeOverview.unity
+  buildScenePaths:
+  - Assets/Games/KickLuckyCube/Scenes/KickLuckyCubeOverview.unity
+  inputProfileId: shared-default
+  inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  cameraProfileId: kick-lucky-cube-third-person
+  uiThemeId: roblox-casual-bright
+  enabledMechanics:
+  - game-local-kick-line
+  - game-local-rarity-corridor
+  - game-local-wave-chase
+  - game-local-stable-income
+  - game-local-strength-training
+  - game-local-rebirth-progression
+  webGL:
+    buildDirectory: Builds/WebGL/KickLuckyCube
+    template: APPLICATION:Default
+    compressionFormat: Disabled
+    dataCaching: 1
+    developmentBuild: 0
+    targetWidth: 960
+    targetHeight: 600
+    memoryGrowthMode: Geometric
+  mobile:
+    supportsTouch: 1
+    defaultOrientation: Landscape
+    requiresVirtualJoystick: 1
+    notes: Mobile support should cover kick, animal running, training prompts, and
+      shop/stable UI.

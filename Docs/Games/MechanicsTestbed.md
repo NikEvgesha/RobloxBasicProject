@@ -48,7 +48,7 @@ Current prototype systems:
 - mobile virtual joystick;
 - mobile sprint and jump buttons;
 - mobile right-side camera drag;
-- desktop-hidden mobile controls with runtime mobile/handheld visibility;
+- desktop-hidden mobile controls with runtime mobile/handheld visibility and explicit simulation override;
 - generic block-character Animator with idle, move, walk, and run clips;
 - ProBuilder environment blockout inspired by a Roblox-style yard from the local reference video;
 - PlayerPrefs save baseline;
@@ -56,8 +56,11 @@ Current prototype systems:
 - settings values for music, SFX, and language;
 - shop prototype grants;
 - wheel prototype reward;
-- timed hard-currency reward.
-- interaction test actions: raycast pickup cube, trigger drop zone, and trigger shop opener.
+- timed hard-currency reward;
+- currency and pickup VFX with a radial particle burst plus homing trail tokens;
+- interaction test actions: raycast pickup cube, trigger drop zone, and trigger shop opener;
+- modal Roblox-style UI windows with square icon launch buttons;
+- Unity Editor-only cheat window opened with `~`.
 
 These stay in:
 
@@ -85,7 +88,7 @@ Mobile:
 - `JUMP`: jump;
 - drag the right side of the screen: rotate camera.
 
-Mobile controls are hidden on desktop by `MechanicsTestbedMobileControlsVisibility` and are shown on mobile or handheld platforms. Use the component's `forceVisible` option only for editor testing.
+Mobile controls are hidden on desktop by `MechanicsTestbedMobileControlsVisibility` and are shown on mobile or handheld platforms. Use the component's `simulateMobileControls` option only for editor or desktop simulation testing.
 
 ## Interaction Test Flow
 
@@ -133,12 +136,29 @@ Keep these under `Assets/Games/MechanicsTestbed` until the shared block-characte
 Current test style:
 
 - shared sprite source: `Assets/SharedArt/UI/RobloxCasual`;
-- compact dark top HUD with coin and diamond currency badges;
+- compact top currency HUD with coin and diamond badges;
+- right-side square icon buttons for shop, wheel, rewards, and settings;
 - casual blue, green, yellow, purple, and red button sprites;
-- light status/action panels with dark readable text;
+- separate modal windows with a dimmed backdrop, red close button, and outside-click close behavior;
+- Unity Editor-only cheat panel opened with `~`;
+- light window panels with dark readable text;
 - no nested cards or decorative background-only elements.
 
 This style is game-local until we decide whether to promote it into a shared `GameKit` UI theme.
+
+## Currency And Pickup VFX
+
+`MT_CurrencyVfx` listens to positive wallet grants through `MechanicsTestbedWallet.CurrencyGained`.
+
+Current behavior:
+
+- soft currency uses gold tokens;
+- hard currency uses pink gem-colored tokens;
+- pickup interactions use cyan tokens;
+- each trigger emits a small `ParticleSystem` burst around the player;
+- spawned token objects scatter outward briefly, then fly back to the player with `TrailRenderer` tails.
+
+This is intentionally game-local until the visual language and timing are proven across more than one game.
 
 ## Localization
 

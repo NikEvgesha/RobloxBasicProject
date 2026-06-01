@@ -16,6 +16,7 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         private int hardCurrency;
 
         public event Action<int, int> Changed;
+        public event Action<int, int> CurrencyGained;
 
         public int SoftCurrency => softCurrency;
         public int HardCurrency => hardCurrency;
@@ -34,6 +35,7 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
 
             softCurrency += amount;
             SaveAndNotify();
+            CurrencyGained?.Invoke(amount, 0);
         }
 
         public void AddHard(int amount)
@@ -45,6 +47,7 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
 
             hardCurrency += amount;
             SaveAndNotify();
+            CurrencyGained?.Invoke(0, amount);
         }
 
         public bool SpendSoft(int amount)

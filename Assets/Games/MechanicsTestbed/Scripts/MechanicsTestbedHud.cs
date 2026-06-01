@@ -1,5 +1,8 @@
 using System.Globalization;
 using UnityEngine;
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 using UnityEngine.UI;
 
 namespace RobloxBasicProject.Games.MechanicsTestbed
@@ -25,6 +28,18 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         [SerializeField] private Text panelTitleText;
         [SerializeField] private Text panelBodyText;
         [SerializeField] private Text rewardStatusText;
+        [SerializeField] private Text musicValueText;
+        [SerializeField] private Text sfxValueText;
+        [SerializeField] private Text languageValueText;
+        [SerializeField] private Text wheelStatusText;
+
+        [Header("Windows")]
+        [SerializeField] private GameObject modalBackdrop;
+        [SerializeField] private GameObject settingsWindow;
+        [SerializeField] private GameObject shopWindow;
+        [SerializeField] private GameObject wheelWindow;
+        [SerializeField] private GameObject rewardsWindow;
+        [SerializeField] private GameObject cheatWindow;
 
         private PanelKind activePanel = PanelKind.Settings;
         private float nextRefreshTime;
@@ -59,10 +74,19 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         {
             RefreshCurrency();
             RefreshPanel();
+            CloseActiveWindow();
+            SetWindowVisible(cheatWindow, false);
         }
 
         private void Update()
         {
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null && Keyboard.current.backquoteKey.wasPressedThisFrame)
+            {
+                ToggleCheatWindow();
+            }
+#endif
+
             if (Time.unscaledTime < nextRefreshTime)
             {
                 return;
@@ -93,25 +117,38 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         public void ShowSettingsPanel()
         {
             activePanel = PanelKind.Settings;
+            OpenWindow(settingsWindow);
             RefreshPanel();
         }
 
         public void ShowShopPanel()
         {
             activePanel = PanelKind.Shop;
+            OpenWindow(shopWindow);
             RefreshPanel();
         }
 
         public void ShowWheelPanel()
         {
             activePanel = PanelKind.Wheel;
+            OpenWindow(wheelWindow);
             RefreshPanel();
         }
 
         public void ShowRewardsPanel()
         {
             activePanel = PanelKind.Rewards;
+            OpenWindow(rewardsWindow);
             RefreshPanel();
+        }
+
+        public void CloseActiveWindow()
+        {
+            SetWindowVisible(settingsWindow, false);
+            SetWindowVisible(shopWindow, false);
+            SetWindowVisible(wheelWindow, false);
+            SetWindowVisible(rewardsWindow, false);
+            SetWindowVisible(modalBackdrop, false);
         }
 
         public void AddSoftPrototypeGrant()
@@ -164,6 +201,7 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         public void SpinWheel()
         {
             activePanel = PanelKind.Wheel;
+            OpenWindow(wheelWindow);
 
             if (Time.unscaledTime < nextWheelSpinTime)
             {
@@ -190,7 +228,25 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         public void ClaimTimedReward()
         {
             activePanel = PanelKind.Rewards;
+            OpenWindow(rewardsWindow);
             RefreshPanel(timedRewards != null && timedRewards.Claim() ? "Reward claimed" : "Reward not ready");
+        }
+
+        public void ToggleCheatWindow()
+        {
+#if UNITY_EDITOR
+            if (cheatWindow == null)
+            {
+                return;
+            }
+
+            SetWindowVisible(cheatWindow, !IsWindowVisible(cheatWindow));
+#endif
+        }
+
+        public void CloseCheatWindow()
+        {
+            SetWindowVisible(cheatWindow, false);
         }
 
         private void OnWalletChanged(int soft, int hard)
@@ -208,12 +264,12 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
 
             if (softCurrencyText != null)
             {
-                softCurrencyText.text = "Soft " + wallet.SoftCurrency.ToString(CultureInfo.InvariantCulture);
+                softCurrencyText.text = wallet.SoftCurrency.ToString(CultureInfo.InvariantCulture);
             }
 
             if (hardCurrencyText != null)
             {
-                hardCurrencyText.text = "Hard " + wallet.HardCurrency.ToString(CultureInfo.InvariantCulture);
+                hardCurrencyText.text = wallet.HardCurrency.ToString(CultureInfo.InvariantCulture);
             }
         }
 
@@ -238,6 +294,67 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
             {
                 rewardStatusText.text = GetRewardStatus();
             }
+
+            if (musicValueText != null)
+            {
+                musicValueText.text = settings == null ? "--" : ToPercent(settings.MusicVolume);
+            }
+
+            if (sfxValueText != null)
+            {
+                sfxValueText.text = settings == null ? "--" : ToPercent(settings.SfxVolume);
+            }
+
+            if (languageValueText != null)
+            {
+                languageValueText.text = GetLanguageCode();
+            }
+
+            if (wheelStatusText != null)
+            {
+                wheelStatusText.text = GetPanelBody(null);
+            }
+        }
+
+        private void OpenWindow(GameObject window)
+        {
+            CloseActiveWindow();
+            SetWindowVisible(modalBackdrop, window != null);
+            SetWindowVisible(window, true);
+        }
+
+        private static void SetWindowVisible(GameObject window, bool visible)
+        {
+            if (window == null)
+            {
+                return;
+            }
+
+            if (!window.activeSelf)
+            {
+                window.SetActive(true);
+            }
+
+            var canvasGroup = window.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = window.AddComponent<CanvasGroup>();
+            }
+
+            canvasGroup.alpha = visible ? 1f : 0f;
+            canvasGroup.interactable = visible;
+            canvasGroup.blocksRaycasts = visible;
+        }
+
+        private static bool IsWindowVisible(GameObject window)
+        {
+            if (window == null || !window.activeSelf)
+            {
+                return false;
+            }
+
+            var canvasGroup = window.GetComponent<CanvasGroup>();
+            return canvasGroup == null || canvasGroup.alpha > 0.01f;
         }
 
         private string GetPanelBody(string statusOverride)
@@ -252,7 +369,7 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
                 case PanelKind.Settings:
                     return settings == null
                         ? "Settings unavailable"
-                        : "Music " + ToPercent(settings.MusicVolume) + "\nSFX " + ToPercent(settings.SfxVolume) + "\nLanguage " + settings.LanguageCode.ToUpperInvariant();
+                        : "Music " + ToPercent(settings.MusicVolume) + "\nSFX " + ToPercent(settings.SfxVolume) + "\nLanguage " + GetLanguageCode();
                 case PanelKind.Shop:
                     return "Prototype grants\n+250 soft\n+5 hard";
                 case PanelKind.Wheel:
@@ -281,6 +398,13 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
         private static string ToPercent(float value)
         {
             return Mathf.RoundToInt(value * 100f).ToString(CultureInfo.InvariantCulture) + "%";
+        }
+
+        private string GetLanguageCode()
+        {
+            return settings == null || string.IsNullOrWhiteSpace(settings.LanguageCode)
+                ? "--"
+                : settings.LanguageCode.ToUpperInvariant();
         }
     }
 }

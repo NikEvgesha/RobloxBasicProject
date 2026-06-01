@@ -49,5 +49,13 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
             cameraDelta = Vector2.zero;
             return value;
         }
+
+        public void Clear()
+        {
+            moveInput = Vector2.zero;
+            cameraDelta = Vector2.zero;
+            sprintHeld = false;
+            jumpQueued = false;
+        }
     }
 }

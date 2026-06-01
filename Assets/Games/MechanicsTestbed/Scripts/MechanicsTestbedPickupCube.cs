@@ -6,10 +6,12 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
     public sealed class MechanicsTestbedPickupCube : MonoBehaviour, GameKitInteractionCondition
     {
         [SerializeField] private MechanicsTestbedCarryController carryController;
+        [SerializeField] private MechanicsTestbedCurrencyVfx currencyVfx;
 
         private void Awake()
         {
             carryController ??= FindFirstObjectByType<MechanicsTestbedCarryController>();
+            currencyVfx ??= FindFirstObjectByType<MechanicsTestbedCurrencyVfx>();
         }
 
         public bool CanInteract(GameObject actor)
@@ -19,7 +21,16 @@ namespace RobloxBasicProject.Games.MechanicsTestbed
 
         public void Pickup()
         {
-            carryController?.TryPickup(gameObject);
+            if (carryController == null)
+            {
+                return;
+            }
+
+            var effectOrigin = carryController.transform.position + Vector3.up * 1.25f;
+            if (carryController.TryPickup(gameObject))
+            {
+                currencyVfx?.PlayPickupBurst(effectOrigin);
+            }
         }
     }
 }
