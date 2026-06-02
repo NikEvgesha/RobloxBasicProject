@@ -9,6 +9,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     public sealed class KickLuckyCubeThirdPersonCamera : MonoBehaviour
     {
         [SerializeField] private Transform defaultTarget;
+        [SerializeField] private KickLuckyCubeKickController kickController;
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
         [SerializeField] private KickLuckyCubeAnimalSpawner animalSpawner;
         [SerializeField] private Vector3 targetOffset = new(0f, 1.45f, 0f);
@@ -43,6 +44,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
             animalSpawner ??= FindFirstObjectByType<KickLuckyCubeAnimalSpawner>(FindObjectsInactive.Include);
+            kickController ??= FindFirstObjectByType<KickLuckyCubeKickController>(FindObjectsInactive.Include);
         }
 
         private void Start()
@@ -123,6 +125,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Transform ResolveTarget()
         {
+            if (kickController != null && kickController.IsCubeInFlight && kickController.CubeTransform != null)
+            {
+                return kickController.CubeTransform;
+            }
+
+            if (runPhase != null && runPhase.IsSelectingAnimal && runPhase.RoulettePreviewTransform != null)
+            {
+                return runPhase.RoulettePreviewTransform;
+            }
+
             if (runPhase != null && runPhase.HasActiveRun && animalSpawner != null && animalSpawner.CurrentAnimal != null)
             {
                 return animalSpawner.CurrentAnimal.transform;

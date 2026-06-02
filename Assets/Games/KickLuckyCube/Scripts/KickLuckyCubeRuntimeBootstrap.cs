@@ -13,12 +13,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         [SerializeField] private bool resetTimeScaleOnAwake = true;
         [SerializeField] private bool runInBackground = true;
+        [SerializeField] private bool ensureToolTraining = true;
+        [SerializeField] private bool ensureInventoryUi = true;
+        [SerializeField] private bool ensureSellShopUi = true;
         [SerializeField, Min(0)] private int startupFramesToNormalize = 5;
 
         private int remainingStartupFrames;
 
         private void Awake()
         {
+            EnsureToolTrainingController();
+            EnsureInventoryController();
+            EnsureSellShopController();
             remainingStartupFrames = startupFramesToNormalize;
             NormalizeTimeScale();
         }
@@ -61,6 +67,71 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 #if UNITY_EDITOR
             EditorPrefs.SetFloat("CustomToolbar.ToolbarTimeSlider.Value", NormalTimeScale);
 #endif
+        }
+
+        private void EnsureToolTrainingController()
+        {
+            if (!Application.isPlaying || !ensureToolTraining)
+            {
+                return;
+            }
+
+            var existingToolTraining = FindFirstObjectByType<KickLuckyCubeToolTrainingController>(FindObjectsInactive.Include);
+            if (existingToolTraining != null)
+            {
+                return;
+            }
+
+            var toolTrainingObject = new GameObject("KLC_ToolTrainingController_Runtime");
+            toolTrainingObject.AddComponent<KickLuckyCubeToolTrainingController>();
+        }
+
+        private void EnsureInventoryController()
+        {
+            if (!Application.isPlaying || !ensureInventoryUi)
+            {
+                return;
+            }
+
+            var existingInventory = FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
+            if (existingInventory != null)
+            {
+                return;
+            }
+
+            var canvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            if (canvas == null)
+            {
+                return;
+            }
+
+            var inventoryObject = new GameObject("KLC_InventoryController_Runtime");
+            inventoryObject.transform.SetParent(canvas.transform, false);
+            inventoryObject.AddComponent<KickLuckyCubeInventoryController>();
+        }
+
+        private void EnsureSellShopController()
+        {
+            if (!Application.isPlaying || !ensureSellShopUi)
+            {
+                return;
+            }
+
+            var existingSellShop = FindFirstObjectByType<KickLuckyCubeSellShopController>(FindObjectsInactive.Include);
+            if (existingSellShop != null)
+            {
+                return;
+            }
+
+            var canvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            if (canvas == null)
+            {
+                return;
+            }
+
+            var sellShopObject = new GameObject("KLC_SellShopController_Runtime");
+            sellShopObject.transform.SetParent(canvas.transform, false);
+            sellShopObject.AddComponent<KickLuckyCubeSellShopController>();
         }
     }
 }

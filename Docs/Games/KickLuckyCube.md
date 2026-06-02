@@ -26,17 +26,30 @@ Implemented in the overview scene:
 
 - prototype player placeholder near the kick area;
 - shared `GameKit` press/hold interaction prompt for `E`;
-- lucky cube hidden at Play Mode start, visible in Edit Mode for placement, and shown at the player when the kick starts;
+- lucky cube hidden at Play Mode start, visible in Edit Mode for placement, and shown in the player's `KLC_CarryAnchor` while the player stands in the kick zone;
 - lucky cube flight from the kick position selected by the first `E` press;
+- flight trail FX on the lucky cube while it is in the air;
+- third-person camera target switches to the flying cube during flight;
 - distance calculation from current strength and the selected kick power meter value;
-- landing marker;
+- lower landing on the active main corridor floor guide, followed by hiding the cube after impact;
+- landing marker positioned on the lower corridor surface;
 - rarity zone detection by corridor depth;
-- animal spawn from the landed rarity pool;
+- animal roulette phase after landing: shadow silhouettes cycle through the landed rarity pool, slow down, then select one random animal;
+- third-person camera target switches to the roulette preview until selection ends;
+- animal spawn from the selected landed-rarity pool result;
 - runner phase for the spawned animal;
-- chasing wave visual behind the animal;
-- return success state where the player carries the animal;
+- chasing wave visual behind the animal, started only after the roulette selection finishes;
+- return success state that adds the animal into the temporary inventory / bottom-bar flow;
+- runtime inventory UI with slot 1 reserved for the selected training tool and slots 2-5 reserved for up to four mobs;
+- inventory window opened by `I` or the `Bag` button, with drag/drop movement between full inventory slots and bottom mob slots;
+- empty bottom mob slots are hidden in normal play and shown as drop targets only while the inventory window is open;
+- the inventory window shows only occupied slots; dropping a bottom-bar mob onto empty inventory-window space creates the next occupied slot there;
+- selecting a mob slot shows a temporary mob preview in the player's `KLC_CarryAnchor`;
+- clicking or pressing the currently-selected mob slot clears selection and removes the hand preview;
+- sell kiosk pad opens a larger inventory sell shop with owned mobs shown as square cards in a 3-column scroll grid;
+- stable placement from inventory and inventory persistence are pending;
 - fail/reset state when the wave catches the animal;
-- sell pad for carried animals;
+- sell kiosk pad for inventory mobs, with a carried-animal fallback kept only for older prototype wiring;
 - stable placement slots for carried animals;
 - stable passive soft income;
 - green stable collect button;
@@ -45,14 +58,14 @@ Implemented in the overview scene:
 - PlayerPrefs-backed stable slot saves for placed animals, pending soft, and capped offline income;
 - HUD/status text with current strength, tool level, animal speed, predicted distance, landing result, run phase state, and economy state;
 - progression stations for training strength, buying animal speed, and buying the next strength tool;
-- bottom tool belt selection for owned strength tools;
+- bottom inventory bar that replaces the old tool belt in Play Mode and lets slot 1 toggle active tool training;
 - `x2` training bonus prompt that can be claimed by pressing `X` or clicking the prompt;
 - working Shop card purchases for speed upgrades, strength tools, and one-shot strength boosts;
 - working playtime Rewards window with soft/hard claims;
 - working Lucky Wheel window with cooldown and soft/hard/strength rewards;
 - Settings-driven audio mute backend and first UI localization binding for EN/RU labels;
 - mobile control layer with virtual joystick and hold-interact button, hidden on desktop by default;
-- third-person follow camera that starts behind the player and follows the spawned animal during the run phase;
+- third-person follow camera that starts behind the player, follows the flying cube, follows the roulette preview, then follows the spawned animal during the run phase;
 - rebirth window and multiplier economy;
 - fake online ambient plots with animated bots and pre-upgraded stable mobs.
 
@@ -221,15 +234,23 @@ Expected test values:
 
 ```text
 0 strength -> Common
-120 strength -> Uncommon -> Boar with current deterministic prototype picker
+120 strength -> Uncommon rarity pool; current main flow picks a random pool animal through the roulette
 500 strength -> Legendary
 Boar sell value -> 82 soft
 Boar stable income -> 3 soft/s
 ```
 
-To test manually, open `KickLuckyCubeOverview`, enter Play Mode, stand near the kick interaction area, press `E` once to start the power meter, then press `E` again to kick with the current meter value.
-After the cube lands, control switches to the spawned animal. Run back toward the kick start point before the wave reaches it.
-After a successful return, walk to `SELL ANIMAL` to sell the carried animal, or walk to an empty stable slot to place it.
+To test manually, open `KickLuckyCubeOverview`, enter Play Mode, and click bottom slot 1 or press `1` to start/stop tool training. The player should hold the tool, squat, gain strength each second, and show at most one pending `x2` circle every 5 seconds. Then stand near the kick interaction area; the lucky cube should appear in the player's hands.
+Press `E` once to start the power meter, then press `E` again to kick with the current meter value.
+The camera follows the cube during flight; the cube leaves a trail, lands on the lower corridor floor, then disappears.
+After landing, the animal roulette cycles through shadow silhouettes from the landed rarity pool and slows down on one selected animal.
+Only after that selection does control switch to the spawned animal and the wave starts. Run back toward the kick start point before the wave reaches it.
+After a successful return, the mob is added to the bottom bar if one of the four mob slots is empty; otherwise it is added to the inventory window.
+Open the temporary inventory with `I` or the `Bag` button and drag mobs between the window and the bottom bar.
+During normal gameplay, unused bottom mob slots are hidden. While the inventory is open, all four bottom mob slots are visible as drop targets.
+The inventory window itself does not display empty slots; dropping a mob onto empty window space creates a new visible item slot.
+Selecting a mob shows it in the player's hands. Selecting that same mob again clears the selection and removes the hand preview.
+Walk to the animal sell kiosk pad, press `E` on `Open sell shop`, then sell owned mobs from square shop cards. The shop closes automatically when the player leaves the sell zone. Placing inventory mobs into stable slots is the next integration step.
 Placed animals generate pending soft every second. Walk to the green stable collect button and hold `E` to claim it.
 
 Prototype controls:
@@ -239,8 +260,10 @@ WASD / arrows: move the prototype player, and later the animal runner during the
 Space: jump while controlling the prototype player
 Shift: sprint while controlling the prototype player
 S / down arrow: run the animal back toward the kick start point in the current blockout
-E: press once to start kick power selection, press again to kick; hold for sell pad, stable slot, collect button, and progression stations
-1-4: select owned strength tool
+E: press once to start kick power selection, press again to kick; press near the sell kiosk to open the sell shop; hold for stable slot, collect button, and progression stations
+I: open / close the temporary inventory window
+1: start / stop training with the selected fixed tool slot
+2-5: select bottom-bar mob slots
 Right mouse drag: rotate third-person camera
 Mouse wheel: zoom third-person camera
 ```
@@ -306,7 +329,7 @@ Visibility: hidden on desktop/editor by default, shown on mobile/handheld platfo
 9. Player controls the animal and runs back to the kick start point.
 10. If the wave catches the animal, the run fails.
 11. If the animal returns in time, the original player picks it up and the wave disappears.
-12. Player sells the animal or places it in a stable.
+12. Player stores the returned animal in the bottom bar/inventory, then sells it through the sell kiosk or later places it in a stable.
 13. Stable animals generate soft currency every second.
 14. Player stands on the green collect button to claim stable income.
 15. Player spends soft currency on animal speed and strength tools.
@@ -328,9 +351,10 @@ Each zone is separated by a river gap. The deeper the cube lands, the better the
 
 Strength:
 
-- first prototype is trained through the green `Train Strength` station;
+- current prototype trains from bottom slot 1: the selected tool appears in-hand, the player squats, and strength is added every second;
+- the green `Train Strength` station remains as an older prototype fallback;
 - each tool level increases strength gained per hold;
-- after each training hold, a short-lived `x2` UI prompt can grant an extra `toolStrength * 2`;
+- every 5 seconds of active tool training can show one short-lived `x2` UI prompt; if one is already visible, no new circle is spawned;
 - tools can have different training animations;
 - future pass should replace the station-only flow with selectable bottom-slot tools and per-tool animations.
 
@@ -347,12 +371,16 @@ Stable income:
 - placed stable animals, pending income, and last save time are stored in PlayerPrefs in Play Mode;
 - offline stable income is capped to avoid unbounded prototype rewards.
 
-Tool belt:
+Inventory / tool bar:
 
-- bottom slots select the active training tool;
-- only owned tool tiers are selectable;
-- keyboard numbers `1`-`4` also select tools on desktop;
-- training gain uses the selected tool tier, while purchases unlock higher owned tiers.
+- bottom slot 1 shows the active training tool and toggles tool training;
+- bottom slots 2-5 hold up to four returned mobs;
+- unused bottom mob slots are hidden unless the inventory window is open;
+- overflow mobs go into the temporary inventory window;
+- mobs can be dragged between inventory-window slots and bottom-bar mob slots, or dropped onto empty window space to create the next inventory slot;
+- selected mobs are shown in `KLC_CarryAnchor`; selecting the same mob again deselects it;
+- the sell kiosk opens a runtime sell window with 3-column square mob cards and removes sold mobs from the bottom bar/inventory while adding their sell value to the wallet;
+- inventory persistence and stable placement from inventory are pending.
 
 Shop:
 
@@ -401,6 +429,7 @@ Rebirth:
 16. Settings audio/localization backend. First prototype done.
 17. Lucky Wheel window and cooldown rewards. Done.
 18. Mobile joystick and hold-interact layer. First prototype done.
+19. Inventory sell shop. First prototype done.
 
 ## Core Loop Probe
 
@@ -482,6 +511,15 @@ Wheel spin -> first true, second false due cooldown
 Wheel reward changed wallet/stats -> true
 Mobile joystick input -> 0.4, -0.9
 Mobile hold bridge -> true, then false after clear
+```
+
+Latest inventory sell shop smoke:
+
+```text
+Sell pad opened shop -> true
+Sell button removed one mob -> 2 to 1
+Soft currency changed -> 0 to 250
+Unity console errors/exceptions -> 0
 ```
 
 ## Latest Agent Test Pass

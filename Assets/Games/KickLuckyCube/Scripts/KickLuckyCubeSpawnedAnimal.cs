@@ -9,6 +9,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0)] private int sellValue;
         [SerializeField, Min(0)] private int incomePerSecond;
         [SerializeField, Min(0f)] private float runnerSpeed;
+        [SerializeField] private Color bodyColor = Color.white;
         [SerializeField] private Renderer bodyRenderer;
 
         public string AnimalName => animalName;
@@ -16,6 +17,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public int SellValue => sellValue;
         public int IncomePerSecond => incomePerSecond;
         public float RunnerSpeed => runnerSpeed;
+        public Color BodyColor => bodyColor;
 
         public void Configure(KickLuckyCubeAnimalOption option, float baseRunnerSpeed)
         {
@@ -24,6 +26,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             sellValue = option.SellValue;
             incomePerSecond = option.IncomePerSecond;
             runnerSpeed = Mathf.Max(0f, baseRunnerSpeed) * option.SpeedMultiplier;
+            bodyColor = option.BodyColor;
             ApplyColor(option.BodyColor);
         }
 

@@ -33,6 +33,45 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             ClearCurrentAnimal();
 
             var option = PickAnimal(result.Rarity, result.Distance);
+            return SpawnConfiguredAnimal(result, baseRunnerSpeed, option);
+        }
+
+        public KickLuckyCubeSpawnedAnimal Spawn(
+            KickLuckyCubeKickResult result,
+            float baseRunnerSpeed,
+            KickLuckyCubeAnimalOption option)
+        {
+            EnsureReady();
+            ClearCurrentAnimal();
+            return SpawnConfiguredAnimal(result, baseRunnerSpeed, option);
+        }
+
+        public KickLuckyCubeAnimalOption[] GetCandidateOptions(KickLuckyCubeRarity rarity)
+        {
+            EnsureReady();
+
+            var candidates = animalOptions
+                .Where(option => option.Rarity == rarity)
+                .ToArray();
+
+            return candidates.Length > 0
+                ? candidates
+                : animalOptions.ToArray();
+        }
+
+        public KickLuckyCubeAnimalOption PickRandomAnimal(KickLuckyCubeRarity rarity)
+        {
+            var candidates = GetCandidateOptions(rarity);
+            return candidates.Length > 0
+                ? candidates[UnityEngine.Random.Range(0, candidates.Length)]
+                : CreateFallbackOption();
+        }
+
+        private KickLuckyCubeSpawnedAnimal SpawnConfiguredAnimal(
+            KickLuckyCubeKickResult result,
+            float baseRunnerSpeed,
+            KickLuckyCubeAnimalOption option)
+        {
             var root = new GameObject("KLC_Runner_" + Sanitize(option.AnimalName));
             root.transform.SetParent(spawnRoot, true);
             root.transform.SetPositionAndRotation(
@@ -99,28 +138,25 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private KickLuckyCubeAnimalOption PickAnimal(KickLuckyCubeRarity rarity, float distance)
         {
-            var candidates = animalOptions
-                .Where(option => option.Rarity == rarity)
-                .ToArray();
-
+            var candidates = GetCandidateOptions(rarity);
             if (candidates.Length == 0)
             {
-                candidates = animalOptions;
-            }
-
-            if (candidates.Length == 0)
-            {
-                return new KickLuckyCubeAnimalOption(
-                    KickLuckyCubeRarity.Common,
-                    "Fallback Cat",
-                    new Color(0.96f, 0.78f, 0.34f),
-                    10,
-                    1,
-                    1f);
+                return CreateFallbackOption();
             }
 
             var index = Mathf.Abs(Mathf.FloorToInt(distance)) % candidates.Length;
             return candidates[index];
+        }
+
+        private static KickLuckyCubeAnimalOption CreateFallbackOption()
+        {
+            return new KickLuckyCubeAnimalOption(
+                KickLuckyCubeRarity.Common,
+                "Fallback Cat",
+                new Color(0.96f, 0.78f, 0.34f),
+                10,
+                1,
+                1f);
         }
 
         public static KickLuckyCubeAnimalOption[] CreateDefaultOptions()

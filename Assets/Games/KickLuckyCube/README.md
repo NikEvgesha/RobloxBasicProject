@@ -7,19 +7,29 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 ## Current Target
 
 - Keep the overview scene readable while mechanics are added incrementally.
-- Current playable prototype: press `E` at the kick line to start the power meter, then press `E` again to kick from that position with the selected power.
-- The real lucky cube is visible in Edit Mode for placement, but hides at Play Mode start and appears at the player when the kick starts.
+- Current playable prototype: enter the kick zone to show the lucky cube in the player's hands, press `E` to start the power meter, then press `E` again to kick from that position with the selected power.
+- The real lucky cube is visible in Edit Mode for placement, but hides at Play Mode start and appears in the player's `KLC_CarryAnchor` while the player stands in the kick zone.
 - The scene starts with a controllable blocky prototype player and a third-person camera behind it.
 - Move the prototype player with `WASD` / arrows, jump with `Space`, sprint with `Shift`, orbit with right mouse drag, and zoom with the mouse wheel.
 - Prototype player animation clips and Animator live under `Assets/Games/KickLuckyCube/Animations`.
-- The cube flies forward based on strength, lands in a rarity zone, spawns an animal, and starts the wave chase.
+- The cube flies forward based on strength, uses a trail FX, lands on the lower corridor floor, disappears, then starts the animal roulette before the wave chase.
+- During the kick flow, the camera follows the flying cube, then the roulette preview, then the spawned animal.
 - Run the animal back to the kick start point before the wave catches it; on success, the prototype player carries the animal.
-- Sell carried animals for soft currency or place them in stable slots.
+- On successful return, the animal is added to the runtime inventory: first four mobs fill the bottom bar, then extra mobs go into the inventory window.
+- The bottom inventory bar keeps the current training tool in slot 1 and up to four mobs in slots 2-5.
+- Empty bottom mob slots are hidden during normal gameplay and shown only while the inventory window is open as drop targets.
+- Open the temporary inventory window with `I` or the `Bag` button, then drag mobs between the inventory window and the bottom bar.
+- The inventory window shows only real item slots; dropping a bottom-bar mob onto empty window space creates the next item slot there.
+- Selecting a mob slot shows that mob as a temporary hand preview under `KLC_CarryAnchor`.
+- Clicking or pressing the already-selected mob slot clears selection and removes the hand preview.
+- Walk to the animal sell kiosk pad to show the `Open sell shop` prompt; press `E` to open the larger sell window with square mob cards in a 3-column scroll grid; the window closes automatically when leaving the sell zone.
+- Final inventory persistence and stable placement from inventory are still pending.
+- The old tool belt UI is hidden in Play Mode; click slot 1 or press `1` to start/stop training with the selected tool in-hand.
 - Stable animals generate soft currency over time; collect it on the green stable button.
 - Stable slot animals and pending income save in PlayerPrefs during Play Mode.
 - Spend soft on the blue speed station and yellow tool station.
-- Select an owned tool in the bottom tool belt, train strength on the green training station, then kick farther into deeper rarity zones.
-- After a training hold, claim the temporary `x2` prompt with `X` or by clicking it for bonus strength.
+- Train strength by toggling the selected bottom-bar tool: the player holds the tool, squats, gains strength every second, and periodically gets one `x2` claim circle.
+- During tool training, claim the temporary `x2` prompt with `X` or by clicking it; a new circle will not spawn while one is already visible.
 - Open Shop from the left-side button to buy speed, tool, and strength boost prototype cards.
 - Open Rewards from the left-side button to claim playtime soft/hard rewards.
 - Open Wheel from the left-side button to spin for soft, hard, or strength rewards.
@@ -38,7 +48,7 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - The location blockout meshes are editable `ProBuilderMesh` objects with scale baked into geometry.
 - Move only objects whose names start with `MOVE_`; the floor, walls, and river/zone guides are baseline ProBuilder blockout references.
 - `MOVE_PlayerSpawn_BlueCube` is the player spawn marker; `KickLuckyCubePlayerSpawnController` snaps `KLC_PrototypePlayer` to it on scene start.
-- `MOVE_KickLine_YellowBar` defines the current kick line; `KLC_KickLineInteractionTrigger` is aligned just before it for hold-to-kick.
+- `MOVE_KickLine_YellowBar` defines the current kick line; `KLC_KickLineInteractionTrigger` is aligned just before it for press-to-aim and shows the cube-in-hands preview while the player is inside it.
 - `KLC_PlayerKickBoundary` is an invisible player-only limiter after the kick line; spawned animals are not clamped by it while returning.
 - Plot allocation is grouped under `KLC_PlotAllocationSystem`.
 - Edit the reusable plot source at `KLC_PlotTemplate_EditSource`.
@@ -64,17 +74,20 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 
 1. Train strength with a selected tool.
 2. Spend soft currency on animal speed upgrades before kicking.
-3. Kick the lucky cube from the player's current position.
-4. Cube flies through rarity zones and lands in one zone.
-5. The landed cube spawns a controllable animal from that zone's rarity pool.
-6. A wave starts behind the animal.
-7. Return to the kick start point before the wave catches the animal.
-8. Carry the animal back as the player.
-9. Sell it for currency or place it in a stable.
-10. Stable animals generate soft currency over time.
-11. Spend soft on animal speed or the next strength tool.
-12. Train strength with the current tool, claim optional `x2` prompts, and kick farther.
-13. Rebirth resets progression for a higher money multiplier.
+3. Enter the kick zone so the lucky cube appears in the player's hands.
+4. Kick the lucky cube from the selected position and power value.
+5. Camera follows the cube through rarity zones; the cube lands on the lower corridor floor and disappears.
+6. Roulette cycles shadow silhouettes from the landed rarity pool and selects one random animal.
+7. A controllable animal spawns from the roulette result.
+8. A wave starts behind the animal only after the roulette finishes.
+9. Return to the kick start point before the wave catches the animal.
+10. Add the returned animal to the bottom bar or inventory window.
+11. Drag mobs between the full inventory and the four mob slots on the bottom bar.
+12. Sell inventory mobs for currency through the sell kiosk or place them in a stable. Stable placement from inventory is pending.
+13. Stable animals generate soft currency over time.
+14. Spend soft on animal speed or the next strength tool.
+15. Toggle the current tool to train strength per second, claim optional `x2` prompts, and kick farther.
+16. Rebirth resets progression for a higher money multiplier.
 
 ## Boundaries
 

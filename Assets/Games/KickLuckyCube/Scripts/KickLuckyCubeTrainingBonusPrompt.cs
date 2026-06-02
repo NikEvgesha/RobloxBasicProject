@@ -66,7 +66,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public void ShowBonus(float strengthAmount, int toolTier)
         {
-            if (strengthAmount <= 0f)
+            if (visible || strengthAmount <= 0f)
             {
                 return;
             }
