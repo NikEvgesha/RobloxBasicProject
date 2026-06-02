@@ -351,7 +351,7 @@ Each zone is separated by a river gap. The deeper the cube lands, the better the
 
 Strength:
 
-- current prototype trains from bottom slot 1: the selected tool appears in-hand, the player squats, and strength is added every second;
+- current prototype trains from bottom slot 1: the selected named tool appears in-hand, the player squats, and tier-based strength is added every second;
 - the green `Train Strength` station remains as an older prototype fallback;
 - each tool level increases strength gained per hold;
 - every 5 seconds of active tool training can show one short-lived `x2` UI prompt; if one is already visible, no new circle is spawned;
@@ -373,7 +373,7 @@ Stable income:
 
 Inventory / tool bar:
 
-- bottom slot 1 shows the active training tool and toggles tool training;
+- bottom slot 1 shows the active named training tool, its owned tier/status, and toggles tool training;
 - bottom slots 2-5 hold up to four returned mobs;
 - unused bottom mob slots are hidden unless the inventory window is open;
 - overflow mobs go into the temporary inventory window;

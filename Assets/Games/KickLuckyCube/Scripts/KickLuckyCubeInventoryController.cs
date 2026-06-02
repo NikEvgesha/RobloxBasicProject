@@ -61,6 +61,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private Image dragGhostImage;
         private int selectedHotbarIndex = -1;
         private int selectedInventoryIndex = -1;
+        private bool subscribedToToolTraining;
 
         public bool IsWindowOpen => inventoryWindowRoot != null && inventoryWindowRoot.gameObject.activeSelf;
         public int HotbarAnimalCount => CountValid(hotbarAnimals);
@@ -99,6 +100,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 stats.Changed += Refresh;
             }
+
+            ResolveToolTraining();
+            SubscribeToolTraining();
         }
 
         private void OnDisable()
@@ -108,6 +112,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 stats.Changed -= Refresh;
             }
 
+            UnsubscribeToolTraining();
             ClearHandPreview();
             toolTraining?.StopTraining();
         }
@@ -623,7 +628,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 var detail = isTraining && toolTraining != null
                     ? $"+{toolTraining.CurrentStrengthPerSecond:0}/s"
                     : $"Owned {ownedTier}";
-                toolSlot.SetTool($"Tool {selectedTier}", detail, isTraining ? selectedFrameColor : toolFrameColor, new Color(0.72f, 0.72f, 0.9f));
+                var title = toolTraining != null ? toolTraining.CurrentToolName : $"Tool {selectedTier}";
+                toolSlot.SetTool(title, detail, isTraining ? "Training" : "Tool", isTraining ? selectedFrameColor : toolFrameColor, new Color(0.72f, 0.72f, 0.9f));
             }
 
             for (var index = 0; index < hotbarSlots.Length; index++)
@@ -811,7 +817,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             toolTraining.ToggleTraining();
             SetStatus(toolTraining.IsTraining
-                ? $"Training with Tool {stats.SelectedStrengthToolTier}: +{toolTraining.CurrentStrengthPerSecond:0}/s."
+                ? $"Training with {toolTraining.CurrentToolName}: +{toolTraining.CurrentStrengthPerSecond:0}/s."
                 : "Training stopped.");
             Refresh();
         }
@@ -819,6 +825,29 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void ResolveToolTraining()
         {
             toolTraining ??= FindFirstObjectByType<KickLuckyCubeToolTrainingController>(FindObjectsInactive.Include);
+            SubscribeToolTraining();
+        }
+
+        private void SubscribeToolTraining()
+        {
+            if (toolTraining == null || subscribedToToolTraining)
+            {
+                return;
+            }
+
+            toolTraining.Changed += Refresh;
+            subscribedToToolTraining = true;
+        }
+
+        private void UnsubscribeToolTraining()
+        {
+            if (toolTraining == null || !subscribedToToolTraining)
+            {
+                return;
+            }
+
+            toolTraining.Changed -= Refresh;
+            subscribedToToolTraining = false;
         }
 
         private void ShowHandPreview(KickLuckyCubeInventoryAnimal animal)

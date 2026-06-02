@@ -28,7 +28,7 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - Stable animals generate soft currency over time; collect it on the green stable button.
 - Stable slot animals and pending income save in PlayerPrefs during Play Mode.
 - Spend soft on the blue speed station and yellow tool station.
-- Train strength by toggling the selected bottom-bar tool: the player holds the tool, squats, gains strength every second, and periodically gets one `x2` claim circle.
+- Train strength by toggling the selected bottom-bar tool: named tool tiers (dumbbell, kettlebell, barbell, and stronger variants) appear in hand, make the player squat, grant tier-based strength every second, and periodically create one `x2` claim circle.
 - During tool training, claim the temporary `x2` prompt with `X` or by clicking it; a new circle will not spawn while one is already visible.
 - Open Shop from the left-side button to buy speed, tool, and strength boost prototype cards.
 - Open Rewards from the left-side button to claim playtime soft/hard rewards.

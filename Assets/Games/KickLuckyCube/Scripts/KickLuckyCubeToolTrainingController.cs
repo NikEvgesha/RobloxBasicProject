@@ -1,15 +1,27 @@
+using System;
 using UnityEngine;
 
 namespace RobloxBasicProject.Games.KickLuckyCube
 {
     public sealed class KickLuckyCubeToolTrainingController : MonoBehaviour
     {
+        private static readonly string[] DefaultToolNames =
+        {
+            "Training Dumbbell",
+            "Iron Kettlebell",
+            "Heavy Barbell",
+            "Gold Barbell",
+            "Power Trainer"
+        };
+
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeTrainingBonusPrompt trainingBonusPrompt;
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
         [SerializeField] private Transform carryAnchor;
         [SerializeField] private Transform playerVisual;
         [SerializeField] private string carryAnchorName = "KLC_CarryAnchor";
+        [SerializeField] private string[] toolNames = DefaultToolNames;
+        [SerializeField] private float[] strengthPerSecondByTier = { 8f, 14f, 24f, 40f, 66f };
         [SerializeField, Min(0.1f)] private float baseStrengthPerSecond = 8f;
         [SerializeField, Min(1f)] private float strengthGainMultiplier = 1.65f;
         [SerializeField, Min(0.5f)] private float bonusIntervalSeconds = 5f;
@@ -25,11 +37,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private int displayedToolTier;
         private bool hasPlayerVisualDefaults;
 
-        public bool IsTraining { get; private set; }
+        public event Action Changed;
 
-        public float CurrentStrengthPerSecond => stats != null
-            ? baseStrengthPerSecond * Mathf.Pow(strengthGainMultiplier, stats.SelectedStrengthToolTier - 1)
-            : baseStrengthPerSecond;
+        public bool IsTraining { get; private set; }
+        public int CurrentToolTier => stats != null ? stats.SelectedStrengthToolTier : 1;
+        public string CurrentToolName => GetToolName(CurrentToolTier);
+
+        public float CurrentStrengthPerSecond => GetStrengthPerSecond(CurrentToolTier);
 
         private void Awake()
         {
@@ -104,6 +118,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             CapturePlayerVisualDefaults();
             RefreshToolPreview(true);
             AnimateSquat();
+            Changed?.Invoke();
             return true;
         }
 
@@ -120,6 +135,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             bonusTimer = 0f;
             DestroyToolPreview();
             RestorePlayerVisual();
+            Changed?.Invoke();
         }
 
         private bool CanTrain()
@@ -197,7 +213,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var selectedTier = stats.SelectedStrengthToolTier;
+            var selectedTier = CurrentToolTier;
             if (!forceRebuild && toolPreview != null && displayedToolTier == selectedTier)
             {
                 return;
@@ -205,16 +221,27 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             DestroyToolPreview();
             displayedToolTier = selectedTier;
-            toolPreview = new GameObject("KLC_SelectedToolHandPreview");
+            toolPreview = new GameObject("KLC_SelectedToolHandPreview_" + CurrentToolName.Replace(" ", string.Empty));
             toolPreview.transform.SetParent(carryAnchor, false);
             toolPreview.transform.localPosition = new Vector3(0.08f, -0.02f, 0.02f);
             toolPreview.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
             toolPreview.transform.localScale = Vector3.one;
 
-            var color = Color.Lerp(new Color(0.62f, 0.66f, 0.74f), new Color(1f, 0.78f, 0.20f), Mathf.InverseLerp(1f, 5f, selectedTier));
-            CreateToolPart("Bar", PrimitiveType.Cylinder, new Vector3(0f, 0f, 0f), Quaternion.identity, new Vector3(0.06f, 0.46f, 0.06f), color);
-            CreateToolPart("LeftWeight", PrimitiveType.Cube, new Vector3(0f, -0.5f, 0f), Quaternion.identity, new Vector3(0.28f, 0.12f, 0.28f), color * 0.85f);
-            CreateToolPart("RightWeight", PrimitiveType.Cube, new Vector3(0f, 0.5f, 0f), Quaternion.identity, new Vector3(0.28f, 0.12f, 0.28f), color * 0.85f);
+            var tier01 = Mathf.InverseLerp(1f, 5f, selectedTier);
+            var color = Color.Lerp(new Color(0.62f, 0.66f, 0.74f), new Color(1f, 0.78f, 0.20f), tier01);
+            var barLength = 0.42f + selectedTier * 0.045f;
+            var barWidth = 0.045f + selectedTier * 0.006f;
+            var weightSize = 0.20f + selectedTier * 0.035f;
+            var weightWidth = 0.09f + selectedTier * 0.014f;
+            CreateToolPart("Bar", PrimitiveType.Cylinder, new Vector3(0f, 0f, 0f), Quaternion.identity, new Vector3(barWidth, barLength, barWidth), color);
+            CreateToolPart("LeftWeight", PrimitiveType.Cube, new Vector3(0f, -barLength - 0.05f, 0f), Quaternion.identity, new Vector3(weightSize, weightWidth, weightSize), color * 0.85f);
+            CreateToolPart("RightWeight", PrimitiveType.Cube, new Vector3(0f, barLength + 0.05f, 0f), Quaternion.identity, new Vector3(weightSize, weightWidth, weightSize), color * 0.85f);
+
+            if (selectedTier >= 3)
+            {
+                CreateToolPart("LeftPlate", PrimitiveType.Cube, new Vector3(0f, -barLength - 0.18f, 0f), Quaternion.identity, new Vector3(weightSize * 0.85f, weightWidth, weightSize * 0.85f), color * 0.72f);
+                CreateToolPart("RightPlate", PrimitiveType.Cube, new Vector3(0f, barLength + 0.18f, 0f), Quaternion.identity, new Vector3(weightSize * 0.85f, weightWidth, weightSize * 0.85f), color * 0.72f);
+            }
         }
 
         private void CreateToolPart(
@@ -260,6 +287,37 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             toolPreview.SetActive(false);
             Destroy(toolPreview);
             toolPreview = null;
+        }
+
+        private float GetStrengthPerSecond(int tier)
+        {
+            if (strengthPerSecondByTier != null)
+            {
+                var index = Mathf.Clamp(tier, 1, Mathf.Max(1, strengthPerSecondByTier.Length)) - 1;
+                if (index >= 0 && index < strengthPerSecondByTier.Length && strengthPerSecondByTier[index] > 0f)
+                {
+                    return strengthPerSecondByTier[index];
+                }
+            }
+
+            return baseStrengthPerSecond * Mathf.Pow(strengthGainMultiplier, Mathf.Max(1, tier) - 1);
+        }
+
+        private string GetToolName(int tier)
+        {
+            if (toolNames != null)
+            {
+                var index = Mathf.Clamp(tier, 1, Mathf.Max(1, toolNames.Length)) - 1;
+                if (index >= 0 && index < toolNames.Length && !string.IsNullOrWhiteSpace(toolNames[index]))
+                {
+                    return toolNames[index];
+                }
+            }
+
+            var defaultIndex = Mathf.Clamp(tier, 1, DefaultToolNames.Length) - 1;
+            return defaultIndex >= 0 && defaultIndex < DefaultToolNames.Length
+                ? DefaultToolNames[defaultIndex]
+                : $"Tool {tier}";
         }
     }
 }

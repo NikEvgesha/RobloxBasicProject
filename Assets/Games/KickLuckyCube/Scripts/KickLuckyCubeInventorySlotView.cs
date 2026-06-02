@@ -50,14 +50,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             badgeText = badge;
         }
 
-        public void SetTool(string title, string detail, Color frameColor, Color iconColor)
+        public void SetTool(string title, string detail, string badge, Color frameColor, Color iconColor)
         {
             SetVisible(true);
             SetFrameColor(frameColor);
             SetIconColor(iconColor);
             SetText(titleText, title);
             SetText(detailText, detail);
-            SetText(badgeText, "Tool");
+            SetText(badgeText, badge);
         }
 
         public void SetAnimal(KickLuckyCubeInventoryAnimal animal, bool selected, Color frameColor, Color emptyFrameColor)
