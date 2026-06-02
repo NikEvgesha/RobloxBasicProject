@@ -37,6 +37,9 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - Current location layout pass is grouped under `KLC_LayoutBlockout_Workspace`.
 - The location blockout meshes are editable `ProBuilderMesh` objects with scale baked into geometry.
 - Move only objects whose names start with `MOVE_`; the floor, walls, and river/zone guides are baseline ProBuilder blockout references.
+- `MOVE_PlayerSpawn_BlueCube` is the player spawn marker; `KickLuckyCubePlayerSpawnController` snaps `KLC_PrototypePlayer` to it on scene start.
+- `MOVE_KickLine_YellowBar` defines the current kick line; `KLC_KickLineInteractionTrigger` is aligned just before it for hold-to-kick.
+- `KLC_PlayerKickBoundary` is an invisible player-only limiter after the kick line; spawned animals are not clamped by it while returning.
 - Plot allocation is grouped under `KLC_PlotAllocationSystem`.
 - Edit the reusable plot source at `KLC_PlotTemplate_EditSource`.
 - `Template_PlotGround` previews the plot footprint and should match the scaled `MOVE_PlotSlot_*` footprint.

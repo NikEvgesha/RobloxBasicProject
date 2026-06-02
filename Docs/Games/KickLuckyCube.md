@@ -259,6 +259,9 @@ Location layout blockout:
 - clean placement workspace is `KLC_LayoutBlockout_Workspace`;
 - move only objects with names starting with `MOVE_`;
 - blockout mesh objects are editable `ProBuilderMesh` objects with scale baked into geometry;
+- `MOVE_PlayerSpawn_BlueCube` is the player spawn marker; `KickLuckyCubePlayerSpawnController` snaps `KLC_PrototypePlayer` to it on scene start;
+- `MOVE_KickLine_YellowBar` defines the current kick line; `KLC_KickLineInteractionTrigger` is aligned just before it for hold-to-kick;
+- `KLC_PlayerKickBoundary` is an invisible player-only limiter after the kick line, so spawned animals can still return through the area;
 - plot allocation is grouped under `KLC_PlotAllocationSystem`;
 - reusable plot source is `KLC_PlotTemplate_EditSource`;
 - `Template_PlotGround` previews the plot footprint and should match the scaled `MOVE_PlotSlot_*` footprint;
