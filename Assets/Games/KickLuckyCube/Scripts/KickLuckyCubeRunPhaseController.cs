@@ -17,6 +17,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private KickLuckyCubeAnimalRunner currentRunner;
         private KickLuckyCubeSpawnedAnimal carriedAnimal;
+        private Vector3 currentReturnPosition;
+        private bool hasCurrentReturnPosition;
 
         public bool HasActiveRun => currentRunner != null && currentRunner.ControlEnabled;
         public bool HasCarriedAnimal => carriedAnimal != null;
@@ -76,6 +78,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             ClearRunnerSubscription();
             carriedAnimal = null;
+            currentReturnPosition = result.KickOriginPosition;
+            hasCurrentReturnPosition = true;
             kickController?.SetKickLocked(true);
 
             var spawnedAnimal = animalSpawner.Spawn(result, stats.AnimalSpeed);
@@ -186,7 +190,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (prototypePlayer != null)
             {
                 prototypePlayer.SetActive(true);
-                prototypePlayer.transform.position = new Vector3(0f, prototypePlayer.transform.position.y, GetReturnLineZ() - 1.4f);
+                var returnPosition = GetReturnPosition();
+                prototypePlayer.transform.position = new Vector3(
+                    returnPosition.x,
+                    prototypePlayer.transform.position.y,
+                    returnPosition.z - 1.4f);
             }
 
             if (carriedAnimal != null)
@@ -241,7 +249,20 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private float GetReturnLineZ()
         {
-            return returnLine != null ? returnLine.position.z : -2f;
+            return hasCurrentReturnPosition
+                ? currentReturnPosition.z
+                : returnLine != null
+                    ? returnLine.position.z
+                    : -2f;
+        }
+
+        private Vector3 GetReturnPosition()
+        {
+            return hasCurrentReturnPosition
+                ? currentReturnPosition
+                : returnLine != null
+                    ? returnLine.position
+                    : Vector3.zero;
         }
 
         private void SetStatus(string text)

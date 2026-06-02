@@ -7,13 +7,13 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 ## Current Target
 
 - Keep the overview scene readable while mechanics are added incrementally.
-- Current playable prototype: hold `E` at the kick line to kick the lucky cube.
-- The real lucky cube is visible in Edit Mode for placement, but hides at Play Mode start and appears when the player kicks from the line.
+- Current playable prototype: hold `E` to kick the lucky cube from the player's current position.
+- The real lucky cube is visible in Edit Mode for placement, but hides at Play Mode start and appears at the player when the kick starts.
 - The scene starts with a controllable blocky prototype player and a third-person camera behind it.
 - Move the prototype player with `WASD` / arrows, jump with `Space`, sprint with `Shift`, orbit with right mouse drag, and zoom with the mouse wheel.
 - Prototype player animation clips and Animator live under `Assets/Games/KickLuckyCube/Animations`.
 - The cube flies forward based on strength, lands in a rarity zone, spawns an animal, and starts the wave chase.
-- Run the animal back to the return line before the wave catches it; on success, the prototype player carries the animal.
+- Run the animal back to the kick start point before the wave catches it; on success, the prototype player carries the animal.
 - Sell carried animals for soft currency or place them in stable slots.
 - Stable animals generate soft currency over time; collect it on the green stable button.
 - Stable slot animals and pending income save in PlayerPrefs during Play Mode.
@@ -39,20 +39,33 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - Move only objects whose names start with `MOVE_`; the floor, walls, and river/zone guides are baseline ProBuilder blockout references.
 - Plot allocation is grouped under `KLC_PlotAllocationSystem`.
 - Edit the reusable plot source at `KLC_PlotTemplate_EditSource`.
-- Move `MOVE_PlotSlot_01..06` to define possible plot locations.
-- At Play Mode start, one plot slot is randomly assigned to the player and the remaining eligible slots are filled with bot plots from the same template.
-- Current plot allocation spawns visual plot instances only; gameplay triggers should be bound to the assigned player slot after final slot placement is approved.
+- `Template_PlotGround` previews the plot footprint and should match the scaled `MOVE_PlotSlot_*` footprint.
+- Current plot template follows the reference base layout: tan room floor, center aisle, two five-slot stable rows, front boards, and green interaction pads.
+- The plot template intentionally has no owner tint strip, player spawn pad, sell pad, or decorative boundary walls.
+- Reusable root modules are grouped as `Template_FrontBoards`, `Template_CenterAisleGroup`, `Template_BackWallGroup`, and `Template_FloorExpansion`.
+- `Template_BaseUpgradeBoard` is the placeholder for buying upward base expansion / extra floors.
+- `Template_CollectAllAdRewardBoard` is the placeholder for the ad-gated collect-all reward board.
+- Each of the ten `Template_StableSlot_*` objects is a grouped stable module with a matching child `MobAnchor`, `CollectSpot` placeholder, and `UpgradeBoard` booster placeholder.
+- `Template_FloorExpansion` contains visual-only posts, ladder, and outline beams for future upper-floor expansion.
+- Move `MOVE_PlotSlot_01..04` to define placed plot locations.
+- `KLC_PlotSlot_StaticInstances` contains edit-mode plot copies placed from the reusable template on every current `MOVE_PlotSlot`.
+- `KLC_PlotTemplate_EditSource` is kept inactive as the reusable edit source; enable it only when editing the template shape.
+- Runtime plot auto-allocation is currently disabled to avoid duplicate plots while static scene placement is being tuned.
+- `KLC_HubKiosks_Blockout/KLC_ImmediateKiosks_LeftToRight` holds the current left-to-right hub kiosks: animal sell, style shop, speed upgrade, weights training, and leaderboard.
+- Sell, speed, and weights kiosks have visible stand pads; style shop uses a hold-interaction anchor without a visible stand pad.
+- `KLC_HubKiosks_Blockout/KLC_FutureFeatureSpots` reserves visual-only spots for weather machine, animal exchange, epic mob shop, and rating gift stand.
+- Plot template, placed plot copies, and hub kiosk blockout meshes are converted to `ProBuilderMesh`; `TextMesh` labels remain regular text objects.
 - Older noisy prototype visual groups are disabled while the layout blockout is being placed.
 
 ## Core Loop Draft
 
 1. Train strength with a selected tool.
 2. Spend soft currency on animal speed upgrades before kicking.
-3. Kick the lucky cube from the start line.
+3. Kick the lucky cube from the player's current position.
 4. Cube flies through rarity zones and lands in one zone.
 5. The landed cube spawns a controllable animal from that zone's rarity pool.
 6. A wave starts behind the animal.
-7. Return to the kick line before the wave catches the animal.
+7. Return to the kick start point before the wave catches the animal.
 8. Carry the animal back as the player.
 9. Sell it for currency or place it in a stable.
 10. Stable animals generate soft currency over time.

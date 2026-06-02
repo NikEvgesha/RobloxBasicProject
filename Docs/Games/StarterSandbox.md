@@ -65,7 +65,13 @@ Keep mobile-specific experiments local to this game until they become generic en
 
 ## Build Notes
 
-Unity Build Settings currently point to the `StarterSandbox` scenes.
+`StarterSandbox` remains the imported starter-scene baseline. The active WebGL validation target currently lives in `MechanicsTestbed`.
+
+To build this sandbox, select `Assets/Games/StarterSandbox/Configs/StarterSandboxGame.asset` and apply it through:
+
+```text
+Roblox Basic Project > Game Definition > Apply Selected To Build Settings
+```
 
 WebGL baseline notes live in:
 

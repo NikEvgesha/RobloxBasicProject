@@ -11,13 +11,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     {
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private Transform cube;
-        [SerializeField] private Transform kickOrigin;
         [SerializeField] private Transform landingMarker;
         [SerializeField] private Text hudText;
         [SerializeField] private TextMesh worldStatusText;
         [SerializeField] private Renderer cubeRenderer;
         [SerializeField] private KickLuckyCubeRarityZone[] zones = Array.Empty<KickLuckyCubeRarityZone>();
         [SerializeField] private bool hideCubeUntilKickInPlayMode = true;
+        [SerializeField, Min(0f)] private float kickHeightOffset = 0.7f;
         [SerializeField, Min(0f)] private float baseKickDistance = 18f;
         [SerializeField, Min(0f)] private float distancePerStrength = 0.23f;
         [SerializeField, Min(1f)] private float minimumDistance = 10f;
@@ -27,6 +27,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Coroutine flightRoutine;
         private bool kickLocked;
+        private Vector3 lastKickOriginPosition;
+        private Quaternion lastKickOriginRotation = Quaternion.identity;
 
         public event Action<KickLuckyCubeKickResult> Landed;
 
@@ -34,7 +36,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public float LastDistance { get; private set; }
         public KickLuckyCubeRarity LastLandedRarity { get; private set; }
         public string LastAnimalPool { get; private set; } = string.Empty;
-        public bool CanKick => !kickLocked && !IsKicking && stats != null && cube != null && kickOrigin != null && zones.Length > 0;
+        public bool CanKick => !kickLocked && !IsKicking && stats != null && cube != null && zones.Length > 0;
 
         private void Awake()
         {
@@ -43,12 +45,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (cube == null)
             {
                 cube = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-                    .FirstOrDefault(found => found.name == "KLC_LuckyCube_OnKickSpot");
-            }
-
-            if (kickOrigin == null)
-            {
-                kickOrigin = cube;
+                    .FirstOrDefault(found => found.name == "KLC_LuckyCube");
             }
 
             if (cubeRenderer == null && cube != null)
@@ -62,6 +59,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             SortZones();
+            ResolveKickOrigin(null, out lastKickOriginPosition, out lastKickOriginRotation);
 
             if (Application.isPlaying && hideCubeUntilKickInPlayMode)
             {
@@ -112,11 +110,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 StopCoroutine(flightRoutine);
             }
 
+            ResolveKickOrigin(actor, out lastKickOriginPosition, out lastKickOriginRotation);
             SetCubeVisible(true);
-            cube.SetPositionAndRotation(kickOrigin.position, kickOrigin.rotation);
+            cube.SetPositionAndRotation(lastKickOriginPosition, lastKickOriginRotation);
 
             var distance = CalculateDistance(stats.Strength);
-            flightRoutine = StartCoroutine(PlayFlight(distance));
+            flightRoutine = StartCoroutine(PlayFlight(distance, lastKickOriginPosition));
         }
 
         public void SetKickLocked(bool value)
@@ -138,9 +137,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             LastAnimalPool = string.Empty;
             LastDistance = 0f;
 
-            if (cube != null && kickOrigin != null)
+            if (cube != null)
             {
-                cube.SetPositionAndRotation(kickOrigin.position, kickOrigin.rotation);
+                cube.SetPositionAndRotation(lastKickOriginPosition, lastKickOriginRotation);
             }
 
             if (Application.isPlaying && hideCubeUntilKickInPlayMode)
@@ -170,8 +169,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             SortZones();
 
-            var originZ = kickOrigin != null ? kickOrigin.position.z : 0f;
-            var landingZ = originZ + Mathf.Max(0f, distance);
+            var landingZ = lastKickOriginPosition.z + Mathf.Max(0f, distance);
 
             var reachedZone = zones
                 .Where(zone => zone != null && zone.HasReached(landingZ))
@@ -193,17 +191,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             IsKicking = false;
             SetCubeVisible(true);
+            ResolveKickOrigin(null, out lastKickOriginPosition, out lastKickOriginRotation);
             LandAtDistance(CalculateDistance(strength));
         }
 
-        private IEnumerator PlayFlight(float distance)
+        private IEnumerator PlayFlight(float distance, Vector3 start)
         {
             IsKicking = true;
             LastLandedRarity = KickLuckyCubeRarity.None;
             LastAnimalPool = string.Empty;
             RefreshStatus("Kicking...");
 
-            var start = kickOrigin.position;
             var end = start + Vector3.forward * distance;
             var elapsed = 0f;
 
@@ -231,7 +229,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             LastLandedRarity = landingZone != null ? landingZone.Rarity : KickLuckyCubeRarity.None;
             LastAnimalPool = landingZone != null ? landingZone.AnimalPoolText : string.Empty;
 
-            var start = kickOrigin.position;
+            var start = lastKickOriginPosition;
             var landingPosition = start + Vector3.forward * distance;
             landingPosition.y = start.y;
             cube.position = landingPosition;
@@ -245,10 +243,32 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             RefreshStatus();
             Landed?.Invoke(new KickLuckyCubeKickResult(
                 distance,
+                start,
                 landingPosition,
                 landingZone,
                 LastLandedRarity,
                 LastAnimalPool));
+        }
+
+        private void ResolveKickOrigin(GameObject actor, out Vector3 position, out Quaternion rotation)
+        {
+            var actorTransform = actor != null ? actor.transform : null;
+            if (actorTransform != null)
+            {
+                position = actorTransform.position + Vector3.up * kickHeightOffset;
+                rotation = actorTransform.rotation;
+                return;
+            }
+
+            if (cube != null)
+            {
+                position = cube.position;
+                rotation = cube.rotation;
+                return;
+            }
+
+            position = transform.position;
+            rotation = transform.rotation;
         }
 
         private void RefreshStatus()
@@ -275,7 +295,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 ? kickLocked
                     ? "Animal run in progress."
                     : LastLandedRarity == KickLuckyCubeRarity.None
-                    ? "Hold E at the kick line."
+                    ? "Hold E to kick."
                     : $"Landed: {LastLandedRarity} | {LastAnimalPool}"
                 : overrideLine;
 

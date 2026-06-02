@@ -10,7 +10,7 @@ Status: concept / overview blockout
 
 ## Concept
 
-Roblox-style WebGL game where the player trains strength, kicks a lucky cube down a long rarity corridor, then controls the spawned animal while escaping a wave back to the kick line.
+Roblox-style WebGL game where the player trains strength, kicks a lucky cube from the current player position down a long rarity corridor, then controls the spawned animal while escaping a wave back to the kick start point.
 
 The animal can be sold immediately or placed in a stable to generate soft currency over time.
 
@@ -24,10 +24,10 @@ Assets/Games/KickLuckyCube/Scenes/KickLuckyCubeOverview.unity
 
 Implemented in the overview scene:
 
-- prototype player placeholder at the kick line;
+- prototype player placeholder near the kick area;
 - shared `GameKit` hold interaction prompt for `E`;
-- lucky cube hidden at Play Mode start, visible in Edit Mode for placement, and shown when the player kicks from the line;
-- lucky cube flight from the kick origin;
+- lucky cube hidden at Play Mode start, visible in Edit Mode for placement, and shown at the player when the kick starts;
+- lucky cube flight from the player's current kick position;
 - distance calculation from current strength;
 - landing marker;
 - rarity zone detection by corridor depth;
@@ -227,8 +227,8 @@ Boar sell value -> 82 soft
 Boar stable income -> 3 soft/s
 ```
 
-To test manually, open `KickLuckyCubeOverview`, enter Play Mode, stand at the kick line placeholder, and hold `E`.
-After the cube lands, control switches to the spawned animal. Run back toward the return line before the wave reaches it.
+To test manually, open `KickLuckyCubeOverview`, enter Play Mode, stand near the kick interaction area, and hold `E`.
+After the cube lands, control switches to the spawned animal. Run back toward the kick start point before the wave reaches it.
 After a successful return, walk to `SELL ANIMAL` to sell the carried animal, or walk to an empty stable slot to place it.
 Placed animals generate pending soft every second. Walk to the green stable collect button and hold `E` to claim it.
 
@@ -238,8 +238,8 @@ Prototype controls:
 WASD / arrows: move the prototype player, and later the animal runner during the chase phase
 Space: jump while controlling the prototype player
 Shift: sprint while controlling the prototype player
-S / down arrow: run the animal back toward the kick line in the current blockout
-E: hold interaction at kick line, sell pad, stable slot, collect button, and progression stations
+S / down arrow: run the animal back toward the kick start point in the current blockout
+E: hold interaction for kick, sell pad, stable slot, collect button, and progression stations
 1-4: select owned strength tool
 Right mouse drag: rotate third-person camera
 Mouse wheel: zoom third-person camera
@@ -261,9 +261,22 @@ Location layout blockout:
 - blockout mesh objects are editable `ProBuilderMesh` objects with scale baked into geometry;
 - plot allocation is grouped under `KLC_PlotAllocationSystem`;
 - reusable plot source is `KLC_PlotTemplate_EditSource`;
-- `MOVE_PlotSlot_01..06` define possible player/bot plot locations;
-- at Play Mode start, one slot is randomly assigned to the player and remaining eligible slots are filled by bot plots from the same template;
-- current plot allocation spawns visual plot instances only; gameplay triggers should be bound to the assigned player slot after final slot placement is approved;
+- `Template_PlotGround` previews the plot footprint and should match the scaled `MOVE_PlotSlot_*` footprint;
+- current plot template follows the reference base layout: tan room floor, center aisle, two five-slot stable rows, front boards, and green interaction pads;
+- obsolete plot decorations are intentionally removed from the template: owner tint strip, player spawn pad, sell pad, and boundary walls;
+- reusable root modules are grouped as `Template_FrontBoards`, `Template_CenterAisleGroup`, `Template_BackWallGroup`, and `Template_FloorExpansion`;
+- `Template_BaseUpgradeBoard` is the placeholder for upward base expansion / extra floors;
+- `Template_CollectAllAdRewardBoard` is the placeholder for the ad-gated collect-all reward board;
+- each of the ten `Template_StableSlot_*` objects is a grouped stable module with a paired child `MobAnchor`, `CollectSpot` placeholder, and `UpgradeBoard` booster placeholder;
+- `Template_FloorExpansion` contains visual-only posts, ladder, and outline beams for future upper-floor expansion;
+- `MOVE_PlotSlot_01..04` define placed plot locations;
+- `KLC_PlotSlot_StaticInstances` contains edit-mode plot copies placed from the reusable template on every current `MOVE_PlotSlot`;
+- `KLC_PlotTemplate_EditSource` is kept inactive as the reusable edit source and should be enabled only when editing the template shape;
+- runtime plot auto-allocation is currently disabled to avoid duplicate plots while static scene placement is being tuned;
+- `KLC_HubKiosks_Blockout/KLC_ImmediateKiosks_LeftToRight` holds the current left-to-right hub kiosks: animal sell, style shop, speed upgrade, weights training, and leaderboard;
+- sell, speed, and weights kiosks have visible stand pads; style shop uses a hold-interaction anchor without a visible stand pad;
+- `KLC_HubKiosks_Blockout/KLC_FutureFeatureSpots` reserves visual-only spots for weather machine, animal exchange, epic mob shop, and rating gift stand;
+- plot template, placed plot copies, and hub kiosk blockout meshes are converted to `ProBuilderMesh`; `TextMesh` labels remain regular text objects;
 - `00_BaseEnvelope_DoNotMoveAsAGroup` holds the flat green grass floor and tan boundary walls;
 - `02_ZoneAndRiverGuides` holds non-final zone, corridor, and river guides;
 - older noisy prototype visual groups are disabled while this layout pass is being placed.
@@ -279,7 +292,7 @@ Visibility: hidden on desktop/editor by default, shown on mobile/handheld platfo
 
 ## Core Loop
 
-1. Player stands near the kick line.
+1. Player stands where they want the kick to start.
 2. Player trains strength with a selected tool.
 3. Player buys speed upgrades for the future animal runner with soft currency.
 4. Player kicks the lucky cube.
@@ -287,7 +300,7 @@ Visibility: hidden on desktop/editor by default, shown on mobile/handheld platfo
 6. Cube passes through corridor zones and changes rarity as it reaches deeper zones.
 7. Cube lands in one zone and spawns an animal from that zone's rarity pool.
 8. Camera shows a wave appearing behind the animal.
-9. Player controls the animal and runs back to the kick line.
+9. Player controls the animal and runs back to the kick start point.
 10. If the wave catches the animal, the run fails.
 11. If the animal returns in time, the original player picks it up and the wave disappears.
 12. Player sells the animal or places it in a stable.
