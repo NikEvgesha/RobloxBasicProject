@@ -25,10 +25,10 @@ Assets/Games/KickLuckyCube/Scenes/KickLuckyCubeOverview.unity
 Implemented in the overview scene:
 
 - prototype player placeholder near the kick area;
-- shared `GameKit` hold interaction prompt for `E`;
+- shared `GameKit` press/hold interaction prompt for `E`;
 - lucky cube hidden at Play Mode start, visible in Edit Mode for placement, and shown at the player when the kick starts;
-- lucky cube flight from the player's current kick position;
-- distance calculation from current strength;
+- lucky cube flight from the kick position selected by the first `E` press;
+- distance calculation from current strength and the selected kick power meter value;
 - landing marker;
 - rarity zone detection by corridor depth;
 - animal spawn from the landed rarity pool;
@@ -227,7 +227,7 @@ Boar sell value -> 82 soft
 Boar stable income -> 3 soft/s
 ```
 
-To test manually, open `KickLuckyCubeOverview`, enter Play Mode, stand near the kick interaction area, and hold `E`.
+To test manually, open `KickLuckyCubeOverview`, enter Play Mode, stand near the kick interaction area, press `E` once to start the power meter, then press `E` again to kick with the current meter value.
 After the cube lands, control switches to the spawned animal. Run back toward the kick start point before the wave reaches it.
 After a successful return, walk to `SELL ANIMAL` to sell the carried animal, or walk to an empty stable slot to place it.
 Placed animals generate pending soft every second. Walk to the green stable collect button and hold `E` to claim it.
@@ -239,7 +239,7 @@ WASD / arrows: move the prototype player, and later the animal runner during the
 Space: jump while controlling the prototype player
 Shift: sprint while controlling the prototype player
 S / down arrow: run the animal back toward the kick start point in the current blockout
-E: hold interaction for kick, sell pad, stable slot, collect button, and progression stations
+E: press once to start kick power selection, press again to kick; hold for sell pad, stable slot, collect button, and progression stations
 1-4: select owned strength tool
 Right mouse drag: rotate third-person camera
 Mouse wheel: zoom third-person camera
@@ -289,7 +289,7 @@ Mobile controls:
 ```text
 Virtual joystick: move animal runner
 Jump button: queue a prototype player jump
-Green E button: hold current interaction through GameKitInteractionDriver.SetExternalHold
+Green E button: starts press-mode targets on tap and holds hold-mode targets through GameKitInteractionDriver.SetExternalHold
 Visibility: hidden on desktop/editor by default, shown on mobile/handheld platforms or when simulation is enabled
 ```
 

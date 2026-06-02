@@ -7,7 +7,7 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 ## Current Target
 
 - Keep the overview scene readable while mechanics are added incrementally.
-- Current playable prototype: hold `E` to kick the lucky cube from the player's current position.
+- Current playable prototype: press `E` at the kick line to start the power meter, then press `E` again to kick from that position with the selected power.
 - The real lucky cube is visible in Edit Mode for placement, but hides at Play Mode start and appears at the player when the kick starts.
 - The scene starts with a controllable blocky prototype player and a third-person camera behind it.
 - Move the prototype player with `WASD` / arrows, jump with `Space`, sprint with `Shift`, orbit with right mouse drag, and zoom with the mouse wheel.

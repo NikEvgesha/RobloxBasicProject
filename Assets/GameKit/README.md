@@ -17,4 +17,4 @@ Promote code into `GameKit` only when it is generic enough to use in more than o
 
 ## Current Runtime Areas
 
-- `Runtime/Interaction` - draft hold-to-interact system with target contracts, prompt driver, trigger source, and raycast source.
+- `Runtime/Interaction` - draft press/hold interaction system with target contracts, prompt driver, trigger source, and raycast source.

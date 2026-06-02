@@ -14,6 +14,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private Transform landingMarker;
         [SerializeField] private Text hudText;
         [SerializeField] private TextMesh worldStatusText;
+        [SerializeField] private CanvasGroup powerMeterGroup;
+        [SerializeField] private Image powerMeterFill;
+        [SerializeField] private RectTransform powerMeterMarker;
+        [SerializeField] private Text powerMeterText;
         [SerializeField] private Renderer cubeRenderer;
         [SerializeField] private KickLuckyCubeRarityZone[] zones = Array.Empty<KickLuckyCubeRarityZone>();
         [SerializeField] private bool hideCubeUntilKickInPlayMode = true;
@@ -24,15 +28,25 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(1f)] private float maximumDistance = 132f;
         [SerializeField, Min(0.05f)] private float flightSeconds = 1.85f;
         [SerializeField, Min(0f)] private float arcHeight = 11f;
+        [SerializeField, Range(0f, 1f)] private float initialPower = 0.5f;
+        [SerializeField, Min(0.05f)] private float powerMeterSpeed = 1.4f;
+        [SerializeField, Min(0f)] private float minimumPowerMultiplier = 0.45f;
+        [SerializeField, Min(0f)] private float maximumPowerMultiplier = 1.2f;
 
         private Coroutine flightRoutine;
         private bool kickLocked;
+        private bool isSelectingKickPower;
+        private float currentPower;
+        private float powerDirection = 1f;
         private Vector3 lastKickOriginPosition;
         private Quaternion lastKickOriginRotation = Quaternion.identity;
+        private Vector3 pendingKickOriginPosition;
+        private Quaternion pendingKickOriginRotation = Quaternion.identity;
 
         public event Action<KickLuckyCubeKickResult> Landed;
 
         public bool IsKicking { get; private set; }
+        public bool IsSelectingKickPower => isSelectingKickPower;
         public float LastDistance { get; private set; }
         public KickLuckyCubeRarity LastLandedRarity { get; private set; }
         public string LastAnimalPool { get; private set; } = string.Empty;
@@ -60,6 +74,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             SortZones();
             ResolveKickOrigin(null, out lastKickOriginPosition, out lastKickOriginRotation);
+            HidePowerMeter();
 
             if (Application.isPlaying && hideCubeUntilKickInPlayMode)
             {
@@ -80,6 +95,29 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
+        private void Update()
+        {
+            if (!isSelectingKickPower)
+            {
+                return;
+            }
+
+            currentPower += powerDirection * powerMeterSpeed * Time.unscaledDeltaTime;
+            if (currentPower >= 1f)
+            {
+                currentPower = 1f;
+                powerDirection = -1f;
+            }
+            else if (currentPower <= 0f)
+            {
+                currentPower = 0f;
+                powerDirection = 1f;
+            }
+
+            RefreshPowerMeter();
+            RefreshStatus("Press E again to kick.\nTop of the meter = stronger hit.");
+        }
+
         private void OnEnable()
         {
             if (stats != null)
@@ -96,10 +134,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 stats.Changed -= RefreshStatus;
             }
+
+            HidePowerMeter();
         }
 
         public void Kick(GameObject actor)
         {
+            if (isSelectingKickPower)
+            {
+                ConfirmKickPower();
+                return;
+            }
+
             if (!CanKick)
             {
                 return;
@@ -110,11 +156,62 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 StopCoroutine(flightRoutine);
             }
 
-            ResolveKickOrigin(actor, out lastKickOriginPosition, out lastKickOriginRotation);
+            BeginKickPowerSelection(actor);
+        }
+
+        public void CancelKickPowerSelection()
+        {
+            if (!isSelectingKickPower)
+            {
+                return;
+            }
+
+            isSelectingKickPower = false;
+            HidePowerMeter();
+            RefreshStatus();
+
+            if (Application.isPlaying && hideCubeUntilKickInPlayMode)
+            {
+                SetCubeVisible(false);
+            }
+        }
+
+        private void BeginKickPowerSelection(GameObject actor)
+        {
+            ResolveKickOrigin(actor, out pendingKickOriginPosition, out pendingKickOriginRotation);
+            currentPower = initialPower;
+            powerDirection = 1f;
+            isSelectingKickPower = true;
+
+            SetCubeVisible(true);
+            cube.SetPositionAndRotation(pendingKickOriginPosition, pendingKickOriginRotation);
+
+            if (landingMarker != null)
+            {
+                landingMarker.gameObject.SetActive(false);
+            }
+
+            RefreshPowerMeter();
+            RefreshStatus("Choose kick power.\nPress E again to kick.");
+        }
+
+        private void ConfirmKickPower()
+        {
+            if (!CanKick)
+            {
+                CancelKickPowerSelection();
+                return;
+            }
+
+            isSelectingKickPower = false;
+            HidePowerMeter();
+
+            lastKickOriginPosition = pendingKickOriginPosition;
+            lastKickOriginRotation = pendingKickOriginRotation;
             SetCubeVisible(true);
             cube.SetPositionAndRotation(lastKickOriginPosition, lastKickOriginRotation);
 
-            var distance = CalculateDistance(stats.Strength);
+            var distance = CalculatePoweredDistance(stats.Strength, currentPower);
             flightRoutine = StartCoroutine(PlayFlight(distance, lastKickOriginPosition));
         }
 
@@ -132,6 +229,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 flightRoutine = null;
             }
 
+            isSelectingKickPower = false;
+            HidePowerMeter();
             IsKicking = false;
             LastLandedRarity = KickLuckyCubeRarity.None;
             LastAnimalPool = string.Empty;
@@ -165,6 +264,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return Mathf.Clamp(rawDistance, minimumDistance, maximumDistance);
         }
 
+        public float CalculatePoweredDistance(float strength, float normalizedPower)
+        {
+            var baseDistance = CalculateDistance(strength);
+            var powerMultiplier = Mathf.Lerp(
+                minimumPowerMultiplier,
+                Mathf.Max(minimumPowerMultiplier, maximumPowerMultiplier),
+                Mathf.Clamp01(normalizedPower));
+            return Mathf.Clamp(baseDistance * powerMultiplier, minimumDistance, maximumDistance);
+        }
+
         public KickLuckyCubeRarityZone ResolveLandingZone(float distance)
         {
             SortZones();
@@ -190,6 +299,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             IsKicking = false;
+            isSelectingKickPower = false;
+            HidePowerMeter();
             SetCubeVisible(true);
             ResolveKickOrigin(null, out lastKickOriginPosition, out lastKickOriginRotation);
             LandAtDistance(CalculateDistance(strength));
@@ -288,14 +399,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 ? $"{stats.SelectedStrengthToolTier.ToString(CultureInfo.InvariantCulture)}/{stats.StrengthToolTier.ToString(CultureInfo.InvariantCulture)}"
                 : "n/a";
             var predictedDistance = stats != null
-                ? CalculateDistance(stats.Strength).ToString("0.0", CultureInfo.InvariantCulture)
+                ? CalculatePoweredDistance(stats.Strength, 1f).ToString("0.0", CultureInfo.InvariantCulture)
                 : "n/a";
 
             var resultLine = string.IsNullOrEmpty(overrideLine)
                 ? kickLocked
                     ? "Animal run in progress."
+                    : isSelectingKickPower
+                    ? "Press E again to kick."
                     : LastLandedRarity == KickLuckyCubeRarity.None
-                    ? "Hold E to kick."
+                    ? "Press E to aim kick."
                     : $"Landed: {LastLandedRarity} | {LastAnimalPool}"
                 : overrideLine;
 
@@ -309,6 +422,59 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (worldStatusText != null)
             {
                 worldStatusText.text = text;
+            }
+        }
+
+        private void RefreshPowerMeter()
+        {
+            if (powerMeterGroup != null)
+            {
+                powerMeterGroup.alpha = isSelectingKickPower ? 1f : 0f;
+                powerMeterGroup.interactable = false;
+                powerMeterGroup.blocksRaycasts = false;
+            }
+
+            if (powerMeterFill != null)
+            {
+                powerMeterFill.fillAmount = Mathf.Clamp01(currentPower);
+            }
+
+            if (powerMeterMarker != null)
+            {
+                var anchor = powerMeterMarker.anchorMin;
+                anchor.y = Mathf.Clamp01(currentPower);
+                powerMeterMarker.anchorMin = anchor;
+
+                anchor = powerMeterMarker.anchorMax;
+                anchor.y = Mathf.Clamp01(currentPower);
+                powerMeterMarker.anchorMax = anchor;
+                powerMeterMarker.anchoredPosition = Vector2.zero;
+            }
+
+            if (powerMeterText != null)
+            {
+                var powerPercent = Mathf.RoundToInt(Mathf.Clamp01(currentPower) * 100f);
+                powerMeterText.text = $"Kick Power {powerPercent}%";
+            }
+        }
+
+        private void HidePowerMeter()
+        {
+            if (powerMeterGroup != null)
+            {
+                powerMeterGroup.alpha = 0f;
+                powerMeterGroup.interactable = false;
+                powerMeterGroup.blocksRaycasts = false;
+            }
+
+            if (powerMeterFill != null)
+            {
+                powerMeterFill.fillAmount = 0f;
+            }
+
+            if (powerMeterText != null)
+            {
+                powerMeterText.text = string.Empty;
             }
         }
 

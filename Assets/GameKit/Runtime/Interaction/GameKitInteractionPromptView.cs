@@ -47,7 +47,9 @@ namespace RobloxBasicProject.GameKit.Interaction
 
             if (progressFill != null)
             {
-                progressFill.fillAmount = Mathf.Clamp01(normalizedProgress);
+                var showProgress = target.ShowsProgress;
+                progressFill.gameObject.SetActive(showProgress);
+                progressFill.fillAmount = showProgress ? Mathf.Clamp01(normalizedProgress) : 0f;
             }
         }
 
@@ -62,6 +64,7 @@ namespace RobloxBasicProject.GameKit.Interaction
 
             if (progressFill != null)
             {
+                progressFill.gameObject.SetActive(false);
                 progressFill.fillAmount = 0f;
             }
         }

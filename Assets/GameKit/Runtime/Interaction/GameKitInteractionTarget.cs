@@ -4,10 +4,17 @@ using UnityEngine.Events;
 
 namespace RobloxBasicProject.GameKit.Interaction
 {
+    public enum GameKitInteractionActivationMode
+    {
+        Hold,
+        Press
+    }
+
     public sealed class GameKitInteractionTarget : MonoBehaviour
     {
         [SerializeField] private string promptKey = "E";
         [SerializeField] private string promptText = "Interact";
+        [SerializeField] private GameKitInteractionActivationMode activationMode = GameKitInteractionActivationMode.Hold;
         [SerializeField, Min(0.05f)] private float holdSeconds = 0.65f;
         [SerializeField] private int priority;
         [SerializeField] private bool interactable = true;
@@ -16,7 +23,9 @@ namespace RobloxBasicProject.GameKit.Interaction
 
         public string PromptKey => promptKey;
         public string PromptText => promptText;
+        public GameKitInteractionActivationMode ActivationMode => activationMode;
         public float HoldSeconds => holdSeconds;
+        public bool ShowsProgress => activationMode == GameKitInteractionActivationMode.Hold;
         public int Priority => priority;
         public UnityEvent Interacted => interacted;
         public UnityEvent<GameObject> ActorInteracted => actorInteracted;

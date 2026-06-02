@@ -19,6 +19,7 @@ namespace RobloxBasicProject.GameKit.Interaction
         private GameKitInteractionTarget currentTarget;
         private float holdProgress;
         private bool externalHold;
+        private bool previousExternalHold;
 
         public GameObject Actor => actor != null ? actor : gameObject;
         public GameKitInteractionTarget CurrentTarget => currentTarget;
@@ -33,7 +34,17 @@ namespace RobloxBasicProject.GameKit.Interaction
 
         private void Update()
         {
-            currentTarget = SelectCurrentTarget();
+            var inputHeld = externalHold || ReadKeyboardHold();
+            var inputPressed = ReadKeyboardPress() || (externalHold && !previousExternalHold);
+            previousExternalHold = externalHold;
+
+            var selectedTarget = SelectCurrentTarget();
+            if (selectedTarget != currentTarget)
+            {
+                currentTarget = selectedTarget;
+                holdProgress = 0f;
+            }
+
             if (currentTarget == null)
             {
                 holdProgress = 0f;
@@ -41,9 +52,22 @@ namespace RobloxBasicProject.GameKit.Interaction
                 return;
             }
 
+            if (currentTarget.ActivationMode == GameKitInteractionActivationMode.Press)
+            {
+                promptView?.Show(currentTarget, 0f);
+                if (!inputPressed)
+                {
+                    return;
+                }
+
+                var pressedTarget = currentTarget;
+                pressedTarget.Interact(Actor);
+                currentTarget = SelectCurrentTarget();
+                return;
+            }
+
             var holdSeconds = Mathf.Max(0.05f, currentTarget.HoldSeconds);
-            var isHeld = externalHold || ReadKeyboardHold();
-            holdProgress = isHeld
+            holdProgress = inputHeld
                 ? Mathf.Min(holdSeconds, holdProgress + Time.unscaledDeltaTime)
                 : Mathf.Max(0f, holdProgress - Time.unscaledDeltaTime * progressReleaseSpeed);
 
@@ -124,6 +148,16 @@ namespace RobloxBasicProject.GameKit.Interaction
             return keyboard != null && keyboard.eKey.isPressed;
 #else
             return Input.GetKey(fallbackKey);
+#endif
+        }
+
+        private bool ReadKeyboardPress()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = Keyboard.current;
+            return keyboard != null && keyboard.eKey.wasPressedThisFrame;
+#else
+            return Input.GetKeyDown(fallbackKey);
 #endif
         }
     }
