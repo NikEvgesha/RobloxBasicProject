@@ -6,24 +6,95 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     public sealed class KickLuckyCubeStablePlacementPad : MonoBehaviour, GameKitInteractionCondition
     {
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
+        [SerializeField] private KickLuckyCubeInventoryController inventory;
+        [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubeStableSlot stableSlot;
+
+        private GameKitInteractionTarget interactionTarget;
 
         private void Awake()
         {
-            runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>();
+            ResolveReferences();
+            interactionTarget = GetComponent<GameKitInteractionTarget>();
+            if (interactionTarget != null)
+            {
+                interactionTarget.ActorInteracted.AddListener(Interact);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (interactionTarget != null)
+            {
+                interactionTarget.ActorInteracted.RemoveListener(Interact);
+            }
         }
 
         public bool CanInteract(GameObject actor)
         {
-            return runPhase != null
-                && stableSlot != null
-                && runPhase.HasCarriedAnimal
-                && !stableSlot.IsOccupied;
+            ResolveReferences();
+            if (stableSlot == null)
+            {
+                return false;
+            }
+
+            if (stableSlot.IsOccupied)
+            {
+                return wallet != null && stableSlot.PendingSoft > 0;
+            }
+
+            return (runPhase != null && runPhase.HasCarriedAnimal)
+                || (inventory != null && inventory.HasSelectedAnimal);
         }
 
         public void Place(GameObject actor)
         {
-            runPhase?.TryPlaceCarriedAnimal(stableSlot);
+            Interact(actor);
+        }
+
+        private void Interact(GameObject actor)
+        {
+            ResolveReferences();
+            if (stableSlot == null)
+            {
+                return;
+            }
+
+            if (stableSlot.IsOccupied)
+            {
+                var amount = stableSlot.Collect();
+                if (amount > 0)
+                {
+                    wallet?.AddSoft(amount);
+                }
+
+                return;
+            }
+
+            if (runPhase != null && runPhase.TryPlaceCarriedAnimal(stableSlot))
+            {
+                return;
+            }
+
+            if (inventory == null || !inventory.TryRemoveSelectedAnimal(out var selectedAnimal))
+            {
+                return;
+            }
+
+            if (stableSlot.TryPlace(selectedAnimal))
+            {
+                return;
+            }
+
+            inventory.TryAddAnimal(selectedAnimal, true);
+        }
+
+        private void ResolveReferences()
+        {
+            runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
+            inventory ??= FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
+            wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>(FindObjectsInactive.Include);
+            stableSlot ??= GetComponentInParent<KickLuckyCubeStableSlot>();
         }
     }
 }

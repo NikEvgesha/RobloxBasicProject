@@ -11,6 +11,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeAnimalSpawner animalSpawner;
         [SerializeField] private KickLuckyCubeInventoryController inventory;
         [SerializeField] private KickLuckyCubeWaveChaseController waveChase;
+        [SerializeField] private KickLuckyCubeThirdPersonCamera thirdPersonCamera;
         [SerializeField] private GameObject prototypePlayer;
         [SerializeField] private Transform carryAnchor;
         [SerializeField] private Transform returnLine;
@@ -19,18 +20,26 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0f)] private float animalRouletteSeconds = 2.4f;
         [SerializeField, Min(0.02f)] private float animalRouletteMinimumStepSeconds = 0.07f;
         [SerializeField, Min(0.02f)] private float animalRouletteMaximumStepSeconds = 0.34f;
-        [SerializeField] private Vector3 animalRoulettePreviewOffset = new(0f, 1.25f, 0f);
+        [SerializeField] private Vector3 animalRoulettePreviewOffset = new(0f, 0.58f, 0f);
         [SerializeField] private Vector3 animalRoulettePreviewScale = new(0.72f, 0.58f, 1.05f);
         [SerializeField] private Color animalRouletteShadowColor = new(0.06f, 0.06f, 0.08f, 0.86f);
+        [SerializeField, Min(0f)] private float returnedPlayerGroundOffset = 0.58f;
+        [SerializeField, Min(0f)] private float waveIntroSeconds = 2.2f;
+        [SerializeField, Min(0f)] private float waveIntroHoldSeconds = 0.35f;
+        [SerializeField, Min(0f)] private float waveIntroCameraDistance = 4.8f;
+        [SerializeField] private float waveIntroCameraPitch = 13f;
+        [SerializeField] private float waveIntroCameraYawOffset;
 
         private KickLuckyCubeAnimalRunner currentRunner;
         private KickLuckyCubeSpawnedAnimal carriedAnimal;
         private Coroutine runStartRoutine;
         private GameObject roulettePreview;
+        private Transform roulettePreviewBody;
         private Renderer roulettePreviewRenderer;
         private TextMesh roulettePreviewLabel;
         private Vector3 currentReturnPosition;
         private bool hasCurrentReturnPosition;
+        private string carriedInventoryAnimalId;
 
         public bool HasActiveRun => currentRunner != null && currentRunner.ControlEnabled;
         public bool HasCarriedAnimal => carriedAnimal != null;
@@ -46,6 +55,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             animalSpawner ??= FindFirstObjectByType<KickLuckyCubeAnimalSpawner>();
             inventory ??= FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
             waveChase ??= FindFirstObjectByType<KickLuckyCubeWaveChaseController>();
+            thirdPersonCamera ??= FindFirstObjectByType<KickLuckyCubeThirdPersonCamera>(FindObjectsInactive.Include);
 
             if (prototypePlayer == null)
             {
@@ -65,6 +75,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 waveChase.AnimalCaught += OnAnimalCaught;
             }
+
+            if (inventory != null)
+            {
+                inventory.AnimalSold += OnInventoryAnimalSold;
+            }
         }
 
         private void OnDisable()
@@ -77,6 +92,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (waveChase != null)
             {
                 waveChase.AnimalCaught -= OnAnimalCaught;
+            }
+
+            if (inventory != null)
+            {
+                inventory.AnimalSold -= OnInventoryAnimalSold;
             }
 
             if (currentRunner != null)
@@ -108,6 +128,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             StopRunStartRoutine();
             ClearRunnerSubscription();
             carriedAnimal = null;
+            carriedInventoryAnimalId = null;
             animalSpawner?.ClearCurrentAnimal();
             waveChase?.StopChase();
             kickController?.SetKickLocked(false);
@@ -143,6 +164,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var animalName = soldAnimal.AnimalName;
             animalSpawner?.ReleaseCurrentAnimal(soldAnimal);
             carriedAnimal = null;
+            RemoveCarriedInventoryItem();
 
             DestroyAnimalObject(soldAnimal);
             wallet.AddSoft(sellValue);
@@ -165,6 +187,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             animalSpawner?.ReleaseCurrentAnimal(animal);
             carriedAnimal = null;
+            RemoveCarriedInventoryItem();
             FinishCarriedAnimalFlow($"{animal.AnimalName} placed in stable.\nIt now earns {animal.IncomePerSecond} soft/s.");
             return true;
         }
@@ -179,7 +202,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var selectedOption = animalSpawner.PickRandomAnimal(result.Rarity);
             yield return PlayAnimalRoulette(result, selectedOption);
-            StartRunWithAnimal(result, selectedOption);
+            yield return StartRunWithAnimalAfterIntro(result, selectedOption);
             runStartRoutine = null;
         }
 
@@ -204,23 +227,72 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void StartRunWithAnimal(KickLuckyCubeKickResult result, KickLuckyCubeAnimalOption selectedOption)
         {
-            var spawnedAnimal = animalSpawner.Spawn(result, stats.AnimalSpeed, selectedOption);
-            currentRunner = spawnedAnimal.GetComponent<KickLuckyCubeAnimalRunner>();
-            if (currentRunner == null)
+            if (!TrySpawnRunner(result, selectedOption, out var spawnedAnimal))
             {
                 return;
             }
 
-            currentRunner.ReturnedToLine += OnAnimalReturned;
             currentRunner.BeginRun(GetReturnLineZ());
+            waveChase.BeginChase(currentRunner, result.Distance);
+            SetRunStartedStatus(spawnedAnimal);
+        }
+
+        private IEnumerator StartRunWithAnimalAfterIntro(KickLuckyCubeKickResult result, KickLuckyCubeAnimalOption selectedOption)
+        {
+            if (!TrySpawnRunner(result, selectedOption, out var spawnedAnimal))
+            {
+                yield break;
+            }
+
+            waveChase.PrepareChase(currentRunner, result.Distance);
+
+            if (thirdPersonCamera != null && waveChase.WaveVisual != null && waveIntroSeconds > 0f)
+            {
+                thirdPersonCamera.BeginCinematicFocus(
+                    waveChase.WaveVisual,
+                    waveIntroCameraDistance,
+                    waveIntroCameraPitch,
+                    waveIntroCameraYawOffset);
+                SetStatus($"Wave is rising...\nSpeed: {waveChase.WaveSpeed:0.0} m/s\nGet ready!");
+                yield return waveChase.PlayPreparedRise(waveIntroSeconds);
+
+                if (waveIntroHoldSeconds > 0f)
+                {
+                    yield return new WaitForSeconds(waveIntroHoldSeconds);
+                }
+            }
+
+            currentRunner.BeginRun(GetReturnLineZ());
+            thirdPersonCamera?.EndCinematicFocus(true);
+            waveChase.StartPreparedChase();
+            SetRunStartedStatus(spawnedAnimal);
+        }
+
+        private bool TrySpawnRunner(
+            KickLuckyCubeKickResult result,
+            KickLuckyCubeAnimalOption selectedOption,
+            out KickLuckyCubeSpawnedAnimal spawnedAnimal)
+        {
+            spawnedAnimal = animalSpawner.Spawn(result, stats.AnimalSpeed, selectedOption);
+            currentRunner = spawnedAnimal != null ? spawnedAnimal.GetComponent<KickLuckyCubeAnimalRunner>() : null;
+            if (currentRunner == null)
+            {
+                return false;
+            }
+
+            currentRunner.ReturnedToLine += OnAnimalReturned;
 
             if (prototypePlayer != null)
             {
                 prototypePlayer.SetActive(false);
             }
 
-            waveChase.BeginChase(currentRunner);
-            SetStatus($"Run back as {spawnedAnimal.AnimalName}!\nRarity: {spawnedAnimal.Rarity}\nWave is chasing you.");
+            return true;
+        }
+
+        private void SetRunStartedStatus(KickLuckyCubeSpawnedAnimal spawnedAnimal)
+        {
+            SetStatus($"Run back as {spawnedAnimal.AnimalName}!\nRarity: {spawnedAnimal.Rarity}\nWave speed: {waveChase.WaveSpeed:0.0} m/s");
         }
 
         private IEnumerator PlayAnimalRoulette(KickLuckyCubeKickResult result, KickLuckyCubeAnimalOption selectedOption)
@@ -272,11 +344,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             body.transform.localPosition = Vector3.zero;
             body.transform.localRotation = Quaternion.identity;
             body.transform.localScale = animalRoulettePreviewScale;
+            roulettePreviewBody = body.transform;
 
             var bodyCollider = body.GetComponent<Collider>();
             if (bodyCollider != null)
             {
-                DestroyObject(bodyCollider);
+                DestroyUnityObject(bodyCollider);
             }
 
             roulettePreviewRenderer = body.GetComponent<Renderer>();
@@ -299,7 +372,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            roulettePreview.transform.localScale = Vector3.one * (selected ? 1.16f : 1f);
+            if (roulettePreviewBody != null)
+            {
+                var scaleMultiplier = selected ? 1.16f : 1f;
+                roulettePreviewBody.localScale = animalRoulettePreviewScale * scaleMultiplier;
+                roulettePreviewBody.localPosition = new Vector3(
+                    0f,
+                    Mathf.Max(0f, roulettePreviewBody.localScale.y - animalRoulettePreviewOffset.y),
+                    0f);
+            }
 
             if (roulettePreviewRenderer != null)
             {
@@ -338,6 +419,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void DestroyRoulettePreview()
         {
+            roulettePreviewBody = null;
             roulettePreviewRenderer = null;
             roulettePreviewLabel = null;
 
@@ -346,7 +428,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            DestroyObject(roulettePreview);
+            DestroyUnityObject(roulettePreview);
             roulettePreview = null;
         }
 
@@ -369,7 +451,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (animalRoulettePreviewOffset.sqrMagnitude <= 0.0001f)
             {
-                animalRoulettePreviewOffset = new Vector3(0f, 1.25f, 0f);
+                animalRoulettePreviewOffset = new Vector3(0f, 0.58f, 0f);
             }
 
             if (animalRoulettePreviewScale.sqrMagnitude <= 0.0001f)
@@ -390,6 +472,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            result = KickLuckyCubeFutureFeatureController.TryApplyWeatherBonus(result);
             BeginRunFromResult(result);
         }
 
@@ -400,40 +483,58 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            var returnedPosition = runner.transform.position;
+            var returnedRotation = runner.transform.rotation;
+            var returnedAnimal = runner.Animal;
+
             waveChase?.StopChase();
             ClearRunnerSubscription();
 
-            var returnedAnimal = runner.Animal;
             if (prototypePlayer != null)
             {
+                var playerPosition = new Vector3(
+                    returnedPosition.x,
+                    returnedPosition.y - returnedPlayerGroundOffset,
+                    returnedPosition.z);
                 prototypePlayer.SetActive(true);
-                var returnPosition = GetReturnPosition();
-                prototypePlayer.transform.position = new Vector3(
-                    returnPosition.x,
-                    prototypePlayer.transform.position.y,
-                    returnPosition.z - 1.4f);
+                if (prototypePlayer.TryGetComponent<KickLuckyCubePlayerController>(out var playerController))
+                {
+                    playerController.TeleportTo(playerPosition, returnedRotation);
+                }
+                else
+                {
+                    prototypePlayer.transform.SetPositionAndRotation(playerPosition, returnedRotation);
+                }
             }
 
-            if (inventory != null && inventory.TryAddAnimal(returnedAnimal))
+            var hasReturnedAnimal = returnedAnimal != null;
+            var returnedAnimalName = hasReturnedAnimal ? returnedAnimal.AnimalName : string.Empty;
+            var addedToInventory = false;
+            carriedAnimal = null;
+            carriedInventoryAnimalId = null;
+
+            if (hasReturnedAnimal)
             {
-                var returnedAnimalName = returnedAnimal.AnimalName;
-                animalSpawner?.ReleaseCurrentAnimal(returnedAnimal);
-                carriedAnimal = null;
-                DestroyAnimalObject(returnedAnimal);
-                kickController?.SetKickLocked(false);
-                kickController?.ResetCubeToOrigin();
-                SetStatus($"{returnedAnimalName} added to inventory.\nKick again or open Bag with I.");
-                return;
+                if (inventory != null && inventory.TryAddAnimal(returnedAnimal, true, out _))
+                {
+                    addedToInventory = true;
+                    animalSpawner?.ReleaseCurrentAnimal(returnedAnimal);
+                    DestroyAnimalObject(returnedAnimal);
+                }
+                else
+                {
+                    carriedAnimal = returnedAnimal;
+                    carriedAnimal.SetCarried(carryAnchor);
+                    animalSpawner?.ReleaseCurrentAnimal(returnedAnimal);
+                }
             }
 
-            carriedAnimal = returnedAnimal;
-            if (carriedAnimal != null)
-            {
-                carriedAnimal.SetCarried(carryAnchor);
-            }
-
-            SetStatus(carriedAnimal != null
-                ? $"{carriedAnimal.AnimalName} returned!\nInventory full, carrying it instead."
+            kickController?.SetKickLocked(false);
+            kickController?.ResetCubeToOrigin();
+            SetStatus(hasReturnedAnimal
+                ? addedToInventory
+                    ? $"{returnedAnimalName} returned!\nAdded to inventory and selected."
+                    : $"{returnedAnimalName} returned!\nInventory is full."
                 : "Animal returned.\nSell/stable flow is next.");
         }
 
@@ -443,6 +544,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             ClearRunnerSubscription();
             animalSpawner?.ClearCurrentAnimal();
             carriedAnimal = null;
+            carriedInventoryAnimalId = null;
             kickController?.SetKickLocked(false);
             kickController?.ResetCubeToOrigin();
 
@@ -452,6 +554,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             SetStatus("Wave caught the animal.\nTry another kick.");
+        }
+
+        private void OnInventoryAnimalSold(KickLuckyCubeInventoryAnimal soldAnimal)
+        {
+            if (!soldAnimal.IsValid
+                || string.IsNullOrWhiteSpace(carriedInventoryAnimalId)
+                || !string.Equals(soldAnimal.Id, carriedInventoryAnimalId, System.StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var animalName = soldAnimal.AnimalName;
+            DestroyAnimalObject(carriedAnimal);
+            carriedAnimal = null;
+            carriedInventoryAnimalId = null;
+            SetStatus($"{animalName} sold.\nReady for next kick.");
         }
 
         private void FinishCarriedAnimalFlow(string status)
@@ -466,6 +584,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             SetStatus(status);
+        }
+
+        private void RemoveCarriedInventoryItem()
+        {
+            if (inventory == null || string.IsNullOrWhiteSpace(carriedInventoryAnimalId))
+            {
+                carriedInventoryAnimalId = null;
+                return;
+            }
+
+            inventory.TryRemoveAnimalById(carriedInventoryAnimalId, out _);
+            carriedInventoryAnimalId = null;
         }
 
         private void ClearRunnerSubscription()
@@ -517,10 +647,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            DestroyObject(animal.gameObject);
+            DestroyUnityObject(animal.gameObject);
         }
 
-        private static void DestroyObject(UnityEngine.Object target)
+        private static void DestroyUnityObject(UnityEngine.Object target)
         {
             if (target == null)
             {

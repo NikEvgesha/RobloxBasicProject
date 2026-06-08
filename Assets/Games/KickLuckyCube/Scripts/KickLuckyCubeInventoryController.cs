@@ -12,6 +12,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     public sealed class KickLuckyCubeInventoryController : MonoBehaviour
     {
         private const int HotbarAnimalSlotCount = 4;
+        private const string InventoryStateKey = "State";
+
+        [Serializable]
+        private sealed class InventorySaveData
+        {
+            public int version = 1;
+            public KickLuckyCubeInventoryAnimal[] hotbarAnimals = Array.Empty<KickLuckyCubeInventoryAnimal>();
+            public KickLuckyCubeInventoryAnimal[] inventoryAnimals = Array.Empty<KickLuckyCubeInventoryAnimal>();
+        }
 
         public readonly struct AnimalSlot
         {
@@ -40,6 +49,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private Color animalFrameColor = new Color(0.18f, 0.38f, 0.12f, 0.84f);
         [SerializeField] private Color selectedFrameColor = new Color(1f, 0.82f, 0.18f, 0.94f);
         [SerializeField] private Color emptyFrameColor = new Color(0.06f, 0.08f, 0.08f, 0.58f);
+        [SerializeField] private string saveKeyPrefix = "KickLuckyCube.Inventory.";
+        [SerializeField] private bool saveInPlayerPrefs = true;
 
         private readonly KickLuckyCubeInventoryAnimal[] hotbarAnimals = new KickLuckyCubeInventoryAnimal[HotbarAnimalSlotCount];
         private KickLuckyCubeInventoryAnimal[] inventoryAnimals;
@@ -63,9 +74,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private int selectedInventoryIndex = -1;
         private bool subscribedToToolTraining;
 
+        public event Action<KickLuckyCubeInventoryAnimal> AnimalSold;
+
         public bool IsWindowOpen => inventoryWindowRoot != null && inventoryWindowRoot.gameObject.activeSelf;
         public int HotbarAnimalCount => CountValid(hotbarAnimals);
         public int StoredAnimalCount => CountValid(inventoryAnimals);
+        public bool HasSelectedAnimal => TryGetSelectedAnimal(out _);
 
         private void Awake()
         {
@@ -73,6 +87,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             toolTraining ??= FindFirstObjectByType<KickLuckyCubeToolTrainingController>(FindObjectsInactive.Include);
             canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
             inventoryAnimals = new KickLuckyCubeInventoryAnimal[Mathf.Max(HotbarAnimalSlotCount, inventorySlotCount)];
+            LoadInventory();
             ResolveUiFont();
             ResolveCarryAnchor();
 
@@ -145,10 +160,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public bool TryAddAnimal(KickLuckyCubeSpawnedAnimal animal)
         {
-            return TryAddAnimal(KickLuckyCubeInventoryAnimal.FromSpawnedAnimal(animal));
+            return TryAddAnimal(animal, true, out _);
+        }
+
+        public bool TryAddAnimal(KickLuckyCubeSpawnedAnimal animal, bool selectAfterAdd, out KickLuckyCubeInventoryAnimal addedAnimal)
+        {
+            addedAnimal = KickLuckyCubeInventoryAnimal.FromSpawnedAnimal(animal);
+            return TryAddAnimal(addedAnimal, selectAfterAdd);
         }
 
         public bool TryAddAnimal(KickLuckyCubeInventoryAnimal animal)
+        {
+            return TryAddAnimal(animal, true);
+        }
+
+        public bool TryAddAnimal(KickLuckyCubeInventoryAnimal animal, bool selectAfterAdd)
         {
             if (!animal.IsValid)
             {
@@ -163,8 +189,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 }
 
                 hotbarAnimals[index] = animal;
-                SelectHotbarAnimal(index);
+                if (selectAfterAdd)
+                {
+                    SelectHotbarAnimal(index);
+                }
+
                 SetStatus($"{animal.AnimalName} added to hotbar.");
+                SaveInventory();
                 Refresh();
                 return true;
             }
@@ -177,8 +208,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 }
 
                 inventoryAnimals[index] = animal;
-                SelectInventoryAnimal(index);
+                if (selectAfterAdd)
+                {
+                    SelectInventoryAnimal(index);
+                }
+
                 SetStatus($"{animal.AnimalName} added to inventory.");
+                SaveInventory();
                 Refresh();
                 return true;
             }
@@ -200,6 +236,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 hotbarAnimals[selectedHotbarIndex] = default;
                 selectedHotbarIndex = -1;
                 ClearHandPreview();
+                SaveInventory();
                 Refresh();
                 return true;
             }
@@ -215,8 +252,27 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 inventoryAnimals[selectedInventoryIndex] = default;
                 selectedInventoryIndex = -1;
                 ClearHandPreview();
+                SaveInventory();
                 Refresh();
                 return true;
+            }
+
+            animal = default;
+            return false;
+        }
+
+        public bool TryGetSelectedAnimal(out KickLuckyCubeInventoryAnimal animal)
+        {
+            if (selectedHotbarIndex >= 0 && selectedHotbarIndex < hotbarAnimals.Length)
+            {
+                animal = hotbarAnimals[selectedHotbarIndex];
+                return animal.IsValid;
+            }
+
+            if (selectedInventoryIndex >= 0 && selectedInventoryIndex < inventoryAnimals.Length)
+            {
+                animal = inventoryAnimals[selectedInventoryIndex];
+                return animal.IsValid;
             }
 
             animal = default;
@@ -232,6 +288,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             wallet.AddSoft(soldAnimal.SellValue);
+            AnimalSold?.Invoke(soldAnimal);
             SetStatus($"Sold {soldAnimal.AnimalName} for ${soldAnimal.SellValue}.");
             return true;
         }
@@ -274,8 +331,60 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             wallet.AddSoft(soldAnimal.SellValue);
+            AnimalSold?.Invoke(soldAnimal);
             SetStatus($"Sold {soldAnimal.AnimalName} for ${soldAnimal.SellValue}.");
             return true;
+        }
+
+        public bool TryRemoveAnimalById(string animalId, out KickLuckyCubeInventoryAnimal removedAnimal)
+        {
+            removedAnimal = default;
+            if (string.IsNullOrWhiteSpace(animalId))
+            {
+                return false;
+            }
+
+            for (var index = 0; index < hotbarAnimals.Length; index++)
+            {
+                if (!hotbarAnimals[index].IsValid || !string.Equals(hotbarAnimals[index].Id, animalId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                removedAnimal = hotbarAnimals[index];
+                hotbarAnimals[index] = default;
+                if (selectedHotbarIndex == index)
+                {
+                    selectedHotbarIndex = -1;
+                    ClearHandPreview();
+                }
+
+                SaveInventory();
+                Refresh();
+                return true;
+            }
+
+            for (var index = 0; index < inventoryAnimals.Length; index++)
+            {
+                if (!inventoryAnimals[index].IsValid || !string.Equals(inventoryAnimals[index].Id, animalId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                removedAnimal = inventoryAnimals[index];
+                inventoryAnimals[index] = default;
+                if (selectedInventoryIndex == index)
+                {
+                    selectedInventoryIndex = -1;
+                    ClearHandPreview();
+                }
+
+                SaveInventory();
+                Refresh();
+                return true;
+            }
+
+            return false;
         }
 
         public bool CanDragFrom(KickLuckyCubeInventorySlotView slot)
@@ -317,6 +426,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 ClearHandPreview();
             }
 
+            SaveInventory();
             Refresh();
             return true;
         }
@@ -663,6 +773,92 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
+        private void LoadInventory()
+        {
+            if (!Application.isPlaying || !saveInPlayerPrefs)
+            {
+                return;
+            }
+
+            var json = PlayerPrefs.GetString(GetSaveKey(InventoryStateKey), string.Empty);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return;
+            }
+
+            InventorySaveData saveData;
+            try
+            {
+                saveData = JsonUtility.FromJson<InventorySaveData>(json);
+            }
+            catch (ArgumentException)
+            {
+                PlayerPrefs.DeleteKey(GetSaveKey(InventoryStateKey));
+                return;
+            }
+
+            if (saveData == null)
+            {
+                return;
+            }
+
+            CopyAnimals(saveData.hotbarAnimals, hotbarAnimals);
+            if (saveData.inventoryAnimals != null && saveData.inventoryAnimals.Length > inventoryAnimals.Length)
+            {
+                inventoryAnimals = new KickLuckyCubeInventoryAnimal[saveData.inventoryAnimals.Length];
+            }
+
+            CopyAnimals(saveData.inventoryAnimals, inventoryAnimals);
+        }
+
+        private void SaveInventory()
+        {
+            if (!Application.isPlaying || !saveInPlayerPrefs)
+            {
+                return;
+            }
+
+            var saveData = new InventorySaveData
+            {
+                hotbarAnimals = CloneAnimals(hotbarAnimals),
+                inventoryAnimals = CloneAnimals(inventoryAnimals),
+            };
+            PlayerPrefs.SetString(GetSaveKey(InventoryStateKey), JsonUtility.ToJson(saveData));
+            PlayerPrefs.Save();
+        }
+
+        private string GetSaveKey(string suffix)
+        {
+            return saveKeyPrefix + suffix;
+        }
+
+        private static KickLuckyCubeInventoryAnimal[] CloneAnimals(KickLuckyCubeInventoryAnimal[] animals)
+        {
+            if (animals == null)
+            {
+                return Array.Empty<KickLuckyCubeInventoryAnimal>();
+            }
+
+            var copy = new KickLuckyCubeInventoryAnimal[animals.Length];
+            Array.Copy(animals, copy, animals.Length);
+            return copy;
+        }
+
+        private static void CopyAnimals(KickLuckyCubeInventoryAnimal[] source, KickLuckyCubeInventoryAnimal[] destination)
+        {
+            if (source == null || destination == null)
+            {
+                return;
+            }
+
+            Array.Clear(destination, 0, destination.Length);
+            var count = Mathf.Min(source.Length, destination.Length);
+            for (var index = 0; index < count; index++)
+            {
+                destination[index] = source[index];
+            }
+        }
+
         private bool TryMoveAnimal(KickLuckyCubeInventorySlotView source, KickLuckyCubeInventorySlotView destination)
         {
             if (source == null
@@ -694,6 +890,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             SetStatus("Moved item.");
+            SaveInventory();
             Refresh();
             return true;
         }
@@ -720,6 +917,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 sourceArray[sourceIndex] = default;
                 SelectInventoryAnimal(index);
                 SetStatus("Moved item to inventory.");
+                SaveInventory();
                 Refresh();
                 return true;
             }
@@ -770,6 +968,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            StopTrainingForAnimalSelection();
             selectedHotbarIndex = index;
             selectedInventoryIndex = -1;
             SetStatus($"Selected {hotbarAnimals[index].AnimalName}.");
@@ -784,6 +983,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            StopTrainingForAnimalSelection();
             selectedInventoryIndex = index;
             selectedHotbarIndex = -1;
             SetStatus($"Selected {inventoryAnimals[index].AnimalName}.");
@@ -800,6 +1000,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Refresh();
         }
 
+        private void StopTrainingForAnimalSelection()
+        {
+            ResolveToolTraining();
+            if (toolTraining != null && toolTraining.IsTraining)
+            {
+                toolTraining.StopTraining();
+            }
+        }
+
         private void ToggleToolTraining()
         {
             ResolveToolTraining();
@@ -808,17 +1017,26 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            if (!toolTraining.IsTraining)
+            if (toolTraining.IsTraining)
+            {
+                toolTraining.StopTraining();
+                SetStatus("Training stopped.");
+                Refresh();
+                return;
+            }
+
+            if (toolTraining.StartTraining())
             {
                 selectedHotbarIndex = -1;
                 selectedInventoryIndex = -1;
                 ClearHandPreview();
+                SetStatus($"Training with {toolTraining.CurrentToolName}: +{toolTraining.CurrentStrengthPerSecond:0}/s.");
+            }
+            else
+            {
+                SetStatus("Cannot train right now.");
             }
 
-            toolTraining.ToggleTraining();
-            SetStatus(toolTraining.IsTraining
-                ? $"Training with {toolTraining.CurrentToolName}: +{toolTraining.CurrentStrengthPerSecond:0}/s."
-                : "Training stopped.");
             Refresh();
         }
 

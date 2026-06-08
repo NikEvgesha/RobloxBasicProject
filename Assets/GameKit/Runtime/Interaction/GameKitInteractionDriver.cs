@@ -12,7 +12,9 @@ namespace RobloxBasicProject.GameKit.Interaction
     {
         [SerializeField] private GameObject actor;
         [SerializeField] private GameKitInteractionPromptView promptView;
+#if !ENABLE_INPUT_SYSTEM
         [SerializeField] private KeyCode fallbackKey = KeyCode.E;
+#endif
         [SerializeField, Min(0f)] private float progressReleaseSpeed = 4f;
 
         private readonly Dictionary<Object, GameKitInteractionTarget> candidates = new Dictionary<Object, GameKitInteractionTarget>();

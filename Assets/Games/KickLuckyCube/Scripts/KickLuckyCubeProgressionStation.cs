@@ -17,6 +17,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
+        [SerializeField] private KickLuckyCubeSpeedShopController speedShop;
         [SerializeField] private KickLuckyCubeTrainingBonusPrompt trainingBonusPrompt;
         [SerializeField] private TextMesh statusLabel;
         [SerializeField, Min(0)] private int baseSpeedCost = 60;
@@ -42,6 +43,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>();
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>();
+            speedShop ??= FindFirstObjectByType<KickLuckyCubeSpeedShopController>(FindObjectsInactive.Include);
             trainingBonusPrompt ??= FindFirstObjectByType<KickLuckyCubeTrainingBonusPrompt>(FindObjectsInactive.Include);
             interactionTarget = GetComponent<GameKitInteractionTarget>();
             interactionTarget.ActorInteracted.AddListener(Interact);
@@ -71,9 +73,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return mode switch
             {
                 StationMode.TrainStrength => true,
-                StationMode.BuySpeedUpgrade => wallet != null
-                    && stats.SpeedUpgradeLevel < maxSpeedLevel
-                    && wallet.SoftCurrency >= SpeedCost,
+                StationMode.BuySpeedUpgrade => speedShop != null
+                    || (wallet != null
+                        && stats.SpeedUpgradeLevel < maxSpeedLevel
+                        && wallet.SoftCurrency >= SpeedCost),
                 StationMode.BuyStrengthTool => wallet != null
                     && stats.StrengthToolTier < maxStrengthToolTier
                     && wallet.SoftCurrency >= ToolCost,
@@ -97,6 +100,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     trainingBonusPrompt?.ShowBonus(strengthGain * 2f, stats.StrengthToolTier);
                     break;
                 case StationMode.BuySpeedUpgrade:
+                    speedShop ??= FindFirstObjectByType<KickLuckyCubeSpeedShopController>(FindObjectsInactive.Include);
+                    if (speedShop != null)
+                    {
+                        speedShop.OpenWindow();
+                        break;
+                    }
+
                     if (wallet.TrySpendSoft(SpeedCost))
                     {
                         stats.AddAnimalSpeed(speedGain);
@@ -130,7 +140,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 StationMode.TrainStrength => $"Train strength\n+{TrainStrengthGain:0} per hold\nTool {stats.SelectedStrengthToolTier}/{stats.StrengthToolTier}\nX for x2",
                 StationMode.BuySpeedUpgrade => stats.SpeedUpgradeLevel >= maxSpeedLevel
                     ? $"Speed maxed\nLv {stats.SpeedUpgradeLevel}/{maxSpeedLevel}\nRun {stats.AnimalSpeed:0.0}"
-                    : $"Buy speed\nCost {SpeedCost} soft\nLv {stats.SpeedUpgradeLevel}/{maxSpeedLevel}",
+                    : $"Open speed shop\nNext {SpeedCost} soft\nLv {stats.SpeedUpgradeLevel}/{maxSpeedLevel}",
                 StationMode.BuyStrengthTool => stats.StrengthToolTier >= maxStrengthToolTier
                     ? $"Tool maxed\nLv {stats.StrengthToolTier}/{maxStrengthToolTier}\n+{TrainStrengthGain:0}/hold"
                     : $"Buy tool\nCost {ToolCost} soft\nNext Lv {stats.StrengthToolTier + 1}",

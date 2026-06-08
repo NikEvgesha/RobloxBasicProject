@@ -8,7 +8,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     {
         [SerializeField] private Transform spawnRoot;
         [SerializeField] private KickLuckyCubeAnimalOption[] animalOptions = Array.Empty<KickLuckyCubeAnimalOption>();
-        [SerializeField] private Vector3 spawnOffset = new Vector3(0f, 0.9f, 0f);
+        [SerializeField] private Vector3 spawnOffset = new Vector3(0f, 0.58f, 0f);
 
         private KickLuckyCubeSpawnedAnimal currentAnimal;
 
@@ -88,7 +88,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var bodyCollider = body.GetComponent<Collider>();
             if (bodyCollider != null)
             {
-                DestroyObject(bodyCollider);
+                DestroyUnityObject(bodyCollider);
             }
 
             var animal = root.AddComponent<KickLuckyCubeSpawnedAnimal>();
@@ -109,7 +109,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            DestroyObject(currentAnimal.gameObject);
+            DestroyUnityObject(currentAnimal.gameObject);
             currentAnimal = null;
         }
 
@@ -182,7 +182,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return new string(source.Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray());
         }
 
-        private static void DestroyObject(UnityEngine.Object target)
+        private static void DestroyUnityObject(UnityEngine.Object target)
         {
             if (target == null)
             {

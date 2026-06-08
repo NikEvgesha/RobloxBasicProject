@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,10 +16,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private Text headlineText;
         [SerializeField] private Text amountText;
         [SerializeField, Min(0.2f)] private float expiresSeconds = 2.4f;
+        [SerializeField] private bool expiresAutomatically;
 
         private float pendingStrength;
         private float expiresAt;
         private bool visible;
+
+        public event Action<float> Claimed;
 
         public bool IsVisible => visible;
         public float PendingStrength => pendingStrength;
@@ -27,13 +31,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
             canvasGroup ??= GetComponent<CanvasGroup>();
-            claimButton ??= GetComponentInChildren<Button>(true);
+            EnsureRuntimeButton();
 
             if (claimButton != null)
             {
+                claimButton.onClick.RemoveListener(ClaimBonusFromButton);
                 claimButton.onClick.AddListener(ClaimBonusFromButton);
             }
 
+            ConfigureCircleOnlyPresentation();
             HideImmediate();
         }
 
@@ -58,7 +64,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            if (Time.unscaledTime >= expiresAt)
+            if (expiresAutomatically && Time.unscaledTime >= expiresAt)
             {
                 HideImmediate();
             }
@@ -74,6 +80,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             pendingStrength = strengthAmount;
             expiresAt = Time.unscaledTime + expiresSeconds;
             visible = true;
+            ConfigureCircleOnlyPresentation();
 
             if (headlineText != null)
             {
@@ -82,7 +89,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (amountText != null)
             {
-                amountText.text = $"+{pendingStrength:0} strength\nPress X";
+                amountText.text = string.Empty;
+                amountText.gameObject.SetActive(false);
             }
 
             if (canvasGroup != null)
@@ -93,6 +101,89 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
+        private void ConfigureCircleOnlyPresentation()
+        {
+            var rootRect = transform as RectTransform;
+            if (rootRect != null)
+            {
+                rootRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 86f);
+                rootRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 86f);
+            }
+
+            var rootImage = GetComponent<Image>();
+            if (rootImage == null)
+            {
+                rootImage = gameObject.AddComponent<Image>();
+            }
+
+            if (rootImage != null)
+            {
+                rootImage.color = new Color(0.05f, 0.11f, 0.05f, 0.74f);
+                rootImage.raycastTarget = true;
+            }
+
+            var iconFrame = transform.Find("IconFrame") as RectTransform;
+            Image iconFrameImage = null;
+            if (iconFrame != null)
+            {
+                iconFrame.anchorMin = new Vector2(0.5f, 0.5f);
+                iconFrame.anchorMax = new Vector2(0.5f, 0.5f);
+                iconFrame.pivot = new Vector2(0.5f, 0.5f);
+                iconFrame.anchoredPosition = Vector2.zero;
+                iconFrame.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 82f);
+                iconFrame.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 82f);
+                iconFrameImage = iconFrame.GetComponent<Image>();
+                if (iconFrameImage != null)
+                {
+                    iconFrameImage.color = new Color(0.14f, 0.92f, 0.22f, 0.92f);
+                    iconFrameImage.raycastTarget = true;
+                }
+            }
+
+            var icon = transform.Find("IconFrame/Icon");
+            if (icon != null)
+            {
+                icon.gameObject.SetActive(false);
+            }
+
+            if (headlineText != null)
+            {
+                var headlineRect = headlineText.transform as RectTransform;
+                if (headlineRect != null)
+                {
+                    headlineRect.anchorMin = new Vector2(0.5f, 0.5f);
+                    headlineRect.anchorMax = new Vector2(0.5f, 0.5f);
+                    headlineRect.pivot = new Vector2(0.5f, 0.5f);
+                    headlineRect.anchoredPosition = Vector2.zero;
+                    headlineRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 82f);
+                    headlineRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 82f);
+                }
+
+                headlineText.text = "x2";
+                headlineText.alignment = TextAnchor.MiddleCenter;
+                headlineText.fontSize = 38;
+                headlineText.raycastTarget = false;
+            }
+
+            if (amountText != null)
+            {
+                amountText.text = string.Empty;
+                amountText.gameObject.SetActive(false);
+            }
+
+            if (claimButton != null)
+            {
+                claimButton.targetGraphic = iconFrameImage != null ? iconFrameImage : rootImage;
+                claimButton.interactable = visible;
+            }
+        }
+
+        private void EnsureRuntimeButton()
+        {
+            canvasGroup ??= gameObject.GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+            claimButton = gameObject.GetComponent<Button>() ?? gameObject.AddComponent<Button>();
+        }
+
         public bool ClaimBonus()
         {
             if (!visible || pendingStrength <= 0f)
@@ -101,8 +192,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
-            stats?.AddStrength(pendingStrength);
+            var claimedStrength = pendingStrength;
+            stats?.AddStrength(claimedStrength);
             HideImmediate();
+            Claimed?.Invoke(claimedStrength);
             return true;
         }
 
@@ -121,6 +214,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 canvasGroup.alpha = 0f;
                 canvasGroup.interactable = false;
                 canvasGroup.blocksRaycasts = false;
+            }
+
+            if (claimButton != null)
+            {
+                claimButton.interactable = false;
             }
         }
 

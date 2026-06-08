@@ -24,8 +24,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeRarityZone[] zones = Array.Empty<KickLuckyCubeRarityZone>();
         [SerializeField] private bool hideCubeUntilKickInPlayMode = true;
         [SerializeField] private string carryAnchorName = "KLC_CarryAnchor";
+        [SerializeField, Min(0.01f)] private float powerSelectionMoveCancelDistance = 0.16f;
         [SerializeField, Min(0f)] private float kickHeightOffset = 0.7f;
-        [SerializeField, Min(0f)] private float landingMarkerSurfaceOffset = 0.08f;
         [SerializeField, Min(0f)] private float baseKickDistance = 18f;
         [SerializeField, Min(0f)] private float distancePerStrength = 0.23f;
         [SerializeField, Min(1f)] private float minimumDistance = 10f;
@@ -50,6 +50,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private Vector3 cubeOriginalLocalScale = Vector3.one;
         private bool cubeOriginalTransformStored;
         private GameObject cubePreviewActor;
+        private GameObject powerSelectionActor;
+        private Vector3 powerSelectionActorStartPosition;
+        private bool powerMeterVisualsConfigured;
 
         public event Action<KickLuckyCubeKickResult> Landed;
 
@@ -85,7 +88,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (landingSurface == null)
             {
                 landingSurface = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-                    .FirstOrDefault(found => found.name == "GUIDE_MainKickCorridor_FloorArea");
+                    .FirstOrDefault(found => found.name == "Floor_FlatGreenGrass");
             }
 
             if (zones == null || zones.Length == 0)
@@ -95,6 +98,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             CacheCubeOriginalTransform();
             ConfigureCubeTrail();
+            ConfigurePowerMeterVisuals();
             SortZones();
             ResolveKickOrigin(null, out lastKickOriginPosition, out lastKickOriginRotation);
             HidePowerMeter();
@@ -122,6 +126,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             if (!isSelectingKickPower)
             {
+                return;
+            }
+
+            if (HasPowerSelectionActorMoved())
+            {
+                CancelKickPowerSelection("Kick cancelled.\nStand still while choosing power.");
                 return;
             }
 
@@ -230,14 +240,20 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public void CancelKickPowerSelection()
         {
+            CancelKickPowerSelection(null);
+        }
+
+        private void CancelKickPowerSelection(string statusOverride)
+        {
             if (!isSelectingKickPower)
             {
                 return;
             }
 
             isSelectingKickPower = false;
+            powerSelectionActor = null;
             HidePowerMeter();
-            RefreshStatus();
+            RefreshStatus(statusOverride);
 
             if (Application.isPlaying && hideCubeUntilKickInPlayMode)
             {
@@ -252,6 +268,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             currentPower = initialPower;
             powerDirection = 1f;
             isSelectingKickPower = true;
+            powerSelectionActor = actor;
+            powerSelectionActorStartPosition = actor != null ? actor.transform.position : pendingKickOriginPosition;
 
             SetCubeTrailEmitting(false);
             SetCubeVisible(true);
@@ -279,6 +297,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             isSelectingKickPower = false;
+            powerSelectionActor = null;
             HidePowerMeter();
 
             lastKickOriginPosition = pendingKickOriginPosition;
@@ -313,6 +332,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             LastAnimalPool = string.Empty;
             LastDistance = 0f;
             cubePreviewActor = null;
+            powerSelectionActor = null;
             SetCubeTrailEmitting(false);
 
             if (cube != null)
@@ -380,6 +400,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             IsKicking = false;
             isSelectingKickPower = false;
+            powerSelectionActor = null;
             HidePowerMeter();
             DetachCubeFromHandsForFlight();
             SetCubeVisible(true);
@@ -395,7 +416,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             LastAnimalPool = string.Empty;
             RefreshStatus("Kicking...");
 
-            var end = start + Vector3.forward * distance;
+            var endXZ = start + Vector3.forward * distance;
+            var endSurfaceY = ResolveLandingSurfaceY(endXZ);
+            var end = new Vector3(endXZ.x, endSurfaceY + ResolveCubeHalfHeight(), endXZ.z);
             var elapsed = 0f;
 
             while (elapsed < flightSeconds)
@@ -435,11 +458,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (landingMarker != null)
             {
-                landingMarker.gameObject.SetActive(true);
-                landingMarker.position = new Vector3(
-                    resultLandingPosition.x,
-                    surfaceY + landingMarkerSurfaceOffset,
-                    resultLandingPosition.z);
+                landingMarker.gameObject.SetActive(false);
             }
 
             SetCubeVisible(false);
@@ -529,6 +548,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void RefreshPowerMeter()
         {
+            ConfigurePowerMeterVisuals();
+
             if (powerMeterGroup != null)
             {
                 powerMeterGroup.alpha = isSelectingKickPower ? 1f : 0f;
@@ -538,6 +559,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (powerMeterFill != null)
             {
+                powerMeterFill.type = Image.Type.Filled;
+                powerMeterFill.fillMethod = Image.FillMethod.Vertical;
+                powerMeterFill.fillOrigin = (int)Image.OriginVertical.Bottom;
+                powerMeterFill.color = new Color(0.22f, 1f, 0.14f, 0.92f);
                 powerMeterFill.fillAmount = Mathf.Clamp01(currentPower);
             }
 
@@ -578,6 +603,73 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 powerMeterText.text = string.Empty;
             }
+        }
+
+        private void ConfigurePowerMeterVisuals()
+        {
+            if (powerMeterVisualsConfigured || powerMeterFill == null)
+            {
+                return;
+            }
+
+            var fillRect = powerMeterFill.rectTransform;
+            var barParent = fillRect.parent as RectTransform;
+            if (barParent == null)
+            {
+                powerMeterVisualsConfigured = true;
+                return;
+            }
+
+            CreatePowerBand(barParent, "KLC_PowerBand_Red", 0f, 0.34f, new Color(1f, 0.12f, 0.08f, 0.72f));
+            CreatePowerBand(barParent, "KLC_PowerBand_Yellow", 0.34f, 0.68f, new Color(1f, 0.78f, 0.08f, 0.72f));
+            CreatePowerBand(barParent, "KLC_PowerBand_Green", 0.68f, 1f, new Color(0.15f, 1f, 0.12f, 0.72f));
+
+            powerMeterFill.type = Image.Type.Filled;
+            powerMeterFill.fillMethod = Image.FillMethod.Vertical;
+            powerMeterFill.fillOrigin = (int)Image.OriginVertical.Bottom;
+            powerMeterFill.color = new Color(0.22f, 1f, 0.14f, 0.92f);
+            powerMeterFill.raycastTarget = false;
+            powerMeterFill.transform.SetAsLastSibling();
+
+            if (powerMeterMarker != null)
+            {
+                powerMeterMarker.SetAsLastSibling();
+            }
+
+            if (powerMeterText != null)
+            {
+                powerMeterText.transform.SetAsLastSibling();
+            }
+
+            powerMeterVisualsConfigured = true;
+        }
+
+        private static void CreatePowerBand(RectTransform parent, string bandName, float minY, float maxY, Color color)
+        {
+            var existing = parent.Find(bandName);
+            var bandTransform = existing as RectTransform;
+            Image bandImage;
+
+            if (bandTransform == null)
+            {
+                var bandObject = new GameObject(bandName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                bandTransform = bandObject.GetComponent<RectTransform>();
+                bandTransform.SetParent(parent, false);
+                bandImage = bandObject.GetComponent<Image>();
+            }
+            else
+            {
+                bandImage = bandTransform.GetComponent<Image>() ?? bandTransform.gameObject.AddComponent<Image>();
+            }
+
+            bandTransform.anchorMin = new Vector2(0f, minY);
+            bandTransform.anchorMax = new Vector2(1f, maxY);
+            bandTransform.offsetMin = Vector2.zero;
+            bandTransform.offsetMax = Vector2.zero;
+            bandTransform.SetAsFirstSibling();
+
+            bandImage.color = color;
+            bandImage.raycastTarget = false;
         }
 
         private void SortZones()
@@ -649,6 +741,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private float ResolveLandingSurfaceY(Vector3 landingPosition)
         {
+            if (TryResolvePhysicsSurfaceY(landingPosition, out var physicsY))
+            {
+                return physicsY;
+            }
+
             if (landingSurface != null)
             {
                 var surfaceRenderer = landingSurface.GetComponentInChildren<Renderer>();
@@ -660,13 +757,85 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return landingSurface.position.y;
             }
 
-            var rayOrigin = new Vector3(landingPosition.x, lastKickOriginPosition.y + arcHeight + 20f, landingPosition.z);
-            if (Physics.Raycast(rayOrigin, Vector3.down, out var hit, 200f, ~0, QueryTriggerInteraction.Ignore))
+            return lastKickOriginPosition.y;
+        }
+
+        private static bool TryResolvePhysicsSurfaceY(Vector3 landingPosition, out float surfaceY)
+        {
+            var rayOrigin = new Vector3(landingPosition.x, landingPosition.y + 120f, landingPosition.z);
+            var hits = Physics
+                .RaycastAll(rayOrigin, Vector3.down, 240f, ~0, QueryTriggerInteraction.Ignore)
+                .OrderBy(hit => hit.distance);
+
+            foreach (var hit in hits)
             {
-                return hit.point.y;
+                if (hit.collider == null || ShouldIgnoreLandingCollider(hit.collider))
+                {
+                    continue;
+                }
+
+                surfaceY = hit.point.y;
+                return true;
             }
 
-            return lastKickOriginPosition.y;
+            surfaceY = 0f;
+            return false;
+        }
+
+        private static bool ShouldIgnoreLandingCollider(Collider collider)
+        {
+            return collider.isTrigger
+                || collider.GetComponentInParent<KickLuckyCubeRarityZone>() != null
+                || collider.GetComponentInParent<KickLuckyCubePlayerController>() != null
+                || collider.GetComponentInParent<KickLuckyCubeAnimalRunner>() != null
+                || collider.GetComponentInParent<KickLuckyCubeWaveChaseController>() != null
+                || IsBoundaryWallCollider(collider)
+                || collider.name.StartsWith("KLC_Zone_", StringComparison.Ordinal)
+                || IsGuideCollider(collider);
+        }
+
+        private static bool IsBoundaryWallCollider(Collider collider)
+        {
+            var current = collider.transform;
+            while (current != null)
+            {
+                if (current.name == "Wall_Left_Tan" || current.name == "Wall_Right_Tan")
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool IsGuideCollider(Collider collider)
+        {
+            var current = collider.transform;
+            while (current != null)
+            {
+                if (current.name.StartsWith("GUIDE_", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private bool HasPowerSelectionActorMoved()
+        {
+            if (powerSelectionActor == null || powerSelectionMoveCancelDistance <= 0f)
+            {
+                return false;
+            }
+
+            var delta = powerSelectionActor.transform.position - powerSelectionActorStartPosition;
+            delta.y = 0f;
+            return delta.sqrMagnitude >= powerSelectionMoveCancelDistance * powerSelectionMoveCancelDistance;
         }
 
         private float ResolveCubeHalfHeight()

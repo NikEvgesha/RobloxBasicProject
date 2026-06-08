@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace RobloxBasicProject.Games.KickLuckyCube
 {
+    [DefaultExecutionOrder(100)]
     public sealed class KickLuckyCubePlayerKickBoundary : MonoBehaviour
     {
         [SerializeField] private GameObject player;
@@ -13,7 +14,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             ResolvePlayer();
         }
 
-        private void LateUpdate()
+        private void Update()
         {
             ResolvePlayer();
 

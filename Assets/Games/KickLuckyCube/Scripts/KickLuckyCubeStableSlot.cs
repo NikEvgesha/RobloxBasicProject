@@ -8,8 +8,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     public sealed class KickLuckyCubeStableSlot : MonoBehaviour, GameKitInteractionCondition
     {
         private const string AnimalNameKey = "AnimalName";
+        private const string AnimalJsonKey = "AnimalJson";
         private const string PendingSoftKey = "PendingSoft";
         private const string SavedAtKey = "SavedAt";
+        private const string UpgradeLevelKey = "UpgradeLevel";
 
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
         [SerializeField] private Transform animalAnchor;
@@ -19,17 +21,31 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0f)] private float incomeUpdateSeconds = 1f;
         [SerializeField, Min(1f)] private float saveIntervalSeconds = 5f;
         [SerializeField, Min(0f)] private float offlineIncomeCapSeconds = 7200f;
+        [SerializeField, Min(1)] private int upgradeLevel = 1;
+        [SerializeField, Min(1)] private int maxUpgradeLevel = 10;
+        [SerializeField, Min(0)] private int baseUpgradeCost = 150;
+        [SerializeField, Min(1f)] private float upgradeCostMultiplier = 1.65f;
+        [SerializeField, Min(0f)] private float incomeBonusPerLevel = 0.2f;
         [SerializeField] private bool saveInPlayerPrefs = true;
 
         private KickLuckyCubeSpawnedAnimal placedAnimal;
+        private KickLuckyCubeInventoryAnimal placedInventoryAnimal;
         private float pendingSoft;
         private float incomeTimer;
         private float saveTimer;
 
         public KickLuckyCubeSpawnedAnimal PlacedAnimal => placedAnimal;
+        public string StableSlotId => stableSlotId;
         public bool IsOccupied => placedAnimal != null;
         public int PendingSoft => Mathf.FloorToInt(pendingSoft);
-        public int IncomePerSecond => placedAnimal != null ? placedAnimal.IncomePerSecond : 0;
+        public int BaseIncomePerSecond => placedAnimal != null ? placedAnimal.IncomePerSecond : 0;
+        public int IncomePerSecond => GetBoostedIncome(BaseIncomePerSecond);
+        public int UpgradeLevel => upgradeLevel;
+        public int MaxUpgradeLevel => maxUpgradeLevel;
+        public float IncomeMultiplier => GetIncomeMultiplier(upgradeLevel);
+        public bool CanUpgrade => upgradeLevel < maxUpgradeLevel;
+        public int NextUpgradeCost => CanUpgrade ? Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(upgradeCostMultiplier, upgradeLevel - 1)) : 0;
+        public float NextIncomeMultiplier => GetIncomeMultiplier(Mathf.Min(maxUpgradeLevel, upgradeLevel + 1));
 
         private void Awake()
         {
@@ -37,12 +53,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (animalAnchor == null)
             {
-                animalAnchor = transform;
+                animalAnchor = FindChildByNamePart("MobAnchor") ?? transform;
+            }
+
+            if (statusLabel == null)
+            {
+                var existingLabel = GetComponentInChildren<TextMesh>(true);
+                statusLabel = existingLabel != null ? existingLabel : CreateStatusLabel();
             }
 
             if (string.IsNullOrWhiteSpace(stableSlotId))
             {
-                stableSlotId = gameObject.name;
+                stableSlotId = BuildStableSlotId();
             }
 
             LoadSlot();
@@ -51,7 +73,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void Update()
         {
-            if (placedAnimal == null || placedAnimal.IncomePerSecond <= 0)
+            if (placedAnimal == null || IncomePerSecond <= 0)
             {
                 return;
             }
@@ -64,7 +86,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var ticks = Mathf.FloorToInt(incomeTimer / incomeUpdateSeconds);
             incomeTimer -= ticks * incomeUpdateSeconds;
-            pendingSoft += placedAnimal.IncomePerSecond * ticks;
+            pendingSoft += IncomePerSecond * ticks;
             RefreshLabel();
 
             saveTimer += ticks * incomeUpdateSeconds;
@@ -98,6 +120,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             placedAnimal = animal;
+            placedInventoryAnimal = KickLuckyCubeInventoryAnimal.FromSpawnedAnimal(animal);
             incomeTimer = 0f;
             placedAnimal.SetCarried(animalAnchor);
 
@@ -108,6 +131,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 runner.enabled = false;
             }
 
+            RefreshLabel();
+            SaveSlot();
+            return true;
+        }
+
+        public bool TryPlace(KickLuckyCubeInventoryAnimal animal)
+        {
+            if (!animal.IsValid || placedAnimal != null)
+            {
+                return false;
+            }
+
+            placedInventoryAnimal = animal;
+            placedAnimal = CreateStableAnimal(animal);
+            incomeTimer = 0f;
             RefreshLabel();
             SaveSlot();
             return true;
@@ -125,6 +163,25 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             RefreshLabel();
             SaveSlot();
             return amount;
+        }
+
+        public bool TryUpgrade(KickLuckyCubeWallet wallet)
+        {
+            if (wallet == null || !CanUpgrade)
+            {
+                return false;
+            }
+
+            var cost = NextUpgradeCost;
+            if (!wallet.TrySpendSoft(cost))
+            {
+                return false;
+            }
+
+            upgradeLevel = Mathf.Clamp(upgradeLevel + 1, 1, maxUpgradeLevel);
+            RefreshLabel();
+            SaveSlot();
+            return true;
         }
 
         public void AddPendingForPrototype(int amount)
@@ -147,8 +204,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             placedAnimal = null;
+            placedInventoryAnimal = default;
             pendingSoft = 0f;
             incomeTimer = 0f;
+            upgradeLevel = 1;
             RefreshLabel();
             SaveSlot();
         }
@@ -161,8 +220,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             statusLabel.text = placedAnimal == null
-                ? "Empty stable"
-                : $"{placedAnimal.AnimalName}\n+{placedAnimal.IncomePerSecond}/s\nClaim: {PendingSoft}";
+                ? $"Empty stable\nLv {upgradeLevel} x{IncomeMultiplier:0.0}\nSelect mob + E"
+                : $"{placedAnimal.AnimalName}\n+{IncomePerSecond}/s x{IncomeMultiplier:0.0}\nClaim: {PendingSoft}";
         }
 
         private static void DestroyAnimalObject(KickLuckyCubeSpawnedAnimal animal)
@@ -188,7 +247,24 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            LoadUpgradeLevel();
+
             var animalName = PlayerPrefs.GetString(GetKey(AnimalNameKey), string.Empty);
+            var animalJson = PlayerPrefs.GetString(GetKey(AnimalJsonKey), string.Empty);
+            if (!string.IsNullOrWhiteSpace(animalJson))
+            {
+                var savedAnimal = JsonUtility.FromJson<KickLuckyCubeInventoryAnimal>(animalJson);
+                if (savedAnimal.IsValid)
+                {
+                    placedInventoryAnimal = savedAnimal;
+                    placedAnimal = CreateStableAnimal(savedAnimal);
+                    pendingSoft = Mathf.Max(0f, PlayerPrefs.GetFloat(GetKey(PendingSoftKey), 0f));
+                    pendingSoft += IncomePerSecond * GetOfflineElapsedSeconds();
+                    SaveSlot();
+                    return;
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(animalName))
             {
                 pendingSoft = 0f;
@@ -205,18 +281,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var option = options.First(candidate => string.Equals(candidate.AnimalName, animalName, StringComparison.Ordinal));
 
+            placedInventoryAnimal = new KickLuckyCubeInventoryAnimal(
+                "stable_" + stableSlotId,
+                option.AnimalName,
+                option.Rarity,
+                option.BodyColor,
+                option.SellValue,
+                option.IncomePerSecond);
+            placedAnimal = CreateStableAnimal(placedInventoryAnimal);
             pendingSoft = Mathf.Max(0f, PlayerPrefs.GetFloat(GetKey(PendingSoftKey), 0f));
-
-            var savedAtText = PlayerPrefs.GetString(GetKey(SavedAtKey), string.Empty);
-            if (long.TryParse(savedAtText, out var savedAtUnix))
-            {
-                var elapsed = Mathf.Min(
-                    offlineIncomeCapSeconds,
-                    Mathf.Max(0f, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - savedAtUnix));
-                pendingSoft += option.IncomePerSecond * elapsed;
-            }
-
-            placedAnimal = CreateStableAnimal(option);
+            pendingSoft += IncomePerSecond * GetOfflineElapsedSeconds();
             SaveSlot();
         }
 
@@ -227,20 +301,37 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            PlayerPrefs.SetInt(GetKey(UpgradeLevelKey), upgradeLevel);
+
             if (placedAnimal == null)
             {
                 ClearSavedSlot();
                 return;
             }
 
+            if (!placedInventoryAnimal.IsValid)
+            {
+                placedInventoryAnimal = KickLuckyCubeInventoryAnimal.FromSpawnedAnimal(placedAnimal);
+            }
+
+            PlayerPrefs.SetString(GetKey(AnimalJsonKey), JsonUtility.ToJson(placedInventoryAnimal));
             PlayerPrefs.SetString(GetKey(AnimalNameKey), placedAnimal.AnimalName);
             PlayerPrefs.SetFloat(GetKey(PendingSoftKey), pendingSoft);
             PlayerPrefs.SetString(GetKey(SavedAtKey), DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
         }
 
+        private void LoadUpgradeLevel()
+        {
+            upgradeLevel = Mathf.Clamp(
+                PlayerPrefs.GetInt(GetKey(UpgradeLevelKey), upgradeLevel),
+                1,
+                maxUpgradeLevel);
+        }
+
         private void ClearSavedSlot()
         {
             PlayerPrefs.DeleteKey(GetKey(AnimalNameKey));
+            PlayerPrefs.DeleteKey(GetKey(AnimalJsonKey));
             PlayerPrefs.DeleteKey(GetKey(PendingSoftKey));
             PlayerPrefs.DeleteKey(GetKey(SavedAtKey));
         }
@@ -248,6 +339,29 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private string GetKey(string suffix)
         {
             return saveKeyPrefix + stableSlotId + "." + suffix;
+        }
+
+        private int GetBoostedIncome(int baseIncome)
+        {
+            return baseIncome > 0 ? Mathf.Max(1, Mathf.RoundToInt(baseIncome * IncomeMultiplier)) : 0;
+        }
+
+        private float GetIncomeMultiplier(int level)
+        {
+            return 1f + Mathf.Max(0, level - 1) * incomeBonusPerLevel;
+        }
+
+        private KickLuckyCubeSpawnedAnimal CreateStableAnimal(KickLuckyCubeInventoryAnimal inventoryAnimal)
+        {
+            var option = new KickLuckyCubeAnimalOption(
+                inventoryAnimal.Rarity,
+                inventoryAnimal.AnimalName,
+                inventoryAnimal.BodyColor,
+                inventoryAnimal.SellValue,
+                inventoryAnimal.IncomePerSecond,
+                1f);
+
+            return CreateStableAnimal(option);
         }
 
         private KickLuckyCubeSpawnedAnimal CreateStableAnimal(KickLuckyCubeAnimalOption option)
@@ -275,6 +389,61 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             animal.SetBodyRenderer(body.GetComponent<Renderer>());
             animal.Configure(option, 0f);
             return animal;
+        }
+
+        private float GetOfflineElapsedSeconds()
+        {
+            var savedAtText = PlayerPrefs.GetString(GetKey(SavedAtKey), string.Empty);
+            if (!long.TryParse(savedAtText, out var savedAtUnix))
+            {
+                return 0f;
+            }
+
+            return Mathf.Min(
+                offlineIncomeCapSeconds,
+                Mathf.Max(0f, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - savedAtUnix));
+        }
+
+        private Transform FindChildByNamePart(string namePart)
+        {
+            var children = GetComponentsInChildren<Transform>(true);
+            return children.FirstOrDefault(child =>
+                child != transform
+                && child.name.IndexOf(namePart, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private TextMesh CreateStatusLabel()
+        {
+            var labelObject = new GameObject("KLC_StableSlot_StatusLabel");
+            labelObject.transform.SetParent(transform, false);
+            labelObject.transform.localPosition = new Vector3(0f, 1.2f, -0.9f);
+            labelObject.transform.localRotation = Quaternion.Euler(60f, 0f, 0f);
+            labelObject.transform.localScale = Vector3.one;
+
+            var label = labelObject.AddComponent<TextMesh>();
+            label.anchor = TextAnchor.MiddleCenter;
+            label.alignment = TextAlignment.Center;
+            label.fontSize = 36;
+            label.characterSize = 0.045f;
+            label.color = Color.white;
+            return label;
+        }
+
+        private string BuildStableSlotId()
+        {
+            var cursor = transform.parent;
+            while (cursor != null)
+            {
+                if (cursor.name.StartsWith("KLC_PlotInstance_", StringComparison.Ordinal)
+                    || cursor.name.StartsWith("KLC_PlotTemplate_", StringComparison.Ordinal))
+                {
+                    return cursor.name + "." + gameObject.name;
+                }
+
+                cursor = cursor.parent;
+            }
+
+            return gameObject.name;
         }
 
         private static void DestroyAnimalCollider(Collider target)

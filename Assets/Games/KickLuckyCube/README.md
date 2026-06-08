@@ -23,13 +23,16 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - Selecting a mob slot shows that mob as a temporary hand preview under `KLC_CarryAnchor`.
 - Clicking or pressing the already-selected mob slot clears selection and removes the hand preview.
 - Walk to the animal sell kiosk pad to show the `Open sell shop` prompt; press `E` to open the larger sell window with square mob cards in a 3-column scroll grid; the window closes automatically when leaving the sell zone.
-- Final inventory persistence and stable placement from inventory are still pending.
+- Inventory persistence is active: returned mobs, hotbar/storage placement, selected mob, and stable placement payloads are saved in PlayerPrefs during Play Mode.
 - The old tool belt UI is hidden in Play Mode; click slot 1 or press `1` to start/stop training with the selected tool in-hand.
-- Stable animals generate soft currency over time; collect it on the green stable button.
-- Stable slot animals and pending income save in PlayerPrefs during Play Mode.
-- Spend soft on the blue speed station and yellow tool station.
+- Stable animals generate soft currency over time; collect from an individual stable `CollectSpot` or from the green collect-all board.
+- Stable slot animals, pending income, offline income, and per-slot booster levels save in PlayerPrefs during Play Mode.
+- Spend soft in the runtime Speed Upgrades and Training Equipment shops.
 - Train strength by toggling the selected bottom-bar tool: named tool tiers (dumbbell, kettlebell, barbell, and stronger variants) appear in hand, make the player squat, grant tier-based strength every second, and periodically create one `x2` claim circle.
 - During tool training, claim the temporary `x2` prompt with `X` or by clicking it; a new circle will not spawn while one is already visible.
+- Style shop is opened by holding `E` near the style kiosk and buys/equips lucky cube color skins.
+- Future feature spots are wired for weather rarity boosts, selected-mob exchange, exclusive epic mobs, and the one-time rating gift.
+- The leaderboard board is filled in Play Mode with local score and fake neighbor rankings.
 - Open Shop from the left-side button to buy speed, tool, and strength boost prototype cards.
 - Open Rewards from the left-side button to claim playtime soft/hard rewards.
 - Open Wheel from the left-side button to spin for soft, hard, or strength rewards.
@@ -58,15 +61,16 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - Reusable root modules are grouped as `Template_FrontBoards`, `Template_CenterAisleGroup`, `Template_BackWallGroup`, and `Template_FloorExpansion`.
 - `Template_BaseUpgradeBoard` is the placeholder for buying upward base expansion / extra floors.
 - `Template_CollectAllAdRewardBoard` is the placeholder for the ad-gated collect-all reward board.
-- Each of the ten `Template_StableSlot_*` objects is a grouped stable module with a matching child `MobAnchor`, `CollectSpot` placeholder, and `UpgradeBoard` booster placeholder.
+- Each of the ten `Template_StableSlot_*` objects is a grouped stable module with a matching child `MobAnchor`, `CollectSpot`, and `UpgradeBoard`.
+- `KLC_PlotInstance_MOVE_PlotSlot_01` is runtime-bound by `KickLuckyCubeStablePlotRuntimeBinder`, which adds stable logic, collect triggers, and per-slot booster interactions to the ten stable modules.
 - `Template_FloorExpansion` contains visual-only posts, ladder, and outline beams for future upper-floor expansion.
 - Move `MOVE_PlotSlot_01..04` to define placed plot locations.
 - `KLC_PlotSlot_StaticInstances` contains edit-mode plot copies placed from the reusable template on every current `MOVE_PlotSlot`.
 - `KLC_PlotTemplate_EditSource` is kept inactive as the reusable edit source; enable it only when editing the template shape.
 - Runtime plot auto-allocation is currently disabled to avoid duplicate plots while static scene placement is being tuned.
 - `KLC_HubKiosks_Blockout/KLC_ImmediateKiosks_LeftToRight` holds the current left-to-right hub kiosks: animal sell, style shop, speed upgrade, weights training, and leaderboard.
-- Sell, speed, and weights kiosks have visible stand pads; style shop uses a hold-interaction anchor without a visible stand pad.
-- `KLC_HubKiosks_Blockout/KLC_FutureFeatureSpots` reserves visual-only spots for weather machine, animal exchange, epic mob shop, and rating gift stand.
+- Sell, speed, and weights kiosks have visible stand pads; style shop uses a hold-interaction anchor and opens the runtime cube-style shop.
+- `KLC_HubKiosks_Blockout/KLC_FutureFeatureSpots` is runtime-bound in Play Mode for weather machine, animal exchange, epic mob shop, and rating gift stand prototypes.
 - Plot template, placed plot copies, and hub kiosk blockout meshes are converted to `ProBuilderMesh`; `TextMesh` labels remain regular text objects.
 - Older noisy prototype visual groups are disabled while the layout blockout is being placed.
 
@@ -83,11 +87,12 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 9. Return to the kick start point before the wave catches the animal.
 10. Add the returned animal to the bottom bar or inventory window.
 11. Drag mobs between the full inventory and the four mob slots on the bottom bar.
-12. Sell inventory mobs for currency through the sell kiosk or place them in a stable. Stable placement from inventory is pending.
+12. Sell inventory mobs for currency through the sell kiosk or place them in a stable.
 13. Stable animals generate soft currency over time.
 14. Spend soft on animal speed or the next strength tool.
 15. Toggle the current tool to train strength per second, claim optional `x2` prompts, and kick farther.
 16. Rebirth resets progression for a higher money multiplier.
+17. Use future-feature spots for weather rarity boosts, selected-mob exchange, exclusive epic mobs, and the one-time rating gift.
 
 ## Boundaries
 

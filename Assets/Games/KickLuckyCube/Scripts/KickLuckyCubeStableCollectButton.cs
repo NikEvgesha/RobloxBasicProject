@@ -10,16 +10,20 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeStableSlot[] stableSlots;
         [SerializeField] private TextMesh statusLabel;
 
-        public int PendingSoft => stableSlots != null ? stableSlots.Sum(slot => slot != null ? slot.PendingSoft : 0) : 0;
+        public int PendingSoft
+        {
+            get
+            {
+                ResolveSlots();
+                return stableSlots != null ? stableSlots.Sum(slot => slot != null ? slot.PendingSoft : 0) : 0;
+            }
+        }
 
         private void Awake()
         {
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>();
 
-            if (stableSlots == null || stableSlots.Length == 0)
-            {
-                stableSlots = FindObjectsByType<KickLuckyCubeStableSlot>(FindObjectsSortMode.None);
-            }
+            ResolveSlots();
 
             RefreshLabel();
         }
@@ -70,6 +74,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             statusLabel.text = PendingSoft > 0
                 ? $"Collect {PendingSoft} soft"
                 : "Stable collect";
+        }
+
+        private void ResolveSlots()
+        {
+            if (stableSlots != null && stableSlots.Length > 0 && stableSlots.All(slot => slot != null))
+            {
+                return;
+            }
+
+            stableSlots = FindObjectsByType<KickLuckyCubeStableSlot>(FindObjectsSortMode.None);
         }
     }
 }

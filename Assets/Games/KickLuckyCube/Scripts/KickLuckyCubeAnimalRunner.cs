@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 #if ENABLE_INPUT_SYSTEM
@@ -10,13 +11,33 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     public sealed class KickLuckyCubeAnimalRunner : MonoBehaviour
     {
         [SerializeField] private KickLuckyCubeSpawnedAnimal animal;
+        [SerializeField] private Transform cameraTransform;
         [SerializeField] private KickLuckyCubeMobileInput mobileInput;
         [SerializeField, Min(0f)] private float speed = 7f;
+        [SerializeField, Min(0f)] private float rotationSharpness = 14f;
         [SerializeField] private bool controlEnabled;
         [SerializeField] private float returnLineZ;
         [SerializeField, Min(0f)] private float returnTolerance = 0.8f;
+        [SerializeField, Min(0f)] private float groundOffset = 0.58f;
+        [SerializeField, Min(0.1f)] private float groundRayHeight = 8f;
+        [SerializeField, Min(0.1f)] private float groundRayDistance = 24f;
+        [SerializeField, Min(0f)] private float groundSnapSharpness = 22f;
+        [SerializeField, Min(0f)] private float upwardGroundSnapSpeed = 4.5f;
+        [SerializeField, Min(0f)] private float downwardGroundSnapSpeed = 14f;
+        [SerializeField, Min(0f)] private float rendererGroundBoundsPadding = 0.2f;
+        [SerializeField, Min(0f)] private float jumpHeight = 1.35f;
+        [SerializeField] private float gravity = -30f;
+        [SerializeField, Min(0f)] private float sideBoundaryPadding = 0.75f;
+        [SerializeField] private Transform fallbackGroundSurface;
 
         public event Action<KickLuckyCubeAnimalRunner> ReturnedToLine;
+
+        private Bounds[] activeRendererGroundBounds = Array.Empty<Bounds>();
+        private float verticalVelocity;
+        private bool isGrounded = true;
+        private bool hasSideBounds;
+        private float sideMinX;
+        private float sideMaxX;
 
         public KickLuckyCubeSpawnedAnimal Animal => animal;
         public bool ControlEnabled => controlEnabled;
@@ -25,6 +46,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void Awake()
         {
             mobileInput ??= FindFirstObjectByType<KickLuckyCubeMobileInput>(FindObjectsInactive.Include);
+            ResolveCameraTransform();
+
+            if (fallbackGroundSurface == null)
+            {
+                fallbackGroundSurface = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                    .FirstOrDefault(found => found.name == "Floor_FlatGreenGrass");
+            }
+
+            CacheActiveRendererGroundSurfaces();
+            CacheSideBounds();
         }
 
         public void Configure(KickLuckyCubeSpawnedAnimal spawnedAnimal, float runnerSpeed)
@@ -37,6 +68,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             returnLineZ = targetReturnLineZ;
             controlEnabled = true;
+            verticalVelocity = -1f;
+            isGrounded = true;
+            ResolveCameraTransform();
         }
 
         public void StopRun()
@@ -57,24 +91,33 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            var deltaTime = Time.unscaledDeltaTime;
+            ResolveCameraTransform();
+
             var input = ReadMoveInput();
             if (mobileInput != null && mobileInput.MoveInput.sqrMagnitude > input.sqrMagnitude)
             {
-                input = mobileInput.MoveInput;
+                input = Vector2.ClampMagnitude(mobileInput.MoveInput, 1f);
             }
-            var movement = new Vector3(input.x, 0f, input.y);
+
+            var movement = GetCameraRelativeMove(input);
             if (movement.sqrMagnitude > 1f)
             {
                 movement.Normalize();
             }
 
+            var nextPosition = transform.position + movement * (speed * deltaTime);
+            ClampToSideBounds(ref nextPosition);
+            ApplyVerticalMotion(ref nextPosition, deltaTime);
+            ClampToSideBounds(ref nextPosition);
+            transform.position = nextPosition;
+
             if (movement.sqrMagnitude > 0.0001f)
             {
-                transform.position += movement * (speed * Time.deltaTime);
                 transform.rotation = Quaternion.Slerp(
                     transform.rotation,
                     Quaternion.LookRotation(movement, Vector3.up),
-                    1f - Mathf.Exp(-16f * Time.deltaTime));
+                    1f - Mathf.Exp(-rotationSharpness * deltaTime));
             }
 
             if (transform.position.z <= returnLineZ + returnTolerance)
@@ -114,10 +157,271 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 input.y += 1f;
             }
 
-            return input;
+            return Vector2.ClampMagnitude(input, 1f);
 #else
-            return new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+            return Vector2.ClampMagnitude(new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")), 1f);
 #endif
+        }
+
+        private static bool ReadJumpPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = Keyboard.current;
+            return keyboard != null && keyboard.spaceKey.wasPressedThisFrame;
+#else
+            return Input.GetKeyDown(KeyCode.Space);
+#endif
+        }
+
+        private void ResolveCameraTransform()
+        {
+            if (cameraTransform == null && Camera.main != null)
+            {
+                cameraTransform = Camera.main.transform;
+            }
+        }
+
+        private Vector3 GetCameraRelativeMove(Vector2 input)
+        {
+            if (input.sqrMagnitude <= 0.0001f)
+            {
+                return Vector3.zero;
+            }
+
+            var forward = transform.forward;
+            var right = transform.right;
+
+            if (cameraTransform != null)
+            {
+                forward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
+                right = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
+
+                if (forward.sqrMagnitude < 0.0001f)
+                {
+                    forward = transform.forward;
+                }
+
+                if (right.sqrMagnitude < 0.0001f)
+                {
+                    right = transform.right;
+                }
+            }
+
+            return forward * input.y + right * input.x;
+        }
+
+        private void ApplyVerticalMotion(ref Vector3 position, float deltaTime)
+        {
+            if (!TryResolveGroundY(position, out var groundY))
+            {
+                isGrounded = false;
+                verticalVelocity += gravity * deltaTime;
+                position.y += verticalVelocity * deltaTime;
+                return;
+            }
+
+            var targetY = groundY + groundOffset;
+            if (isGrounded && ReadJumpPressed())
+            {
+                isGrounded = false;
+                verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            }
+
+            if (!isGrounded)
+            {
+                verticalVelocity += gravity * deltaTime;
+                position.y += verticalVelocity * deltaTime;
+
+                if (verticalVelocity <= 0f && position.y <= targetY + 0.03f)
+                {
+                    position.y = targetY;
+                    verticalVelocity = -1f;
+                    isGrounded = true;
+                }
+
+                return;
+            }
+
+            var snapSpeed = targetY > position.y ? upwardGroundSnapSpeed : downwardGroundSnapSpeed;
+            if (snapSpeed <= 0f)
+            {
+                snapSpeed = groundSnapSharpness;
+            }
+
+            verticalVelocity = -1f;
+            position.y = Mathf.MoveTowards(position.y, targetY, snapSpeed * Mathf.Max(0f, deltaTime));
+            isGrounded = Mathf.Abs(position.y - targetY) <= 0.04f;
+        }
+
+        private bool TryResolveGroundY(Vector3 position, out float groundY)
+        {
+            var hasGround = false;
+            groundY = 0f;
+
+            var rayOrigin = new Vector3(position.x, position.y + groundRayHeight, position.z);
+            var hits = Physics
+                .RaycastAll(rayOrigin, Vector3.down, groundRayHeight + groundRayDistance, ~0, QueryTriggerInteraction.Ignore)
+                .OrderBy(hit => hit.distance);
+
+            foreach (var hit in hits)
+            {
+                if (hit.collider == null || ShouldIgnoreGroundCollider(hit.collider))
+                {
+                    continue;
+                }
+
+                groundY = hit.point.y;
+                hasGround = true;
+                break;
+            }
+
+            if (TryResolveActiveRendererGroundY(position, out var rendererGroundY))
+            {
+                groundY = hasGround ? Mathf.Max(groundY, rendererGroundY) : rendererGroundY;
+                hasGround = true;
+            }
+
+            if (hasGround)
+            {
+                return true;
+            }
+
+            if (fallbackGroundSurface != null)
+            {
+                var renderer = fallbackGroundSurface.GetComponentInChildren<Renderer>();
+                groundY = renderer != null ? renderer.bounds.max.y : fallbackGroundSurface.position.y;
+                return true;
+            }
+
+            groundY = 0f;
+            return false;
+        }
+
+        private bool ShouldIgnoreGroundCollider(Collider collider)
+        {
+            return collider.isTrigger
+                || collider.transform.IsChildOf(transform)
+                || collider.GetComponentInParent<KickLuckyCubeRarityZone>() != null
+                || collider.GetComponentInParent<KickLuckyCubeWaveChaseController>() != null
+                || collider.GetComponentInParent<KickLuckyCubePlayerController>() != null
+                || IsBoundaryWallCollider(collider)
+                || collider.name.StartsWith("KLC_Zone_", StringComparison.Ordinal)
+                || IsGuideCollider(collider);
+        }
+
+        private static bool IsBoundaryWallCollider(Collider collider)
+        {
+            var current = collider.transform;
+            while (current != null)
+            {
+                if (current.name == "Wall_Left_Tan" || current.name == "Wall_Right_Tan")
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool IsGuideCollider(Collider collider)
+        {
+            var current = collider.transform;
+            while (current != null)
+            {
+                if (current.name.StartsWith("GUIDE_", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private void CacheActiveRendererGroundSurfaces()
+        {
+            activeRendererGroundBounds = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+                .Where(renderer => renderer != null && renderer.enabled && renderer.gameObject.activeInHierarchy)
+                .Where(IsRendererGroundSurface)
+                .Select(renderer => renderer.bounds)
+                .Where(bounds => bounds.size.x > 0.4f && bounds.size.z > 0.4f && bounds.size.y <= 3f)
+                .ToArray();
+        }
+
+        private void CacheSideBounds()
+        {
+            var activeRenderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+                .Where(renderer => renderer != null && renderer.enabled && renderer.gameObject.activeInHierarchy)
+                .ToArray();
+            var leftWall = activeRenderers.FirstOrDefault(renderer => renderer.name == "Wall_Left_Tan");
+            var rightWall = activeRenderers.FirstOrDefault(renderer => renderer.name == "Wall_Right_Tan");
+            if (leftWall != null && rightWall != null)
+            {
+                sideMinX = leftWall.bounds.max.x + sideBoundaryPadding;
+                sideMaxX = rightWall.bounds.min.x - sideBoundaryPadding;
+                hasSideBounds = sideMinX < sideMaxX;
+                return;
+            }
+
+            var floor = activeRenderers.FirstOrDefault(renderer => renderer.name == "Floor_FlatGreenGrass");
+            if (floor == null)
+            {
+                hasSideBounds = false;
+                return;
+            }
+
+            sideMinX = floor.bounds.min.x + sideBoundaryPadding;
+            sideMaxX = floor.bounds.max.x - sideBoundaryPadding;
+            hasSideBounds = sideMinX < sideMaxX;
+        }
+
+        private void ClampToSideBounds(ref Vector3 position)
+        {
+            if (!hasSideBounds)
+            {
+                return;
+            }
+
+            position.x = Mathf.Clamp(position.x, sideMinX, sideMaxX);
+        }
+
+        private bool TryResolveActiveRendererGroundY(Vector3 position, out float groundY)
+        {
+            var foundGround = false;
+            groundY = 0f;
+
+            foreach (var bounds in activeRendererGroundBounds)
+            {
+                if (position.x < bounds.min.x - rendererGroundBoundsPadding
+                    || position.x > bounds.max.x + rendererGroundBoundsPadding
+                    || position.z < bounds.min.z - rendererGroundBoundsPadding
+                    || position.z > bounds.max.z + rendererGroundBoundsPadding)
+                {
+                    continue;
+                }
+
+                groundY = foundGround ? Mathf.Max(groundY, bounds.max.y) : bounds.max.y;
+                foundGround = true;
+            }
+
+            return foundGround;
+        }
+
+        private static bool IsRendererGroundSurface(Renderer renderer)
+        {
+            var objectName = renderer.name;
+            return renderer.GetComponentInParent<KickLuckyCubeGroundSurface>() != null
+                || objectName.IndexOf("Ramp", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Hill", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Slope", StringComparison.OrdinalIgnoreCase) >= 0
+                || (objectName.StartsWith("Bridge_", StringComparison.Ordinal)
+                    && (objectName.IndexOf("_MainPlank", StringComparison.Ordinal) >= 0
+                        || objectName.IndexOf("_Slat_", StringComparison.Ordinal) >= 0
+                        || objectName.EndsWith("_LeftBank", StringComparison.Ordinal)
+                        || objectName.EndsWith("_RightBank", StringComparison.Ordinal)));
         }
     }
 }

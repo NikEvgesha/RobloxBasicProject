@@ -33,6 +33,20 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public bool IsSprinting { get; private set; }
         public bool IsGrounded => isGrounded;
 
+        public void TeleportTo(Vector3 position, Quaternion rotation)
+        {
+            transform.SetPositionAndRotation(position, rotation);
+            lockedY = position.y;
+            verticalVelocity = -1f;
+            isGrounded = true;
+
+            if (body != null)
+            {
+                body.position = position;
+                body.rotation = rotation;
+            }
+        }
+
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
