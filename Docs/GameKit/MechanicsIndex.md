@@ -30,7 +30,7 @@ Status: draft
 Owner: Shared GameKit
 Used by: `Assets/Games/MechanicsTestbed`, `Assets/Games/KickLuckyCube`
 Purpose: Provide a reusable Roblox-style interaction contract where independent sources nominate interaction targets and a central driver handles prompt display, press/hold activation, optional hold progress, and invocation.
-Public API: `GameKitInteractionTarget`, `GameKitInteractionActivationMode`, `GameKitInteractionCondition`, `GameKitInteractionDriver`, `GameKitInteractionPromptView`, `GameKitInteractionTriggerSource`, `GameKitInteractionRaycastSource`.
+Public API: `GameKitInteractionTarget`, `GameKitInteractionActivationMode`, `GameKitInteractionCondition`, `GameKitInteractionDriver`, `GameKitInteractionPromptView`, `GameKitInteractionTriggerSource`, `GameKitInteractionRaycastSource`. `GameKitInteractionTarget.SetPrompt` and `SetPromptText` can update a target's visible prompt at runtime while preserving the same target object.
 Required prefabs: none yet.
 Required ScriptableObjects: none.
 Input requirements: keyboard `E` through the active Input System path, with old-input fallback only when legacy input is enabled.

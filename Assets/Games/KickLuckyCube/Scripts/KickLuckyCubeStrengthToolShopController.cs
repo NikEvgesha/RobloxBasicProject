@@ -1,4 +1,7 @@
 using System;
+using System.Linq;
+using System.Reflection;
+using RobloxBasicProject.GameKit.Interaction;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +13,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 {
     public sealed class KickLuckyCubeStrengthToolShopController : MonoBehaviour
     {
+        private const BindingFlags SerializedFieldFlags = BindingFlags.Instance | BindingFlags.NonPublic;
+
         private static readonly string[] DefaultToolNames =
         {
             "Training Dumbbell",
@@ -34,6 +39,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private Color ownedColor = new(0.20f, 0.62f, 0.92f, 0.92f);
         [SerializeField] private Color buyColor = new(0.18f, 0.78f, 0.26f, 0.94f);
         [SerializeField] private Color lockedColor = new(0.18f, 0.18f, 0.20f, 0.86f);
+        [SerializeField] private string worldPadName = "KLC_Kiosk_04_WeightsTraining_StandPad";
+        [SerializeField] private Vector3 worldPadTriggerSize = new(2.4f, 2.4f, 2.0f);
 
         private RectTransform windowRoot;
         private Text statusText;
@@ -67,6 +74,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             ResolveReferences();
             BuildRuntimeUi();
+            ConfigureWorldPad();
             Subscribe();
             CloseWindow();
             Refresh();
@@ -135,6 +143,65 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
             uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
                 ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+        }
+
+        private void ConfigureWorldPad()
+        {
+            if (!Application.isPlaying || string.IsNullOrWhiteSpace(worldPadName))
+            {
+                return;
+            }
+
+            var padObject = GameObject.Find(worldPadName);
+            if (padObject == null)
+            {
+                padObject = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                    .FirstOrDefault(candidate => string.Equals(candidate.name, worldPadName, StringComparison.Ordinal))
+                    ?.gameObject;
+            }
+
+            if (padObject == null)
+            {
+                return;
+            }
+
+            var collider = padObject.GetComponent<BoxCollider>();
+            if (collider == null)
+            {
+                collider = padObject.AddComponent<BoxCollider>();
+            }
+
+            collider.isTrigger = true;
+            collider.center = new Vector3(0f, worldPadTriggerSize.y * 0.5f, 0f);
+            collider.size = new Vector3(
+                Mathf.Max(0.2f, worldPadTriggerSize.x),
+                Mathf.Max(0.2f, worldPadTriggerSize.y),
+                Mathf.Max(0.2f, worldPadTriggerSize.z));
+
+            var target = padObject.GetComponent<GameKitInteractionTarget>();
+            if (target == null)
+            {
+                target = padObject.AddComponent<GameKitInteractionTarget>();
+            }
+
+            target.SetPrompt("E", "Open tools shop");
+            SetPrivateField(target, "activationMode", GameKitInteractionActivationMode.Press);
+            SetPrivateField(target, "holdSeconds", 0.05f);
+            SetPrivateField(target, "priority", 23);
+            target.SetInteractable(true);
+
+            if (padObject.GetComponent<GameKitInteractionTriggerSource>() == null)
+            {
+                padObject.AddComponent<GameKitInteractionTriggerSource>();
+            }
+
+            var pad = padObject.GetComponent<KickLuckyCubeStrengthToolShopPad>();
+            if (pad == null)
+            {
+                pad = padObject.AddComponent<KickLuckyCubeStrengthToolShopPad>();
+            }
+
+            pad.Configure(this);
         }
 
         private void Subscribe()
@@ -445,6 +512,85 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 #else
             return Input.GetKeyDown(KeyCode.Escape);
 #endif
+        }
+
+        private static void SetPrivateField<TTarget, TValue>(TTarget target, string fieldName, TValue value)
+        {
+            var field = typeof(TTarget).GetField(fieldName, SerializedFieldFlags);
+            field?.SetValue(target, value);
+        }
+    }
+
+    [RequireComponent(typeof(GameKitInteractionTarget))]
+    public sealed class KickLuckyCubeStrengthToolShopPad : MonoBehaviour, GameKitInteractionCondition
+    {
+        [SerializeField] private KickLuckyCubeStrengthToolShopController toolShop;
+        [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
+        [SerializeField] private GameKitInteractionDriver driver;
+
+        private GameKitInteractionTarget interactionTarget;
+
+        private void Awake()
+        {
+            ResolveReferences();
+            interactionTarget = GetComponent<GameKitInteractionTarget>();
+            interactionTarget.ActorInteracted.AddListener(OpenShop);
+        }
+
+        private void OnDestroy()
+        {
+            if (interactionTarget != null)
+            {
+                interactionTarget.ActorInteracted.RemoveListener(OpenShop);
+            }
+        }
+
+        private void OnDisable()
+        {
+            CloseShop();
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            driver ??= FindFirstObjectByType<GameKitInteractionDriver>();
+            if (driver == null || !driver.IsActorCollider(other))
+            {
+                return;
+            }
+
+            CloseShop();
+        }
+
+        public void Configure(KickLuckyCubeStrengthToolShopController controller)
+        {
+            toolShop = controller;
+            ResolveReferences();
+        }
+
+        public bool CanInteract(GameObject actor)
+        {
+            ResolveReferences();
+            return toolShop != null
+                && (runPhase == null || (!runPhase.HasActiveRun && !runPhase.HasCarriedAnimal && !runPhase.IsSelectingAnimal));
+        }
+
+        private void OpenShop(GameObject actor)
+        {
+            ResolveReferences();
+            toolShop?.OpenWindow();
+        }
+
+        private void CloseShop()
+        {
+            toolShop ??= FindFirstObjectByType<KickLuckyCubeStrengthToolShopController>(FindObjectsInactive.Include);
+            toolShop?.CloseWindow();
+        }
+
+        private void ResolveReferences()
+        {
+            toolShop ??= FindFirstObjectByType<KickLuckyCubeStrengthToolShopController>(FindObjectsInactive.Include);
+            runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
+            driver ??= FindFirstObjectByType<GameKitInteractionDriver>();
         }
     }
 }

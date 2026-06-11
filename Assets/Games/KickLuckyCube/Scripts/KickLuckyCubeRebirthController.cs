@@ -111,7 +111,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             rebirthCount++;
-            stats.ResetProgression();
+            stats.ResetStrengthForRebirth();
             ApplyMoneyMultiplier();
             Save();
             Refresh("Rebirth complete.");
@@ -177,7 +177,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (bodyText != null)
             {
-                bodyText.text = $"Current multiplier: x{MoneyMultiplier.ToString("0", CultureInfo.InvariantCulture)}\nNext multiplier: x{nextMultiplier.ToString("0", CultureInfo.InvariantCulture)}\nResets strength, speed, and tool progress.";
+                bodyText.text = $"Current multiplier: x{MoneyMultiplier.ToString("0", CultureInfo.InvariantCulture)}\nNext multiplier: x{nextMultiplier.ToString("0", CultureInfo.InvariantCulture)}\nResets strength only. Speed and tools stay owned.";
             }
 
             if (requirementText != null)

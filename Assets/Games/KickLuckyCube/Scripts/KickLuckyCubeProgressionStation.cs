@@ -23,7 +23,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0)] private int baseSpeedCost = 60;
         [SerializeField, Min(0)] private int speedCostStep = 55;
         [SerializeField, Min(0.1f)] private float speedGain = 0.8f;
-        [SerializeField, Min(1)] private int maxSpeedLevel = 8;
         [SerializeField, Min(0)] private int baseToolCost = 90;
         [SerializeField, Min(1f)] private float toolCostMultiplier = 2f;
         [SerializeField, Min(1)] private int maxStrengthToolTier = 5;
@@ -75,7 +74,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 StationMode.TrainStrength => true,
                 StationMode.BuySpeedUpgrade => speedShop != null
                     || (wallet != null
-                        && stats.SpeedUpgradeLevel < maxSpeedLevel
                         && wallet.SoftCurrency >= SpeedCost),
                 StationMode.BuyStrengthTool => wallet != null
                     && stats.StrengthToolTier < maxStrengthToolTier
@@ -138,9 +136,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             statusLabel.text = mode switch
             {
                 StationMode.TrainStrength => $"Train strength\n+{TrainStrengthGain:0} per hold\nTool {stats.SelectedStrengthToolTier}/{stats.StrengthToolTier}\nX for x2",
-                StationMode.BuySpeedUpgrade => stats.SpeedUpgradeLevel >= maxSpeedLevel
-                    ? $"Speed maxed\nLv {stats.SpeedUpgradeLevel}/{maxSpeedLevel}\nRun {stats.AnimalSpeed:0.0}"
-                    : $"Open speed shop\nNext {SpeedCost} soft\nLv {stats.SpeedUpgradeLevel}/{maxSpeedLevel}",
+                StationMode.BuySpeedUpgrade => $"Open speed shop\nNext {SpeedCost} soft\nLv {stats.SpeedUpgradeLevel}",
                 StationMode.BuyStrengthTool => stats.StrengthToolTier >= maxStrengthToolTier
                     ? $"Tool maxed\nLv {stats.StrengthToolTier}/{maxStrengthToolTier}\n+{TrainStrengthGain:0}/hold"
                     : $"Buy tool\nCost {ToolCost} soft\nNext Lv {stats.StrengthToolTier + 1}",

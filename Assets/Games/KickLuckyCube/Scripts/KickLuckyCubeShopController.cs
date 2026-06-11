@@ -56,7 +56,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0)] private int baseSpeedCost = 60;
         [SerializeField, Min(0)] private int speedCostStep = 55;
         [SerializeField, Min(0.1f)] private float speedGain = 0.8f;
-        [SerializeField, Min(1)] private int maxSpeedLevel = 8;
         [SerializeField, Min(0)] private int baseToolCost = 90;
         [SerializeField, Min(1f)] private float toolCostMultiplier = 2f;
         [SerializeField, Min(1)] private int maxStrengthToolTier = 5;
@@ -124,9 +123,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private bool BuySpeedUpgrade()
         {
-            if (wallet == null || stats == null || stats.SpeedUpgradeLevel >= maxSpeedLevel)
+            if (wallet == null || stats == null)
             {
-                SetStatus("Speed is already maxed.");
+                SetStatus("Speed shop is not ready.");
                 return false;
             }
 
@@ -190,8 +189,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             switch (item.ItemType)
             {
                 case ItemType.SpeedUpgrade:
-                    maxed = stats != null && stats.SpeedUpgradeLevel >= maxSpeedLevel;
-                    canBuy = wallet != null && stats != null && wallet.SoftCurrency >= SpeedCost && !maxed;
+                    maxed = false;
+                    canBuy = wallet != null && stats != null && wallet.SoftCurrency >= SpeedCost;
                     name = stats != null ? $"Speed Lv {stats.SpeedUpgradeLevel + 1}" : "Speed";
                     price = $"{SpeedCost} soft";
                     break;

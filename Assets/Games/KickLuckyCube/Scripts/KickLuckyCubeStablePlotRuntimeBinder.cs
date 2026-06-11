@@ -14,10 +14,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private string stableSlotPrefix = "Template_StableSlot_";
         [SerializeField] private string collectSpotNamePart = "CollectSpot";
         [SerializeField] private string upgradeBoardNamePart = "UpgradeBoard";
-        [SerializeField] private string collectPromptText = "Place / collect";
-        [SerializeField] private string upgradePromptText = "Upgrade stable";
+        [SerializeField] private string collectPromptText = "Поставить";
         [SerializeField] private Vector3 collectTriggerSize = new(1.8f, 2.4f, 1.4f);
         [SerializeField] private Vector3 upgradeTriggerSize = new(1.8f, 2.2f, 1.2f);
+        [SerializeField, Min(0.1f)] private float stableAnimalTargetHeight = 1.05f;
+        [SerializeField] private Vector3 stableAnimalLocalPosition = Vector3.zero;
+        [SerializeField, Min(0f)] private float stableAnimalBottomOffset = 0.04f;
+        [SerializeField] private Vector3 stableLabelWorldOffset = new(0f, 0.62f, 0f);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -40,9 +43,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             ConfigurePlayerPlot();
         }
 
+        private void Update()
+        {
+            ConfigurePlayerPlot();
+        }
+
         public void ConfigurePlayerPlot()
         {
-            var plot = GameObject.Find(playerPlotInstanceName);
+            var plot = ResolvePlayerPlot();
             if (plot == null)
             {
                 return;
@@ -62,6 +70,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void ConfigureStableSlot(Transform slotRoot)
         {
             var stableSlot = GetOrAddComponent<KickLuckyCubeStableSlot>(slotRoot.gameObject);
+            stableSlot.ConfigureStableVisuals(
+                stableAnimalTargetHeight,
+                stableAnimalLocalPosition,
+                stableAnimalBottomOffset,
+                stableLabelWorldOffset);
+
             var collectSpot = FindChildByNamePart(slotRoot, collectSpotNamePart) ?? slotRoot;
             ConfigureCollectSpot(collectSpot.gameObject, stableSlot);
 
@@ -92,16 +106,51 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             ConfigureTriggerCollider(upgradeBoard, upgradeTriggerSize);
 
-            var target = GetOrAddComponent<GameKitInteractionTarget>(upgradeBoard);
-            ConfigureInteractionTarget(target, upgradePromptText, 24);
-
-            if (upgradeBoard.GetComponent<GameKitInteractionTriggerSource>() == null)
+            var target = upgradeBoard.GetComponent<GameKitInteractionTarget>();
+            if (target != null)
             {
-                upgradeBoard.AddComponent<GameKitInteractionTriggerSource>();
+                target.SetInteractable(false);
+            }
+
+            var triggerSource = upgradeBoard.GetComponent<GameKitInteractionTriggerSource>();
+            if (triggerSource != null)
+            {
+                triggerSource.enabled = false;
             }
 
             var board = GetOrAddComponent<KickLuckyCubeStableUpgradeBoard>(upgradeBoard);
             board.Configure(stableSlot);
+        }
+
+        private GameObject ResolvePlayerPlot()
+        {
+            var playerPlot = GameObject.Find("KLC_PlayerPlot_Instance");
+            if (playerPlot != null)
+            {
+                return playerPlot;
+            }
+
+            var configuredPlotObject = GameObject.Find(playerPlotInstanceName);
+            if (configuredPlotObject != null)
+            {
+                return configuredPlotObject;
+            }
+
+            var allocator = FindFirstObjectByType<KickLuckyCubePlotAllocator>(FindObjectsInactive.Include);
+            if (allocator != null && allocator.PlayerSlot != null)
+            {
+                var slotId = allocator.PlayerSlot.SlotId;
+                if (!string.IsNullOrWhiteSpace(slotId))
+                {
+                    var plotBySlot = GameObject.Find("KLC_PlotInstance_" + slotId);
+                    if (plotBySlot != null)
+                    {
+                        return plotBySlot;
+                    }
+                }
+            }
+
+            return null;
         }
 
         private static void ConfigureTriggerCollider(GameObject target, Vector3 triggerSize)

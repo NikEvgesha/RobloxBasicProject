@@ -21,6 +21,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public event Action<int, int> Changed;
         public event Action<int, int> CurrencyGained;
+        public event Action<int, int> CurrencySpent;
 
         public int SoftCurrency => initialized ? softCurrency : initialSoftCurrency;
         public int HardCurrency => initialized ? hardCurrency : initialHardCurrency;
@@ -67,6 +68,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             softCurrency -= amount;
+            CurrencySpent?.Invoke(amount, 0);
             Save();
             return true;
         }

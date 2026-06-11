@@ -64,13 +64,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public void AddAnimalSpeed(float amount)
         {
-            if (amount <= 0f)
+            AddAnimalSpeedLevels(1, amount);
+        }
+
+        public void AddAnimalSpeedLevels(int levels, float amountPerLevel)
+        {
+            if (levels <= 0 || amountPerLevel <= 0f)
             {
                 return;
             }
 
-            animalSpeed = Mathf.Max(0f, AnimalSpeed + amount);
-            speedUpgradeLevel = Mathf.Max(0, SpeedUpgradeLevel + 1);
+            animalSpeed = Mathf.Max(0f, AnimalSpeed + amountPerLevel * levels);
+            speedUpgradeLevel = Mathf.Max(0, SpeedUpgradeLevel + levels);
             CommitChange();
         }
 
@@ -107,6 +112,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             strengthToolTier = Mathf.Max(1, initialStrengthToolTier);
             selectedStrengthToolTier = strengthToolTier;
             speedUpgradeLevel = Mathf.Max(0, initialSpeedUpgradeLevel);
+            CommitChange();
+        }
+
+        public void ResetStrengthForRebirth()
+        {
+            strength = Mathf.Max(0f, initialStrength);
             CommitChange();
         }
 

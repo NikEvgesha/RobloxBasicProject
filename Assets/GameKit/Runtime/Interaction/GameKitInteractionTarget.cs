@@ -35,6 +35,27 @@ namespace RobloxBasicProject.GameKit.Interaction
             interactable = value;
         }
 
+        public void SetPrompt(string key, string text)
+        {
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                promptKey = key;
+            }
+
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                promptText = text;
+            }
+        }
+
+        public void SetPromptText(string text)
+        {
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                promptText = text;
+            }
+        }
+
         public bool CanInteract(GameObject actor)
         {
             if (!interactable || !isActiveAndEnabled)

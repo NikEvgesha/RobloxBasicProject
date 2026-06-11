@@ -94,6 +94,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var animal = root.AddComponent<KickLuckyCubeSpawnedAnimal>();
             animal.SetBodyRenderer(body.GetComponent<Renderer>());
             animal.Configure(option, baseRunnerSpeed);
+            animal.EnsureBlackOutline();
 
             var runner = root.AddComponent<KickLuckyCubeAnimalRunner>();
             runner.Configure(animal, animal.RunnerSpeed);

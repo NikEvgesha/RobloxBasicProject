@@ -13,6 +13,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     public sealed class KickLuckyCubeSpeedShopController : MonoBehaviour
     {
         private const BindingFlags SerializedFieldFlags = BindingFlags.Instance | BindingFlags.NonPublic;
+        private static readonly int[] PurchaseLevelCounts = { 1, 5, 10 };
 
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubePlayerStats stats;
@@ -24,22 +25,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0)] private int baseSpeedCost = 60;
         [SerializeField, Min(0)] private int speedCostStep = 55;
         [SerializeField, Min(0.1f)] private float speedGain = 0.8f;
-        [SerializeField, Min(0f)] private float baselineAnimalSpeed = 7f;
-        [SerializeField, Min(1)] private int maxSpeedLevel = 8;
-        [SerializeField] private Color ownedColor = new(0.20f, 0.62f, 0.92f, 0.92f);
         [SerializeField] private Color nextColor = new(0.18f, 0.78f, 0.26f, 0.94f);
         [SerializeField] private Color lockedColor = new(0.18f, 0.18f, 0.20f, 0.86f);
-        [SerializeField] private Color maxedColor = new(1f, 0.82f, 0.18f, 0.96f);
 
         private RectTransform windowRoot;
         private Text statusText;
         private Text summaryText;
         private Font uiFont;
-        private Button[] levelButtons = Array.Empty<Button>();
-        private Text[] levelTitleTexts = Array.Empty<Text>();
-        private Text[] levelDetailTexts = Array.Empty<Text>();
-        private Text[] levelButtonTexts = Array.Empty<Text>();
-        private Image[] levelFrames = Array.Empty<Image>();
+        private RectTransform[] purchaseCards = Array.Empty<RectTransform>();
+        private Button[] purchaseButtons = Array.Empty<Button>();
+        private Text[] purchaseTitleTexts = Array.Empty<Text>();
+        private Text[] purchaseDetailTexts = Array.Empty<Text>();
+        private Text[] purchaseButtonTexts = Array.Empty<Text>();
+        private Image[] purchaseFrames = Array.Empty<Image>();
 
         public bool IsOpen => windowRoot != null && windowRoot.gameObject.activeSelf;
 
@@ -128,6 +126,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public bool BuyNextLevel()
         {
+            return BuyLevels(1);
+        }
+
+        public bool BuyLevels(int levels)
+        {
             ResolveReferences();
             if (wallet == null || stats == null)
             {
@@ -135,24 +138,24 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return false;
             }
 
-            if (stats.SpeedUpgradeLevel >= maxSpeedLevel)
+            var normalizedLevels = Mathf.Max(1, levels);
+            var totalCost = GetTotalCostForNextLevels(normalizedLevels);
+            if (totalCost > int.MaxValue || wallet.SoftCurrency < totalCost)
             {
-                SetStatus("Speed is already maxed.");
+                SetStatus($"No money for +{normalizedLevels} speed levels.");
                 Refresh();
                 return false;
             }
 
-            var nextLevel = stats.SpeedUpgradeLevel + 1;
-            var cost = GetLevelCost(nextLevel);
-            if (!wallet.TrySpendSoft(cost))
+            if (!wallet.TrySpendSoft((int)totalCost))
             {
-                SetStatus($"Need {cost} soft for speed Lv {nextLevel}.");
+                SetStatus($"No money for +{normalizedLevels} speed levels.");
                 Refresh();
                 return false;
             }
 
-            stats.AddAnimalSpeed(speedGain);
-            SetStatus($"Speed upgraded to Lv {stats.SpeedUpgradeLevel}. Run speed {stats.AnimalSpeed:0.0}.");
+            stats.AddAnimalSpeedLevels(normalizedLevels, speedGain);
+            SetStatus($"Speed +{normalizedLevels} levels. Lv {stats.SpeedUpgradeLevel}, speed {stats.AnimalSpeed:0.0}.");
             Refresh();
             return true;
         }
@@ -211,40 +214,42 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             windowRoot.anchorMax = new Vector2(0.5f, 0.5f);
             windowRoot.pivot = new Vector2(0.5f, 0.5f);
             windowRoot.anchoredPosition = new Vector2(0f, 16f);
-            windowRoot.sizeDelta = new Vector2(780f, 460f);
+            windowRoot.sizeDelta = new Vector2(780f, 360f);
             AddImage(windowRoot.gameObject, new Color(0.035f, 0.04f, 0.055f, 0.92f));
 
-            CreateLabel(windowRoot, "Title", "Speed Upgrades", 34, TextAnchor.MiddleLeft, new Vector2(430f, 46f), new Vector2(-160f, 196f));
-            summaryText = CreateLabel(windowRoot, "Summary", string.Empty, 18, TextAnchor.MiddleRight, new Vector2(300f, 44f), new Vector2(170f, 196f));
-            statusText = CreateLabel(windowRoot, "Status", "Buy speed levels for your returned mobs.", 18, TextAnchor.MiddleLeft, new Vector2(590f, 28f), new Vector2(-55f, -202f));
+            CreateLabel(windowRoot, "Title", "Speed Upgrades", 34, TextAnchor.MiddleLeft, new Vector2(430f, 46f), new Vector2(-160f, 146f));
+            summaryText = CreateLabel(windowRoot, "Summary", string.Empty, 18, TextAnchor.MiddleRight, new Vector2(300f, 44f), new Vector2(170f, 146f));
+            statusText = CreateLabel(windowRoot, "Status", "Buy speed levels for your returned mobs.", 18, TextAnchor.MiddleLeft, new Vector2(590f, 28f), new Vector2(-55f, -152f));
 
             var closeButton = CreateButton(windowRoot, "Close", "X", new Vector2(44f, 36f));
-            closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(352f, 196f);
+            closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(352f, 146f);
             closeButton.onClick.AddListener(CloseWindow);
 
-            var grid = CreateRect("SpeedCards", windowRoot);
+            var grid = CreateRect("SpeedPurchaseOptions", windowRoot);
             grid.anchorMin = new Vector2(0.5f, 0.5f);
             grid.anchorMax = new Vector2(0.5f, 0.5f);
             grid.pivot = new Vector2(0.5f, 0.5f);
-            grid.anchoredPosition = new Vector2(0f, -18f);
-            grid.sizeDelta = new Vector2(700f, 330f);
+            grid.anchoredPosition = new Vector2(0f, -12f);
+            grid.sizeDelta = new Vector2(700f, 190f);
 
-            var layout = grid.gameObject.AddComponent<GridLayoutGroup>();
-            layout.cellSize = new Vector2(162f, 148f);
-            layout.spacing = new Vector2(12f, 12f);
-            layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            layout.constraintCount = 4;
+            var layout = grid.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 18f;
             layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
 
-            levelButtons = new Button[maxSpeedLevel];
-            levelTitleTexts = new Text[maxSpeedLevel];
-            levelDetailTexts = new Text[maxSpeedLevel];
-            levelButtonTexts = new Text[maxSpeedLevel];
-            levelFrames = new Image[maxSpeedLevel];
+            purchaseCards = new RectTransform[PurchaseLevelCounts.Length];
+            purchaseButtons = new Button[PurchaseLevelCounts.Length];
+            purchaseTitleTexts = new Text[PurchaseLevelCounts.Length];
+            purchaseDetailTexts = new Text[PurchaseLevelCounts.Length];
+            purchaseButtonTexts = new Text[PurchaseLevelCounts.Length];
+            purchaseFrames = new Image[PurchaseLevelCounts.Length];
 
-            for (var level = 1; level <= maxSpeedLevel; level++)
+            for (var index = 0; index < PurchaseLevelCounts.Length; index++)
             {
-                CreateSpeedCard(grid, level);
+                CreatePurchaseCard(grid, index, PurchaseLevelCounts[index]);
             }
         }
 
@@ -259,68 +264,92 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             button.onClick.AddListener(ToggleWindow);
         }
 
-        private void CreateSpeedCard(RectTransform parent, int level)
+        private void CreatePurchaseCard(RectTransform parent, int index, int levels)
         {
-            var card = CreateRect("SpeedLevel_" + level, parent);
-            card.sizeDelta = new Vector2(162f, 148f);
-            levelFrames[level - 1] = AddImage(card.gameObject, lockedColor);
+            var card = CreateRect("SpeedUpgradePlus_" + levels, parent);
+            card.sizeDelta = new Vector2(208f, 178f);
+            purchaseCards[index] = card;
+            purchaseFrames[index] = AddImage(card.gameObject, lockedColor);
+            var cardButton = card.gameObject.AddComponent<Button>();
+            cardButton.targetGraphic = purchaseFrames[index];
+            cardButton.onClick.AddListener(() => BuyLevels(levels));
+            purchaseButtons[index] = cardButton;
 
-            levelTitleTexts[level - 1] = CreateLabel(card, "Title", $"Lv {level}", 21, TextAnchor.MiddleCenter, new Vector2(148f, 32f), new Vector2(0f, 48f));
-            levelDetailTexts[level - 1] = CreateLabel(card, "Detail", string.Empty, 15, TextAnchor.MiddleCenter, new Vector2(150f, 48f), new Vector2(0f, 4f));
-            var actionButton = CreateButton(card, "Action", string.Empty, new Vector2(128f, 34f));
-            actionButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -48f);
-            actionButton.onClick.AddListener(() => BuyNextLevel());
-            levelButtons[level - 1] = actionButton;
-            levelButtonTexts[level - 1] = actionButton.GetComponentInChildren<Text>();
+            purchaseTitleTexts[index] = CreateLabel(card, "Title", string.Empty, 23, TextAnchor.MiddleCenter, new Vector2(190f, 34f), new Vector2(0f, 56f));
+            purchaseDetailTexts[index] = CreateLabel(card, "Detail", string.Empty, 16, TextAnchor.MiddleCenter, new Vector2(190f, 66f), new Vector2(0f, 10f));
+            var actionPlate = CreateRect("ActionLabel", card);
+            actionPlate.sizeDelta = new Vector2(164f, 40f);
+            actionPlate.anchoredPosition = new Vector2(0f, -58f);
+            AddImage(actionPlate.gameObject, new Color(0.08f, 0.08f, 0.08f, 0.88f)).raycastTarget = false;
+            purchaseButtonTexts[index] = CreateLabel(actionPlate, "Label", string.Empty, 14, TextAnchor.MiddleCenter, actionPlate.sizeDelta, Vector2.zero);
         }
 
         private void Refresh()
         {
-            if (stats == null || levelButtons == null)
+            if (stats == null || purchaseCards == null)
             {
                 return;
             }
 
             if (summaryText != null)
             {
-                summaryText.text = $"Current: {stats.AnimalSpeed:0.0}\nLv {stats.SpeedUpgradeLevel}/{maxSpeedLevel}";
+                summaryText.text = $"Current: {stats.AnimalSpeed:0.0}\nLv {stats.SpeedUpgradeLevel}";
             }
 
-            var ownedLevel = stats.SpeedUpgradeLevel;
-            var nextLevel = ownedLevel + 1;
-            for (var level = 1; level <= levelButtons.Length; level++)
+            var visibleOptions = 0;
+            for (var index = 0; index < PurchaseLevelCounts.Length; index++)
             {
-                var owned = level <= ownedLevel;
-                var nextToBuy = level == nextLevel && ownedLevel < maxSpeedLevel;
-                var maxed = ownedLevel >= maxSpeedLevel && level == maxSpeedLevel;
-                var cost = GetLevelCost(level);
-                var canAfford = wallet != null && wallet.SoftCurrency >= cost;
-
-                if (levelDetailTexts[level - 1] != null)
+                var levels = PurchaseLevelCounts[index];
+                var totalCost = GetTotalCostForNextLevels(levels);
+                var canAfford = wallet != null && totalCost <= wallet.SoftCurrency;
+                var isRequiredBaseOption = index == 0;
+                if (purchaseCards[index] != null)
                 {
-                    levelDetailTexts[level - 1].text = $"Run {GetSpeedAfterLevel(level):0.0}\n+{speedGain:0.0} speed";
+                    purchaseCards[index].gameObject.SetActive(isRequiredBaseOption || canAfford);
                 }
 
-                if (levelButtonTexts[level - 1] != null)
+                if (!canAfford && !isRequiredBaseOption)
                 {
-                    levelButtonTexts[level - 1].text = maxed ? "MAX" : owned ? "Owned" : nextToBuy ? $"Buy ${cost}" : "Locked";
+                    if (purchaseButtons[index] != null)
+                    {
+                        purchaseButtons[index].interactable = false;
+                    }
+
+                    continue;
                 }
 
-                if (levelButtons[level - 1] != null)
+                visibleOptions++;
+                if (purchaseTitleTexts[index] != null)
                 {
-                    levelButtons[level - 1].interactable = nextToBuy;
+                    purchaseTitleTexts[index].text = "+" + levels + (levels == 1 ? " Level" : " Levels");
                 }
 
-                if (levelFrames[level - 1] != null)
+                if (purchaseDetailTexts[index] != null)
                 {
-                    levelFrames[level - 1].color = maxed
-                        ? maxedColor
-                        : owned
-                            ? ownedColor
-                            : nextToBuy && canAfford
-                                ? nextColor
-                                : lockedColor;
+                    purchaseDetailTexts[index].text = $"+{speedGain * levels:0.0} speed";
                 }
+
+                if (purchaseButtonTexts[index] != null)
+                {
+                    purchaseButtonTexts[index].text = canAfford
+                        ? $"Buy {FormatCost(totalCost)}"
+                        : "No money";
+                }
+
+                if (purchaseButtons[index] != null)
+                {
+                    purchaseButtons[index].interactable = canAfford;
+                }
+
+                if (purchaseFrames[index] != null)
+                {
+                    purchaseFrames[index].color = canAfford ? nextColor : lockedColor;
+                }
+            }
+
+            if (visibleOptions == 0)
+            {
+                SetStatus("No money for the next speed level.");
             }
         }
 
@@ -394,20 +423,36 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return component != null ? component : target.AddComponent<T>();
         }
 
-        private int GetLevelCost(int level)
+        private long GetLevelCost(int level)
         {
-            return Mathf.RoundToInt(baseSpeedCost + Mathf.Max(0, level - 1) * speedCostStep);
+            return Math.Max(0L, baseSpeedCost + Math.Max(0, level - 1) * (long)speedCostStep);
         }
 
-        private float GetSpeedAfterLevel(int level)
+        private long GetTotalCostForNextLevels(int levels)
         {
-            if (stats == null)
+            var total = 0L;
+            var currentLevel = stats != null ? stats.SpeedUpgradeLevel : 0;
+            for (var offset = 1; offset <= Mathf.Max(1, levels); offset++)
             {
-                return baselineAnimalSpeed + level * speedGain;
+                total += GetLevelCost(currentLevel + offset);
             }
 
-            var inferredBaseSpeed = Mathf.Max(0f, stats.AnimalSpeed - stats.SpeedUpgradeLevel * speedGain);
-            return inferredBaseSpeed + level * speedGain;
+            return total;
+        }
+
+        private static string FormatCost(long cost)
+        {
+            if (cost >= 1000000L)
+            {
+                return (cost / 1000000f).ToString("0.0M");
+            }
+
+            if (cost >= 1000L)
+            {
+                return (cost / 1000f).ToString("0.0K");
+            }
+
+            return cost.ToString();
         }
 
         private void OnWalletChanged(int soft, int hard)

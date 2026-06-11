@@ -70,10 +70,10 @@ Implemented in the overview scene:
 - active tool training shows randomized strength gain bursts around the player, flies them to the strength HUD, moves the held tool with the squat animation, and grants strength once per second;
 - moving while tool training is active immediately cancels training and hides the held tool;
 - `x2` training bonus prompt is shown as a circle-only `x2` button that stays pending until clicked, pressed with `X`, or until tool training stops;
-- runtime Training Equipment shop can unlock the next strength tool tier and equip already-owned tools through the `Tools` button or `T`;
-- runtime Speed Upgrades shop opens from the speed kiosk stand pad or `Y` and buys sequential animal speed levels;
+- runtime Training Equipment shop can unlock the next strength tool tier and equip already-owned tools through the `Tools` button, `T`, or the weights-training kiosk stand pad;
+- runtime Speed Upgrades shop opens from the speed kiosk stand pad or `Y` and buys affordable `+1`, `+5`, or `+10` animal speed level bundles;
 - runtime Style shop opens from the style kiosk hold-interaction anchor and buys/equips lucky cube color skins;
-- runtime Future Feature spots support weather rarity boosts, selected-mob exchange charges, three exclusive epic-shop mobs, and a one-time rating gift mob;
+- runtime Future Feature spots support weather rarity boosts, selected-mob exchange charges with confirmation UI, three exclusive epic-shop mobs, and a one-time rating gift mob;
 - runtime Leaderboard board displays a live prototype score list based on strength, soft currency, and owned mobs;
 - working Shop card purchases for speed upgrades, strength tools, and one-shot strength boosts;
 - working playtime Rewards window with soft/hard claims;
@@ -153,6 +153,9 @@ Current UI coverage:
 - left-side square icon buttons for Shop, Settings, Rewards, and Rebirth;
 - bottom tool belt with four visual slots;
 - restyled hold-`E` interaction prompt;
+- runtime home icon above the player's plot, drawn in its own high-order screen-space overlay canvas with a black outline, so it remains visible through walls and clamps to the screen edge when the home is off-camera;
+- runtime currency gain numbers burst around the player and fly to the wallet HUD after any soft/hard wallet gain;
+- runtime future-feature status pills show current Weather and Exchange charge state;
 - visual Shop and Settings windows under `KLC_UIWindows`;
 - reusable local window open/close controller for game-specific UI panels.
 
@@ -163,8 +166,11 @@ The Shop and Settings side buttons are wired to visual windows:
 - `KLC_EventSystem` uses `InputSystemUIInputModule`;
 - there is no `StandaloneInputModule` in the overview scene;
 - Shop cards buy speed upgrades, strength tools, and strength boosts with soft currency;
+- the dedicated Speed Upgrades window uses whole-card purchase buttons; `+1` is always shown and disabled as `No money` when unaffordable, while `+5` and `+10` appear only when the player can afford the summed one-level costs;
+- speed purchase cards show only the speed gain amount, not a final run-speed preview;
 - Settings contents are UI-backed, but the final audio mixer and localization routing are still pending.
 - the current audio backend applies Music/SFX toggles to configured sources, and falls back to `AudioListener.volume` while there are no final scene audio sources;
+- `KickLuckyCubeSfxController` currently generates short procedural prototype sounds at runtime for money gain, purchases, stable place/take, stable upgrades, and denied clicks; these are placeholder SFX until final authored clips are chosen;
 - the first localization backend applies EN/RU text to selected UI labels from the Settings language toggle.
 
 The Rewards side button is wired to a working playtime window:
@@ -207,7 +213,7 @@ The Rebirth side button is wired to a working window:
 - the window closes through the red close button or backdrop click;
 - first rebirth requires 1000 strength;
 - each next rebirth requirement is 10x higher;
-- rebirth resets strength, speed, and strength-tool progression;
+- rebirth resets strength only while keeping speed upgrades and owned strength tools;
 - soft gain multiplier becomes `x2`, then `x3`, then `x4`, and so on.
 
 ## Fake Online Ambient Layer
@@ -271,10 +277,11 @@ During normal gameplay, unused bottom mob slots are hidden. While the inventory 
 The inventory window itself does not display empty slots; dropping a mob onto empty window space creates a new visible item slot.
 Selecting a mob shows it in the player's hands and stops tool training if it was active. Selecting that same mob again clears the selection and removes the hand preview.
 Walk to the animal sell kiosk pad, press `E` on `Open sell shop`, then sell owned mobs from square shop cards. The shop closes automatically when the player leaves the sell zone.
-To place a mob into the player plot, select it in the bottom bar or inventory, stand on a stable `CollectSpot`, and press `E`; the mob leaves the inventory and appears on that slot's `MobAnchor`.
-Stand near that slot's `UpgradeBoard` and press `E` to buy the next slot booster level; the boosted multiplier affects only the animal placed on that exact slot.
+To place a mob into the player plot, select it in the bottom bar or inventory, stand on an empty stable `CollectSpot`, and press `E` on `Поставить`; the mob leaves the inventory and appears on that slot's `MobAnchor`.
+To take a placed mob back, stand on an occupied stable `CollectSpot` and press `E` on `Забрать`; the mob returns to inventory, preferring an empty bottom hotbar slot.
+Click that slot's `UpgradeBoard` with the mouse to buy the next slot booster level; the boosted multiplier affects only the animal placed on that exact slot. The board displays only the current level and a compact next price, with a black outline for readability.
 Walk to the speed kiosk stand pad, press `E` on `Open speed shop`, then buy the next speed level from the runtime card grid. The shop closes automatically when the player leaves the stand pad.
-Placed animals generate pending soft every second. Stand on that slot's `CollectSpot` and press `E` to claim the slot income, or use the green collect-all board for the combined income.
+Placed animals generate pending soft from saved real UTC time, so income continues accumulating while the player is offline and is restored on the next launch. Stand on that slot's `CollectSpot` to claim the slot income automatically, or use the green collect-all board for the combined income. The pending soft amount is shown above the green `CollectSpot`, not in the mob name label.
 
 Prototype controls:
 
@@ -283,7 +290,8 @@ WASD / arrows: move the prototype player, and later the animal runner relative t
 Space: jump while controlling the prototype player
 Shift: sprint while controlling the prototype player
 Rotate the camera, then use WASD / arrows to steer the animal in the same relative direction as the player
-E: press once to start kick power selection, press again to kick; press near sell/speed kiosks to open their shops; hold for stable slot, collect button, and progression stations
+E: press once to start kick power selection, press again to kick; press near sell/speed kiosks to open their shops; press near stable collect spots to place/take mobs; hold for collect-all and progression stations
+Mouse left click: upgrade an occupied stable slot from its `UpgradeBoard`
 Hold E near style kiosk: open cube-style shop
 E near future spots: start weather, exchange selected mob, open epic mob shop, or claim rating gift
 I: open / close the temporary inventory window
@@ -322,7 +330,15 @@ Location layout blockout:
 - `Template_BaseUpgradeBoard` is the placeholder for upward base expansion / extra floors;
 - `Template_CollectAllAdRewardBoard` is the placeholder for the ad-gated collect-all reward board;
 - each of the ten `Template_StableSlot_*` objects is a grouped stable module with a paired child `MobAnchor`, `CollectSpot` placeholder, and `UpgradeBoard` booster placeholder;
-- `KLC_PlotInstance_MOVE_PlotSlot_01` is currently auto-bound in Play Mode by `KickLuckyCubeStablePlotRuntimeBinder`: its ten direct `Template_StableSlot_*` children receive stable logic, a trigger on `CollectSpot`, an `E` interaction for place/collect, and an `UpgradeBoard` interaction for per-slot boosters;
+- `KLC_PlotInstance_MOVE_PlotSlot_01` is currently auto-bound in Play Mode by `KickLuckyCubeStablePlotRuntimeBinder`: its ten direct `Template_StableSlot_*` children receive stable logic, a trigger on `CollectSpot`, an `E` interaction for place/take, automatic income collection while standing on the collect spot, and a mouse-click `UpgradeBoard` for per-slot boosters;
+- the player's current plot also gets a runtime home icon through `KickLuckyCubeHomeIconMarker`; it follows the plot in a dedicated UI overlay canvas, stays visible through walls and other 3D blockers, and clamps to the screen edge when the home is behind the camera;
+- empty stable collect spots show `Поставить` only while the player is carrying/selecting a mob; occupied stable collect spots show `Забрать` and return the mob to inventory, preferring free bottom hotbar slots;
+- standing on an occupied stable `CollectSpot` automatically claims pending soft currency without pressing `E`;
+- each occupied `CollectSpot` shows the pending soft amount as a short white label with black outline fixed inside the green pad; it does not billboard toward the camera and shows `0` while the slot has a mob but no pending income;
+- stable `UpgradeBoard` objects are mouse-click targets, not `E` prompts, and their runtime text is limited to level plus compact price; the runtime label size is derived from the board mesh height so it stays proportional to the stable board;
+- spawned and stabled mob capsules use a black inverse-hull outline for clearer Roblox-style readability;
+- stable mob anchor placeholder visuals are hidden at runtime; only actual placed mobs should be visible on slots;
+- occupied stable slots normalize placed mobs to a target world height from renderer bounds, independent of the non-uniform `MobAnchor` scale, and show a white TextMesh with black outline above the mob; the label contains only mob name, stable level, and income per second, faces the camera from an unscaled runtime label root, and hides at distance to reduce visual clutter;
 - `Template_FloorExpansion` contains visual-only posts, ladder, and outline beams for future upper-floor expansion;
 - `MOVE_PlotSlot_01..04` define placed plot locations;
 - `KLC_PlotSlot_StaticInstances` contains edit-mode plot copies placed from the reusable template on every current `MOVE_PlotSlot`;
@@ -362,7 +378,7 @@ Visibility: hidden on desktop/editor by default, shown on mobile/handheld platfo
 13. Stable animals generate soft currency every second.
 14. Player stands on the green collect button to claim stable income.
 15. Player spends soft currency on animal speed and strength tools.
-16. Rebirth resets progression for a permanent money multiplier.
+16. Rebirth resets strength for a permanent money multiplier.
 
 ## Rarity Corridor
 
@@ -388,13 +404,19 @@ Strength:
 - claiming `x2` via click/tap or `X` gives the pending bonus and triggers the same strength gain fly-text effect;
 - the runtime Training Equipment shop buys only the next locked tool tier, then lets owned tiers be re-equipped;
 - tools can have different training animations;
-- future pass should wire the shop to its final kiosk/interaction pad and replace placeholder tool cards with final visuals.
+- the weights-training kiosk stand pad opens the same runtime Training Equipment shop with `E`;
+- future pass should replace placeholder tool cards with final visuals.
 
 Speed:
 
 - current prototype opens a runtime Speed Upgrades shop from `KLC_Kiosk_03_SpeedUpgrade_StandPad` or `Y`;
 - the old blue `Buy Speed` station now opens the same shop when it is active instead of buying directly;
-- only the next locked speed level can be bought; future levels stay locked until previous levels are owned;
+- speed levels are uncapped;
+- the shop can show up to three purchase buttons: `+1`, `+5`, and `+10` levels;
+- the `+1` button is always shown as the baseline upgrade option, but is disabled when the wallet cannot afford it;
+- `+5` and `+10` purchase buttons are hidden when the wallet cannot afford that full bundle;
+- `+5` and `+10` prices are calculated as the sum of buying each next level one by one from the current level;
+- each next single level costs more than the previous level;
 - each bought level increases animal runner speed by the shop's configured gain and affects the animal while escaping the wave;
 - the speed shop closes automatically when the player leaves the speed kiosk stand pad.
 
@@ -402,11 +424,13 @@ Stable income:
 
 - stable animals generate soft currency per second;
 - every stable slot starts at booster level 1; each upgrade increases only that slot's income multiplier by 20%;
-- slot upgrade costs start at 150 soft and scale by 1.65x per level up to level 10;
-- each occupied stable slot can be claimed from its own green `CollectSpot`;
+- slot upgrade levels are uncapped; upgrade costs start at 150 soft and scale by 1.65x per level;
+- each occupied stable slot is claimed automatically by standing on its own green `CollectSpot`;
+- each occupied stable slot has a larger placed mob, a black outline, and a distance-gated billboard label above the mob;
+- stable upgrade boards show only the current level and next price, and are bought by mouse click;
 - the green collect-all board resolves runtime stable slots dynamically and claims the combined pending income;
 - placed stable animals, pending income, upgrade level, and last save time are stored in PlayerPrefs in Play Mode with a plot-instance-specific slot id;
-- offline stable income is capped to avoid unbounded prototype rewards.
+- offline stable income is calculated from the saved UTC timestamp by real elapsed seconds; the default prototype setting has no offline cap, so next-day returns still accumulate income.
 - prototype saves, including inventory, can be cleared in the Unity Editor through `Tools/Kick Lucky Cube/Clear Prototype Save`.
 
 Inventory / tool bar:
@@ -423,10 +447,10 @@ Inventory / tool bar:
 
 Shop:
 
-- Speed cards buy animal speed levels with soft currency;
-- runtime Speed Upgrades shop exposes the sequential speed-level purchase flow through `Y` / the speed kiosk pad;
+- Speed cards buy the next uncapped animal speed level with soft currency;
+- runtime Speed Upgrades shop exposes uncapped `+1`, `+5`, and `+10` speed bundles through `Y` / the speed kiosk pad;
 - Tool cards buy the next strength tool tier with soft currency;
-- runtime Training Equipment shop also exposes strength tool unlock/equip flow through `T` / `Tools`;
+- runtime Training Equipment shop also exposes strength tool unlock/equip flow through `T` / `Tools` / the weights-training kiosk pad;
 - Strength boost cards buy a one-shot strength increase with soft currency;
 - runtime Style shop buys and equips lucky cube color skins from the style kiosk hold-interaction anchor;
 - Epic Mob Shop sells three one-time exclusive mobs and immediately selects the purchased mob when inventory has space;
@@ -434,8 +458,8 @@ Shop:
 
 Future feature spots:
 
-- Weather Machine requires at least one Epic or Legendary mob in inventory or stable, lasts 10 minutes, and gives landed cubes a chance to boost rarity before the animal roulette;
-- Exchange Booth consumes one of 10 exchange charges, restores one charge every 5 minutes, and swaps the selected inventory mob for a nearby-value random mob;
+- Weather Machine requires at least one Epic or Legendary mob in inventory or stable, lasts 10 minutes, gives landed cubes a chance to boost rarity before the animal roulette, and is shown in the future-feature status strip while active;
+- Exchange Booth opens a confirmation window for the currently selected mob, consumes one of 10 exchange charges after confirmation, restores one charge every 5 minutes, and swaps the selected inventory mob for a nearby-value random mob;
 - Epic Mob Shop sells `Crystal Griffin`, `Neon Hydra`, and `Sun Kaiju` as one-time exclusive purchases;
 - Rating Gift Stand grants `Star Review Buddy` once per save file;
 - future feature save keys are included in the prototype save reset menu.
@@ -458,7 +482,7 @@ Rebirth:
 - first rebirth requires 1000 strength;
 - each next rebirth requirement is 10x higher;
 - multiplier increases from x2 to x3 to x4 and so on;
-- rebirth restarts character progression while increasing money gain.
+- rebirth resets strength while keeping speed/tool ownership and increasing money gain.
 
 ## First Implementation Order
 
@@ -471,7 +495,7 @@ Rebirth:
 7. Sell/stable placement. Done.
 8. Stable income, collect button, and per-slot booster board. Done.
 9. Strength tools and training prompts. Bottom-slot training, movement cancel, `x2`, gain FX, and runtime tool shop prototype done.
-10. Speed upgrades. Runtime speed shop, kiosk pad opening, and sequential level purchases done.
+10. Speed upgrades. Runtime speed shop, kiosk pad opening, uncapped levels, and `+1`/`+5`/`+10` bundle purchases done.
 11. Rebirth window and multiplier economy. Done.
 12. Tool belt selection. First owned-tier selection prototype done.
 13. Rewards window and playtime hard/soft claims. Done.
@@ -517,8 +541,7 @@ Latest rebirth probe:
 rebirth count -> 1
 soft gain -> x2
 strength reset -> 120
-animal speed reset -> 7.0
-tool level reset -> 1
+animal speed/tool ownership -> kept
 100 soft reward after rebirth -> 200 soft
 next requirement -> 10000 strength
 ```
@@ -582,12 +605,24 @@ Returned mob -> added through inventory and selected as held mob
 Stable slot runtime binder -> 10 stable modules on KLC_PlotInstance_MOVE_PlotSlot_01
 Stable booster board -> level saved and income multiplier applied per slot
 Speed shop -> opens from speed kiosk pad and buys sequential levels
-Training equipment shop -> unlocks next tool tier and re-equips owned tools
+Training equipment shop -> opens from weights kiosk pad, unlocks next tool tier, and re-equips owned tools
 Style shop -> opens from style kiosk hold anchor and applies selected cube color
 Weather machine -> requires Epic/Legendary mob and can boost landed rarity before roulette
 Exchange booth -> consumes/restores exchange charges and swaps selected mob
 Epic mob shop/rating gift -> add exclusive mobs through inventory save path
 Leaderboard -> updates local/fake ranking text in Play Mode
+```
+
+Latest core-loop feature probe:
+
+```text
+Training shop pad -> object true, target true, pad true, prompt Open tools shop, mode Press
+Training shop buy tier 2 -> owned 2, selected 2
+Future status pills -> weather true, exchange true
+Exchange window -> active true, selected mob shown, confirms replacement, charges 0
+Epic mob shop buy #1 -> owned true, button disabled after purchase, text Owned
+Weather status -> active true, label Weather active 10:00, Rare boosted to Epic
+Rebirth -> true, count 1, strength reset to 120, tool tier kept at 2, soft x2, +100 gives 200
 ```
 
 ## Latest Agent Test Pass

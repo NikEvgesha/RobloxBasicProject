@@ -1,9 +1,10 @@
 {
   "dependencies": {
-    "com.ivanmurzak.unity.mcp": "0.79.0",
-    "com.ivanmurzak.unity.mcp.animation": "1.2.14",
-    "com.ivanmurzak.unity.mcp.particlesystem": "1.2.14",
-    "com.ivanmurzak.unity.mcp.probuilder": "1.2.14",
+    "com.ivanmurzak.unity.mcp": "0.80.1",
+    "com.ivanmurzak.unity.mcp.animation": "1.2.17",
+    "com.ivanmurzak.unity.mcp.inputsystem": "1.0.3",
+    "com.ivanmurzak.unity.mcp.particlesystem": "1.2.17",
+    "com.ivanmurzak.unity.mcp.probuilder": "1.2.17",
     "com.romanlee17.mirrasdk5": "https://github.com/MirraSDK/SDK5.git",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.navigation": "2.0.10",
@@ -51,8 +52,7 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0",
-    "com.ivanmurzak.unity.mcp.inputsystem": "1.0.0"
+    "com.unity.modules.xr": "1.0.0"
   },
   "scopedRegistries": [
     {

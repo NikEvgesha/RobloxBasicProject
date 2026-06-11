@@ -91,7 +91,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             textTransform.localRotation = Quaternion.identity;
             textTransform.localScale = Vector3.one;
 
-            var text = textTransform.GetComponent<TextMesh>() ?? textTransform.gameObject.AddComponent<TextMesh>();
+            var text = textTransform.GetComponent<TextMesh>();
+            if (text == null)
+            {
+                text = textTransform.gameObject.AddComponent<TextMesh>();
+            }
+
             text.anchor = anchor;
             text.alignment = anchor == TextAnchor.MiddleLeft ? TextAlignment.Left : TextAlignment.Center;
             text.characterSize = characterSize;
