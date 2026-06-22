@@ -1,10 +1,10 @@
 {
   "dependencies": {
-    "com.ivanmurzak.unity.mcp": "0.80.1",
-    "com.ivanmurzak.unity.mcp.animation": "1.2.17",
-    "com.ivanmurzak.unity.mcp.inputsystem": "1.0.3",
-    "com.ivanmurzak.unity.mcp.particlesystem": "1.2.17",
-    "com.ivanmurzak.unity.mcp.probuilder": "1.2.17",
+    "com.ivanmurzak.unity.mcp": "0.82.1",
+    "com.ivanmurzak.unity.mcp.animation": "1.2.20",
+    "com.ivanmurzak.unity.mcp.inputsystem": "1.0.6",
+    "com.ivanmurzak.unity.mcp.particlesystem": "1.2.20",
+    "com.ivanmurzak.unity.mcp.probuilder": "1.2.20",
     "com.romanlee17.mirrasdk5": "https://github.com/MirraSDK/SDK5.git",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.navigation": "2.0.10",

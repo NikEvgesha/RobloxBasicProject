@@ -5,6 +5,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     public sealed class KickLuckyCubeSpawnedAnimal : MonoBehaviour
     {
         [SerializeField] private string animalName;
+        [SerializeField] private string catalogId;
         [SerializeField] private KickLuckyCubeRarity rarity;
         [SerializeField, Min(0)] private int sellValue;
         [SerializeField, Min(0)] private int incomePerSecond;
@@ -14,6 +15,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private Renderer outlineRenderer;
 
         public string AnimalName => animalName;
+        public string CatalogId => string.IsNullOrWhiteSpace(catalogId)
+            ? KickLuckyCubeAnimalCatalog.MakeStableId(AnimalName, rarity)
+            : catalogId;
         public KickLuckyCubeRarity Rarity => rarity;
         public int SellValue => sellValue;
         public int IncomePerSecond => incomePerSecond;
@@ -23,6 +27,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public void Configure(KickLuckyCubeAnimalOption option, float baseRunnerSpeed)
         {
             animalName = option.AnimalName;
+            catalogId = option.CatalogId;
             rarity = option.Rarity;
             sellValue = option.SellValue;
             incomePerSecond = option.IncomePerSecond;

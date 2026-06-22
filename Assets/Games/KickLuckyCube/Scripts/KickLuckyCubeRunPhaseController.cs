@@ -515,6 +515,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (hasReturnedAnimal)
             {
+                KickLuckyCubeAnimalCollection.MarkDiscovered(returnedAnimal);
+
                 if (inventory != null && inventory.TryAddAnimal(returnedAnimal, true, out _))
                 {
                     addedToInventory = true;

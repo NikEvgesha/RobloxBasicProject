@@ -113,12 +113,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var rootImage = GetComponent<Image>();
             if (rootImage == null)
             {
-                rootImage = gameObject.AddComponent<Image>();
+                rootImage = KickLuckyCubeUiTheme.AddImage(gameObject, KickLuckyCubeUiTheme.ActionPlate);
             }
 
             if (rootImage != null)
             {
-                rootImage.color = new Color(0.05f, 0.11f, 0.05f, 0.74f);
+                KickLuckyCubeUiTheme.AddImage(rootImage.gameObject, KickLuckyCubeUiTheme.ActionPlate);
+                rootImage.color = KickLuckyCubeUiTheme.ActionPlate;
                 rootImage.raycastTarget = true;
             }
 
@@ -135,7 +136,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 iconFrameImage = iconFrame.GetComponent<Image>();
                 if (iconFrameImage != null)
                 {
-                    iconFrameImage.color = new Color(0.14f, 0.92f, 0.22f, 0.92f);
+                    KickLuckyCubeUiTheme.AddImage(iconFrameImage.gameObject, KickLuckyCubeUiTheme.Primary);
+                    iconFrameImage.color = KickLuckyCubeUiTheme.Primary;
                     iconFrameImage.raycastTarget = true;
                 }
             }
@@ -163,6 +165,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 headlineText.alignment = TextAnchor.MiddleCenter;
                 headlineText.fontSize = 38;
                 headlineText.raycastTarget = false;
+                KickLuckyCubeUiTheme.StyleText(headlineText, "Title");
             }
 
             if (amountText != null)
@@ -174,6 +177,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (claimButton != null)
             {
                 claimButton.targetGraphic = iconFrameImage != null ? iconFrameImage : rootImage;
+                KickLuckyCubeUiTheme.StyleButton(claimButton, "ActionButton");
                 claimButton.interactable = visible;
             }
         }

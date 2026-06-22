@@ -55,6 +55,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>();
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
             WireButtons();
+            ApplyTheme();
             Refresh();
         }
 
@@ -88,6 +89,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var reward = PickReward();
             GrantReward(reward);
             PlayerPrefs.SetFloat(NextSpinAtKey, Time.unscaledTime + cooldownSeconds);
+            PlayerPrefs.Save();
             visualSpinVelocity = 920f;
 
             if (resultText != null)
@@ -102,6 +104,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public void ResetCooldownForPrototype()
         {
             PlayerPrefs.DeleteKey(NextSpinAtKey);
+            PlayerPrefs.Save();
             Refresh();
         }
 
@@ -127,8 +130,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (pointerImage != null)
             {
                 pointerImage.color = CanSpin
-                    ? new Color(1f, 0.82f, 0.12f, 1f)
-                    : new Color(0.65f, 0.70f, 0.78f, 1f);
+                    ? KickLuckyCubeUiTheme.Warning
+                    : KickLuckyCubeUiTheme.Disabled;
             }
         }
 
@@ -141,6 +144,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             spinButton.onClick.RemoveListener(SpinFromButton);
             spinButton.onClick.AddListener(SpinFromButton);
+        }
+
+        private void ApplyTheme()
+        {
+            KickLuckyCubeUiTheme.StyleButton(spinButton, spinButton != null ? spinButton.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(titleText, titleText != null ? titleText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(resultText, resultText != null ? resultText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(cooldownText, cooldownText != null ? cooldownText.gameObject.name : string.Empty);
+
+            if (pointerImage != null)
+            {
+                KickLuckyCubeUiTheme.StyleTree(pointerImage.gameObject);
+            }
         }
 
         private void SpinFromButton()

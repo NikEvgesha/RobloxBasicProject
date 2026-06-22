@@ -21,6 +21,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void Awake()
         {
+            ApplyTheme();
             WireButtons();
 
             if (closeOnAwake)
@@ -69,6 +70,33 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (backdropRoot != null)
             {
                 backdropRoot.SetActive(false);
+            }
+        }
+
+        private void ApplyTheme()
+        {
+            KickLuckyCubeUiTheme.StyleTree(windowRoot);
+
+            if (openButtons != null)
+            {
+                foreach (var button in openButtons)
+                {
+                    if (button != null)
+                    {
+                        KickLuckyCubeUiTheme.StyleButton(button, button.gameObject.name);
+                    }
+                }
+            }
+
+            if (closeButtons != null)
+            {
+                foreach (var button in closeButtons)
+                {
+                    if (button != null)
+                    {
+                        KickLuckyCubeUiTheme.StyleButton(button, button.gameObject.name);
+                    }
+                }
             }
         }
 

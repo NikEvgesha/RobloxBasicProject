@@ -46,7 +46,7 @@ Implemented in the overview scene:
 - wave speed scales up from the kick distance and is shown as a world label above the wave;
 - red screen-edge danger vignette that intensifies as the wave approaches the animal;
 - return success state respawns the prototype player at the animal's finish point, stores the returned animal through the inventory, and selects it as the active held mob;
-- runtime inventory UI with slot 1 reserved for the selected training tool and slots 2-5 reserved for up to four mobs;
+- runtime inventory UI with slot 1 reserved for the selected training tool and slots 2-5 reserved for up to four visible mobs;
 - inventory window opened by `I` or the `Bag` button, with drag/drop movement between full inventory slots and bottom mob slots;
 - inventory hotbar/storage mobs are saved in PlayerPrefs and restored in Play Mode;
 - empty bottom mob slots are hidden in normal play and shown as drop targets only while the inventory window is open;
@@ -74,6 +74,8 @@ Implemented in the overview scene:
 - runtime Speed Upgrades shop opens from the speed kiosk stand pad or `Y` and buys affordable `+1`, `+5`, or `+10` animal speed level bundles;
 - runtime Style shop opens from the style kiosk hold-interaction anchor and buys/equips lucky cube color skins;
 - runtime Future Feature spots support weather rarity boosts, selected-mob exchange charges with confirmation UI, three exclusive epic-shop mobs, and a one-time rating gift mob;
+- runtime Animal Catalog defines the shared mob list used by kick spawns, epic shop animals, rating gift animals, and album discovery;
+- runtime Mob Album opens from a square UI button, closes through `X`, `Escape`, or backdrop click, and shows every catalog mob as a dark silhouette until it has been obtained at least once;
 - runtime Leaderboard board displays a live prototype score list based on strength, soft currency, and owned mobs;
 - working Shop card purchases for speed upgrades, strength tools, and one-shot strength boosts;
 - working playtime Rewards window with soft/hard claims;
@@ -144,18 +146,24 @@ This pass uses the imported casual Roblox UI toolkit from `Assets/SharedArt/UI` 
 - `KLC_KickHud` still receives status text from gameplay scripts;
 - `KLC_EconomyHud` still receives economy text from gameplay scripts;
 - `KLC_InteractionPrompt` still uses the shared `GameKitInteractionPromptView`.
+- runtime-generated UI should use `KickLuckyCubeUiTheme` for windows, cards, buttons, outlines, text, and shared colors instead of hardcoding unrelated local palettes;
+- HUD text, mobile controls, training bonus prompts, floating gain numbers, and world-space labels should also use `KickLuckyCubeUiTheme` helpers so buttons and labels stay visually consistent;
 
 Current UI coverage:
 
 - top-left kick/status backplate;
 - top-center objective strip;
 - top-right soft/hard currency panel with toolkit icons;
-- left-side square icon buttons for Shop, Settings, Rewards, and Rebirth;
+- left-side square icon buttons for Shop, Settings, Rewards, Rebirth, and Wheel;
 - bottom tool belt with four visual slots;
 - restyled hold-`E` interaction prompt;
 - runtime home icon above the player's plot, drawn in its own high-order screen-space overlay canvas with a black outline, so it remains visible through walls and clamps to the screen edge when the home is off-camera;
 - runtime currency gain numbers burst around the player and fly to the wallet HUD after any soft/hard wallet gain;
 - runtime future-feature status pills show current Weather and Exchange charge state;
+- runtime Mob Album uses PlayerPrefs-backed discovered flags, refreshes when a newly obtained mob is marked discovered, and uses the same bottom square-button style as the other runtime feature buttons;
+- runtime windows for Album, Inventory, Sell, Speed, Training Equipment, Cube Styles, and Future Feature panels now share the same bright Roblox-casual window/card/button/text treatment;
+- scene-backed Shop, Settings, Rewards, Rebirth, and Lucky Wheel controls also apply the shared theme on startup;
+- lower tool belt, mobile buttons, kick power meter, economy HUD, x2 training prompt, home icon, currency/strength fly texts, and stable/wave world labels use the same shared button/text/outline treatment;
 - visual Shop and Settings windows under `KLC_UIWindows`;
 - reusable local window open/close controller for game-specific UI panels.
 
@@ -205,6 +213,8 @@ Settings controls: 3 clickable rows
 Settings toggle check: Music OFF, SFX OFF, Language RU
 Settings reset check: Music ON, SFX ON, Language EN
 EventSystem: InputSystemUIInputModule, no StandaloneInputModule
+Active clickable UI overlap audit: 0 overlaps on 1920x1080 Play Mode probe
+Album backdrop probe: open -> backdrop click -> closed
 ```
 
 The Rebirth side button is wired to a working window:
@@ -330,7 +340,7 @@ Location layout blockout:
 - `Template_BaseUpgradeBoard` is the placeholder for upward base expansion / extra floors;
 - `Template_CollectAllAdRewardBoard` is the placeholder for the ad-gated collect-all reward board;
 - each of the ten `Template_StableSlot_*` objects is a grouped stable module with a paired child `MobAnchor`, `CollectSpot` placeholder, and `UpgradeBoard` booster placeholder;
-- `KLC_PlotInstance_MOVE_PlotSlot_01` is currently auto-bound in Play Mode by `KickLuckyCubeStablePlotRuntimeBinder`: its ten direct `Template_StableSlot_*` children receive stable logic, a trigger on `CollectSpot`, an `E` interaction for place/take, automatic income collection while standing on the collect spot, and a mouse-click `UpgradeBoard` for per-slot boosters;
+- the current player plot is auto-bound in Play Mode by `KickLuckyCubeStablePlotRuntimeBinder`: its ten direct `Template_StableSlot_*` children receive stable logic, a trigger on `CollectSpot`, an `E` interaction for place/take, automatic income collection while standing on the collect spot, and a mouse-click `UpgradeBoard` for per-slot boosters;
 - the player's current plot also gets a runtime home icon through `KickLuckyCubeHomeIconMarker`; it follows the plot in a dedicated UI overlay canvas, stays visible through walls and other 3D blockers, and clamps to the screen edge when the home is behind the camera;
 - empty stable collect spots show `Поставить` only while the player is carrying/selecting a mob; occupied stable collect spots show `Забрать` and return the mob to inventory, preferring free bottom hotbar slots;
 - standing on an occupied stable `CollectSpot` automatically claims pending soft currency without pressing `E`;
@@ -429,8 +439,11 @@ Stable income:
 - each occupied stable slot has a larger placed mob, a black outline, and a distance-gated billboard label above the mob;
 - stable upgrade boards show only the current level and next price, and are bought by mouse click;
 - the green collect-all board resolves runtime stable slots dynamically and claims the combined pending income;
-- placed stable animals, pending income, upgrade level, and last save time are stored in PlayerPrefs in Play Mode with a plot-instance-specific slot id;
+- placed stable animals, pending income, upgrade level, and last save time are stored in PlayerPrefs in Play Mode with player-owned slot ids like `Player.Template_StableSlot_01`, independent of which physical plot location is assigned this run;
+- fake/bot/template stable slots do not write player stable save keys and are ignored by player collect/weather checks;
 - offline stable income is calculated from the saved UTC timestamp by real elapsed seconds; the default prototype setting has no offline cap, so next-day returns still accumulate income.
+- stable saves explicitly flush `PlayerPrefs.Save()` after place/take/collect/upgrade/clear so WebGL/mobile builds do not lose the last action;
+- stable slot teardown preserves the saved inventory payload even if Unity destroys the runtime mob GameObject before `KickLuckyCubeStableSlot.OnDestroy`, so stopping Play Mode no longer clears placed mobs;
 - prototype saves, including inventory, can be cleared in the Unity Editor through `Tools/Kick Lucky Cube/Clear Prototype Save`.
 
 Inventory / tool bar:
@@ -438,12 +451,48 @@ Inventory / tool bar:
 - bottom slot 1 shows the active named training tool, its owned tier/status, and toggles tool training;
 - bottom slots 2-5 hold up to four returned mobs;
 - unused bottom mob slots are hidden unless the inventory window is open;
+- when the inventory window is closed, visible mob slots are compacted left-to-right and number shortcuts select by visible order: `1` always toggles training, then `2-5` select the first through fourth visible mob;
+- when the inventory window is open, bottom mob slots keep their physical slot positions so drag/drop placement remains explicit;
 - overflow mobs go into the temporary inventory window but can still become the active held mob;
 - mobs can be dragged between inventory-window slots and bottom-bar mob slots, or dropped onto empty window space to create the next inventory slot;
 - selected mobs are shown in `KLC_CarryAnchor`; selecting the same mob again deselects it, and selecting any mob stops active tool training;
 - the sell kiosk opens a runtime sell window with 3-column square mob cards and removes sold mobs from the bottom bar/inventory while adding their sell value to the wallet;
 - selected inventory mobs can be placed into an empty stable `CollectSpot`; if placement fails, the mob is returned to the hotbar/inventory;
 - inventory persistence is active, and stable slot persistence stores the full inventory animal payload.
+
+Save contract:
+
+- `KickLuckyCube.Wallet.*`: soft and hard currency;
+- `KickLuckyCube.PlayerStats.*`: strength, animal speed, speed level, owned tool tier, and selected tool tier;
+- `KickLuckyCube.Inventory.State`: bottom hotbar and storage inventory mobs;
+- `KickLuckyCube.Stable.Player.Template_StableSlot_*`: placed stable mob payload, pending soft, upgrade level, and last UTC save time;
+- `KickLuckyCube.Rewards.*`: playtime reward elapsed time, claimed mask, and reset start time;
+- `KickLuckyCube.Rebirth.*`: rebirth count, which restores the soft gain multiplier at startup;
+- `KickLuckyCube.Settings.*`: music, SFX, and language;
+- `KickLuckyCube.Wheel.NextSpinAt`: wheel cooldown;
+- `KickLuckyCube.Future.*`: weather timer, exchange charges/timer, epic mob purchases, and rating gift claim;
+- `KickLuckyCube.AnimalCollection.Discovered.*`: album discovery flags.
+
+Latest persistence probe:
+
+```text
+Stable slots -> 14 total, 10 player persistent, 0 duplicate save ids
+Player stable ids -> Player.Template_StableSlot_01 ... Player.Template_StableSlot_10
+Non-player stable slots with save id -> 0
+Stable in-session load probe -> temporary Probe Cat placed, AnimalJson saved, slot reloaded occupied, then probe keys cleared
+Stable full restart probe -> temporary Full Cycle Probe 2 placed, Stop Play, Start Play, reloaded occupied from PlayerPrefs, then probe keys restored
+Fresh Unity errors after final compile -> 0
+```
+
+Animal catalog / album:
+
+- `KickLuckyCubeAnimalCatalog` is the current shared runtime source for regular kick mobs, epic-shop exclusives, and rating gift mobs;
+- every catalog mob has a stable `catalogId`, display name, rarity, body color, sell value, income per second, speed multiplier, and source;
+- `KickLuckyCubeInventoryAnimal` and `KickLuckyCubeSpawnedAnimal` carry `catalogId` while preserving old saves by falling back to name+rarity matching;
+- `KickLuckyCubeAnimalCollection` stores discovered flags in PlayerPrefs under `KickLuckyCube.AnimalCollection.Discovered.*`;
+- mobs are marked discovered when obtained through return-to-line, inventory add, stable placement, epic shop, rating gift, or exchange result;
+- `KickLuckyCubeAnimalAlbumController` creates a runtime square `Album` button and a scrollable album window with `X`, `Escape`, and backdrop-click close behavior;
+- undiscovered mobs appear as dark silhouettes with hidden names/stats, while discovered mobs show name, rarity, income, sell value, and source.
 
 Shop:
 
@@ -602,7 +651,7 @@ Latest plot/shop/future smoke:
 
 ```text
 Returned mob -> added through inventory and selected as held mob
-Stable slot runtime binder -> 10 stable modules on KLC_PlotInstance_MOVE_PlotSlot_01
+Stable slot runtime binder -> 10 player stable modules
 Stable booster board -> level saved and income multiplier applied per slot
 Speed shop -> opens from speed kiosk pad and buys sequential levels
 Training equipment shop -> opens from weights kiosk pad, unlocks next tool tier, and re-equips owned tools

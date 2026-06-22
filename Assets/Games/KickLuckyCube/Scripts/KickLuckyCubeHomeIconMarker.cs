@@ -244,9 +244,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
     public sealed class KickLuckyCubeHomeIconGraphic : MaskableGraphic
     {
-        [SerializeField] private Color outlineColor = Color.black;
-        [SerializeField] private Color roofColor = new(1f, 0.88f, 0.08f, 1f);
-        [SerializeField] private Color bodyColor = new(0.12f, 0.78f, 1f, 1f);
+        [SerializeField] private Color outlineColor = KickLuckyCubeUiTheme.Outline;
+        [SerializeField] private Color roofColor = KickLuckyCubeUiTheme.Warning;
+        [SerializeField] private Color bodyColor = KickLuckyCubeUiTheme.Secondary;
         [SerializeField] private Color doorColor = new(1f, 1f, 1f, 1f);
         [SerializeField, Min(0f)] private float outlinePixels = 5f;
 

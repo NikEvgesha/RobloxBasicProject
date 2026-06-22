@@ -6166,7 +6166,6 @@ MonoBehaviour:
   baseSpeedCost: 60
   speedCostStep: 55
   speedGain: 0.8
-  maxSpeedLevel: 8
   baseToolCost: 90
   toolCostMultiplier: 2
   maxStrengthToolTier: 5
@@ -21662,7 +21661,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeStablePlacementPad
   runPhase: {fileID: 85609418}
+  inventory: {fileID: 0}
+  wallet: {fileID: 0}
   stableSlot: {fileID: 1992016295}
+  collectLabel: {fileID: 0}
+  collectLabelLocalPosition: {x: 0, y: 0.08, z: 0}
+  collectLabelLocalEuler: {x: 90, y: 0, z: 0}
+  collectLabelVisibleDistance: 22
+  placePromptText: "\u041F\u043E\u0441\u0442\u0430\u0432\u0438\u0442\u044C"
+  takePromptText: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
 --- !u!1 &84920121
 GameObject:
   m_ObjectHideFlags: 0
@@ -22634,60 +22641,70 @@ MonoBehaviour:
     sellValue: 25
     incomePerSecond: 1
     speedMultiplier: 1
+    catalogId: 
   - rarity: 1
     animalName: Dog
     bodyColor: {r: 0.72, g: 0.52, b: 0.32, a: 1}
     sellValue: 30
     incomePerSecond: 1
     speedMultiplier: 1.02
+    catalogId: 
   - rarity: 2
     animalName: Fox
     bodyColor: {r: 1, g: 0.42, b: 0.18, a: 1}
     sellValue: 70
     incomePerSecond: 3
     speedMultiplier: 1.08
+    catalogId: 
   - rarity: 2
     animalName: Boar
     bodyColor: {r: 0.45, g: 0.36, b: 0.28, a: 1}
     sellValue: 82
     incomePerSecond: 3
     speedMultiplier: 0.96
+    catalogId: 
   - rarity: 3
     animalName: Wolf
     bodyColor: {r: 0.48, g: 0.58, b: 0.72, a: 1}
     sellValue: 180
     incomePerSecond: 7
     speedMultiplier: 1.15
+    catalogId: 
   - rarity: 3
     animalName: Deer
     bodyColor: {r: 0.74, g: 0.47, b: 0.22, a: 1}
     sellValue: 210
     incomePerSecond: 8
     speedMultiplier: 1.22
+    catalogId: 
   - rarity: 4
     animalName: Lion
     bodyColor: {r: 1, g: 0.72, b: 0.18, a: 1}
     sellValue: 520
     incomePerSecond: 18
     speedMultiplier: 1.28
+    catalogId: 
   - rarity: 4
     animalName: Dragon Pup
     bodyColor: {r: 0.62, g: 0.35, b: 1, a: 1}
     sellValue: 680
     incomePerSecond: 24
     speedMultiplier: 1.36
+    catalogId: 
   - rarity: 5
     animalName: Phoenix
     bodyColor: {r: 1, g: 0.24, b: 0.12, a: 1}
     sellValue: 1600
     incomePerSecond: 60
     speedMultiplier: 1.48
+    catalogId: 
   - rarity: 5
     animalName: Lucky Beast
     bodyColor: {r: 0.2, g: 1, b: 0.72, a: 1}
     sellValue: 2200
     incomePerSecond: 85
     speedMultiplier: 1.55
+    catalogId: 
   spawnOffset: {x: 0, y: 0.58, z: 0}
 --- !u!114 &85609421
 MonoBehaviour:
@@ -53308,7 +53325,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeStablePlacementPad
   runPhase: {fileID: 85609418}
+  inventory: {fileID: 0}
+  wallet: {fileID: 0}
   stableSlot: {fileID: 1272762863}
+  collectLabel: {fileID: 0}
+  collectLabelLocalPosition: {x: 0, y: 0.08, z: 0}
+  collectLabelLocalEuler: {x: 90, y: 0, z: 0}
+  collectLabelVisibleDistance: 22
+  placePromptText: "\u041F\u043E\u0441\u0442\u0430\u0432\u0438\u0442\u044C"
+  takePromptText: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
 --- !u!1 &222054913
 GameObject:
   m_ObjectHideFlags: 0
@@ -53345,7 +53370,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -130}
+  m_AnchoredPosition: {x: 0, y: -220}
   m_SizeDelta: {x: 86, y: 82}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &222054915
@@ -195253,12 +195278,12 @@ MonoBehaviour:
   wallet: {fileID: 85609421}
   stats: {fileID: 85609416}
   runPhase: {fileID: 85609418}
+  speedShop: {fileID: 0}
   trainingBonusPrompt: {fileID: 0}
   statusLabel: {fileID: 1421336703}
   baseSpeedCost: 60
   speedCostStep: 55
   speedGain: 0.8
-  maxSpeedLevel: 8
   baseToolCost: 90
   toolCostMultiplier: 2
   maxStrengthToolTier: 5
@@ -196041,12 +196066,12 @@ MonoBehaviour:
   wallet: {fileID: 85609421}
   stats: {fileID: 85609416}
   runPhase: {fileID: 85609418}
+  speedShop: {fileID: 0}
   trainingBonusPrompt: {fileID: 713525837}
   statusLabel: {fileID: 127467676}
   baseSpeedCost: 60
   speedCostStep: 55
   speedGain: 0.8
-  maxSpeedLevel: 8
   baseToolCost: 90
   toolCostMultiplier: 2
   maxStrengthToolTier: 5
@@ -298365,9 +298390,18 @@ MonoBehaviour:
   statusLabel: {fileID: 1515119524}
   stableSlotId: 
   saveKeyPrefix: KickLuckyCube.Stable.
-  incomeUpdateSeconds: 1
   saveIntervalSeconds: 5
   offlineIncomeCapSeconds: 7200
+  upgradeLevel: 1
+  baseUpgradeCost: 150
+  upgradeCostMultiplier: 1.65
+  incomeBonusPerLevel: 0.2
+  stableAnimalLocalPosition: {x: 0, y: 0, z: 0}
+  stableAnimalTargetHeight: 1.05
+  stableAnimalBottomOffset: 0.04
+  hideMobAnchorVisuals: 1
+  labelVisibleDistance: 22
+  labelWorldOffset: {x: 0, y: 0.62, z: 0}
   saveInPlayerPrefs: 1
 --- !u!43 &1273765112
 Mesh:
@@ -300509,7 +300543,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeStablePlacementPad
   runPhase: {fileID: 85609418}
+  inventory: {fileID: 0}
+  wallet: {fileID: 0}
   stableSlot: {fileID: 2143067174}
+  collectLabel: {fileID: 0}
+  collectLabelLocalPosition: {x: 0, y: 0.08, z: 0}
+  collectLabelLocalEuler: {x: 90, y: 0, z: 0}
+  collectLabelVisibleDistance: 22
+  placePromptText: "\u041F\u043E\u0441\u0442\u0430\u0432\u0438\u0442\u044C"
+  takePromptText: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
 --- !u!1 &1284836743
 GameObject:
   m_ObjectHideFlags: 0
@@ -324482,9 +324524,18 @@ MonoBehaviour:
   statusLabel: {fileID: 165666611}
   stableSlotId: 
   saveKeyPrefix: KickLuckyCube.Stable.
-  incomeUpdateSeconds: 1
   saveIntervalSeconds: 5
   offlineIncomeCapSeconds: 7200
+  upgradeLevel: 1
+  baseUpgradeCost: 150
+  upgradeCostMultiplier: 1.65
+  incomeBonusPerLevel: 0.2
+  stableAnimalLocalPosition: {x: 0, y: 0, z: 0}
+  stableAnimalTargetHeight: 1.05
+  stableAnimalBottomOffset: 0.04
+  hideMobAnchorVisuals: 1
+  labelVisibleDistance: 22
+  labelWorldOffset: {x: 0, y: 0.62, z: 0}
   saveInPlayerPrefs: 1
 --- !u!1 &1370081771
 GameObject:
@@ -358855,7 +358906,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeStablePlacementPad
   runPhase: {fileID: 85609418}
+  inventory: {fileID: 0}
+  wallet: {fileID: 0}
   stableSlot: {fileID: 1370002225}
+  collectLabel: {fileID: 0}
+  collectLabelLocalPosition: {x: 0, y: 0.08, z: 0}
+  collectLabelLocalEuler: {x: 90, y: 0, z: 0}
+  collectLabelVisibleDistance: 22
+  placePromptText: "\u041F\u043E\u0441\u0442\u0430\u0432\u0438\u0442\u044C"
+  takePromptText: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
 --- !u!43 &1523441907
 Mesh:
   m_ObjectHideFlags: 0
@@ -367988,12 +368047,12 @@ MonoBehaviour:
   wallet: {fileID: 85609421}
   stats: {fileID: 85609416}
   runPhase: {fileID: 85609418}
+  speedShop: {fileID: 0}
   trainingBonusPrompt: {fileID: 0}
   statusLabel: {fileID: 1681761040}
   baseSpeedCost: 60
   speedCostStep: 55
   speedGain: 0.8
-  maxSpeedLevel: 8
   baseToolCost: 90
   toolCostMultiplier: 2
   maxStrengthToolTier: 5
@@ -463161,9 +463220,18 @@ MonoBehaviour:
   statusLabel: {fileID: 1092327655}
   stableSlotId: 
   saveKeyPrefix: KickLuckyCube.Stable.
-  incomeUpdateSeconds: 1
   saveIntervalSeconds: 5
   offlineIncomeCapSeconds: 7200
+  upgradeLevel: 1
+  baseUpgradeCost: 150
+  upgradeCostMultiplier: 1.65
+  incomeBonusPerLevel: 0.2
+  stableAnimalLocalPosition: {x: 0, y: 0, z: 0}
+  stableAnimalTargetHeight: 1.05
+  stableAnimalBottomOffset: 0.04
+  hideMobAnchorVisuals: 1
+  labelVisibleDistance: 22
+  labelWorldOffset: {x: 0, y: 0.62, z: 0}
   saveInPlayerPrefs: 1
 --- !u!43 &1992308571
 Mesh:
@@ -477614,7 +477682,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.GameKit.Interaction.GameKitInteractionDriver
   actor: {fileID: 2063598238}
   promptView: {fileID: 172369626}
-  fallbackKey: 101
   progressReleaseSpeed: 4
 --- !u!54 &2063598240
 Rigidbody:
@@ -494399,9 +494466,18 @@ MonoBehaviour:
   statusLabel: {fileID: 2127900835}
   stableSlotId: 
   saveKeyPrefix: KickLuckyCube.Stable.
-  incomeUpdateSeconds: 1
   saveIntervalSeconds: 5
   offlineIncomeCapSeconds: 7200
+  upgradeLevel: 1
+  baseUpgradeCost: 150
+  upgradeCostMultiplier: 1.65
+  incomeBonusPerLevel: 0.2
+  stableAnimalLocalPosition: {x: 0, y: 0, z: 0}
+  stableAnimalTargetHeight: 1.05
+  stableAnimalBottomOffset: 0.04
+  hideMobAnchorVisuals: 1
+  labelVisibleDistance: 22
+  labelWorldOffset: {x: 0, y: 0.62, z: 0}
   saveInPlayerPrefs: 1
 --- !u!1 &2143162563
 GameObject:

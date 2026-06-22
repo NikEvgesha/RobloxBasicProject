@@ -26,6 +26,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             public float UnlockSeconds => Mathf.Max(1f, unlockSeconds);
             public Button ClaimButton => claimButton;
 
+            public void ApplyTheme()
+            {
+                if (frameImage != null)
+                {
+                    KickLuckyCubeUiTheme.StyleTree(frameImage.gameObject);
+                }
+
+                KickLuckyCubeUiTheme.StyleButton(claimButton, claimButton != null ? claimButton.gameObject.name : string.Empty);
+                KickLuckyCubeUiTheme.StyleText(titleText, titleText != null ? titleText.gameObject.name : string.Empty);
+                KickLuckyCubeUiTheme.StyleText(rewardText, rewardText != null ? rewardText.gameObject.name : string.Empty);
+                KickLuckyCubeUiTheme.StyleText(statusText, statusText != null ? statusText.gameObject.name : string.Empty);
+            }
+
             public void Refresh(bool claimed, bool claimable, float remainingSeconds)
             {
                 if (titleText != null)
@@ -55,10 +68,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 if (frameImage != null)
                 {
                     frameImage.color = claimed
-                        ? new Color(0.4f, 0.42f, 0.46f, 0.85f)
+                        ? KickLuckyCubeUiTheme.Disabled
                         : claimable
-                            ? new Color(0.25f, 0.92f, 0.22f, 1f)
-                            : new Color(0.12f, 0.66f, 0.95f, 1f);
+                            ? KickLuckyCubeUiTheme.Primary
+                            : KickLuckyCubeUiTheme.Secondary;
                 }
             }
 
@@ -124,6 +137,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             EnsureClaimedArray();
             LoadState();
             WireButtons();
+            ApplyTheme();
             RefreshView();
         }
 
@@ -238,6 +252,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
+        private void ApplyTheme()
+        {
+            KickLuckyCubeUiTheme.StyleText(headerText, headerText != null ? headerText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(statusText, statusText != null ? statusText.gameObject.name : string.Empty);
+
+            if (rewards == null)
+            {
+                return;
+            }
+
+            foreach (var reward in rewards)
+            {
+                reward?.ApplyTheme();
+            }
+        }
+
         private void UnwireButtons()
         {
             if (rewards == null)
@@ -296,6 +326,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             PlayerPrefs.SetFloat(saveKeyPrefix + ElapsedKey, elapsedSeconds);
             PlayerPrefs.SetInt(saveKeyPrefix + ClaimedMaskKey, claimedMask);
+            PlayerPrefs.Save();
         }
 
         private void EnsureClaimedArray()

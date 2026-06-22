@@ -25,8 +25,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0)] private int baseSpeedCost = 60;
         [SerializeField, Min(0)] private int speedCostStep = 55;
         [SerializeField, Min(0.1f)] private float speedGain = 0.8f;
-        [SerializeField] private Color nextColor = new(0.18f, 0.78f, 0.26f, 0.94f);
-        [SerializeField] private Color lockedColor = new(0.18f, 0.18f, 0.20f, 0.86f);
+        [SerializeField] private Color nextColor = KickLuckyCubeUiTheme.Primary;
+        [SerializeField] private Color lockedColor = KickLuckyCubeUiTheme.CardDark;
 
         private RectTransform windowRoot;
         private Text statusText;
@@ -166,8 +166,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>(FindObjectsInactive.Include);
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
             canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
-            uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            uiFont = KickLuckyCubeUiTheme.Font;
         }
 
         private void Subscribe()
@@ -272,6 +271,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             purchaseFrames[index] = AddImage(card.gameObject, lockedColor);
             var cardButton = card.gameObject.AddComponent<Button>();
             cardButton.targetGraphic = purchaseFrames[index];
+            KickLuckyCubeUiTheme.StyleButton(cardButton, "SpeedUpgradeButton");
             cardButton.onClick.AddListener(() => BuyLevels(levels));
             purchaseButtons[index] = cardButton;
 
@@ -486,6 +486,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var image = AddImage(rect.gameObject, new Color(0.08f, 0.08f, 0.08f, 0.88f));
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
+            KickLuckyCubeUiTheme.StyleButton(button, name);
             CreateLabel(rect, "Label", label, 14, TextAnchor.MiddleCenter, size, Vector2.zero);
             return button;
         }
@@ -503,14 +504,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             label.color = Color.white;
             label.text = text;
             label.raycastTarget = false;
+            KickLuckyCubeUiTheme.StyleText(label, name);
             return label;
         }
 
         private static Image AddImage(GameObject target, Color color)
         {
-            var image = target.AddComponent<Image>();
-            image.color = color;
-            return image;
+            return KickLuckyCubeUiTheme.AddImage(target, color);
         }
 
         private static bool ReadTogglePressed()

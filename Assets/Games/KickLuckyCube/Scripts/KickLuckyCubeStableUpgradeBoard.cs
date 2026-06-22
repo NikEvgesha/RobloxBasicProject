@@ -233,11 +233,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             label.fontSize = 96;
             label.characterSize = ResolveBoardLabelCharacterSize();
             label.lineSpacing = 0.62f;
-            KickLuckyCubeWorldTextOutline.ApplyTextColor(label, Color.white);
-
-            var outline = label.GetComponent<KickLuckyCubeWorldTextOutline>()
-                ?? label.gameObject.AddComponent<KickLuckyCubeWorldTextOutline>();
-            outline.Configure(Color.black, Mathf.Max(0.004f, label.characterSize * 0.09f));
+            KickLuckyCubeUiTheme.StyleWorldText(label, Color.white, Mathf.Max(0.004f, label.characterSize * 0.09f));
         }
 
         private float ResolveBoardLabelCharacterSize()

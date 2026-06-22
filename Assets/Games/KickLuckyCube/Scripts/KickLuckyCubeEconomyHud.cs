@@ -14,6 +14,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>();
             collectButton ??= FindFirstObjectByType<KickLuckyCubeStableCollectButton>();
+            ApplyTheme();
         }
 
         private void OnEnable()
@@ -61,6 +62,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 worldText.text = text;
             }
+        }
+
+        private void ApplyTheme()
+        {
+            KickLuckyCubeUiTheme.StyleHudText(hudText);
+            KickLuckyCubeUiTheme.StyleWorldText(worldText, Color.white, 0.009f);
         }
     }
 }

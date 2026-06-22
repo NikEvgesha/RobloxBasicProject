@@ -26,6 +26,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var tint = isPlayerOwned ? playerTint : botTint;
             ApplyTint(tint);
+            ConfigureStablePersistence(ownerName, isPlayerOwned);
         }
 
         private void ApplyTint(Color tint)
@@ -59,6 +60,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             return new string(chars);
+        }
+
+        private void ConfigureStablePersistence(string ownerName, bool isPlayerOwned)
+        {
+            var ownerId = isPlayerOwned ? "Player" : "Bot." + Sanitize(ownerName);
+            var stableSlots = GetComponentsInChildren<KickLuckyCubeStableSlot>(true);
+            foreach (var slot in stableSlots)
+            {
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                slot.ConfigurePersistence(ownerId + "." + slot.gameObject.name, isPlayerOwned);
+            }
         }
     }
 }

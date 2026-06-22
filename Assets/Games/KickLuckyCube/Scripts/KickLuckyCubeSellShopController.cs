@@ -291,6 +291,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var image = AddImage(rect.gameObject, new Color(0.18f, 0.44f, 0.12f, 0.92f));
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
+            KickLuckyCubeUiTheme.StyleButton(button, name);
             CreateLabel(rect, "Label", label, 16, TextAnchor.MiddleCenter, size, Vector2.zero);
             return button;
         }
@@ -317,16 +318,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             label.color = Color.white;
             label.text = text;
             label.raycastTarget = false;
+            KickLuckyCubeUiTheme.StyleText(label, name);
             return label;
         }
 
         private void ResolveUiFont()
         {
-            uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (uiFont == null)
-            {
-                uiFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            }
+            uiFont = KickLuckyCubeUiTheme.Font;
         }
 
         private static RectTransform CreateRect(string name, Transform parent)
@@ -339,9 +337,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private static Image AddImage(GameObject target, Color color)
         {
-            var image = target.AddComponent<Image>();
-            image.color = color;
-            return image;
+            return KickLuckyCubeUiTheme.AddImage(target, color);
         }
 
         private static bool ReadEscapePressed()

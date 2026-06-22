@@ -162,19 +162,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public static KickLuckyCubeAnimalOption[] CreateDefaultOptions()
         {
-            return new[]
-            {
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Common, "Cat", new Color(0.96f, 0.78f, 0.34f), 25, 1, 1f),
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Common, "Dog", new Color(0.72f, 0.52f, 0.32f), 30, 1, 1.02f),
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Uncommon, "Fox", new Color(1f, 0.42f, 0.18f), 70, 3, 1.08f),
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Uncommon, "Boar", new Color(0.45f, 0.36f, 0.28f), 82, 3, 0.96f),
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Rare, "Wolf", new Color(0.48f, 0.58f, 0.72f), 180, 7, 1.15f),
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Rare, "Deer", new Color(0.74f, 0.47f, 0.22f), 210, 8, 1.22f),
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Epic, "Lion", new Color(1f, 0.72f, 0.18f), 520, 18, 1.28f),
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Epic, "Dragon Pup", new Color(0.62f, 0.35f, 1f), 680, 24, 1.36f),
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Legendary, "Phoenix", new Color(1f, 0.24f, 0.12f), 1600, 60, 1.48f),
-                new KickLuckyCubeAnimalOption(KickLuckyCubeRarity.Legendary, "Lucky Beast", new Color(0.2f, 1f, 0.72f), 2200, 85, 1.55f)
-            };
+            return KickLuckyCubeAnimalCatalog.CreateDefaultOptions();
         }
 
         private static string Sanitize(string value)

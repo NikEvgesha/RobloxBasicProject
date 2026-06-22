@@ -532,21 +532,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var text = textObject.GetComponent<Text>();
             text.text = burstIndex == 0 ? $"+{amount:0}" : "+";
             text.alignment = TextAnchor.MiddleCenter;
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = burstIndex == 0 ? 46 : 30;
-            text.fontStyle = FontStyle.Bold;
-            text.color = burstIndex == 0
-                ? new Color(1f, 0.9f, 0.08f, 1f)
-                : new Color(0.24f, 1f, 0.14f, 0.95f);
-            text.raycastTarget = false;
-
-            var shadow = textObject.GetComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.86f);
-            shadow.effectDistance = new Vector2(3f, -3f);
-
-            var outline = textObject.GetComponent<Outline>();
-            outline.effectColor = new Color(0f, 0.12f, 0f, 0.92f);
-            outline.effectDistance = new Vector2(2f, -2f);
+            KickLuckyCubeUiTheme.StyleFloatingText(
+                text,
+                burstIndex == 0 ? KickLuckyCubeUiTheme.SoftCurrency : KickLuckyCubeUiTheme.Strength);
 
             var group = textObject.GetComponent<CanvasGroup>();
             group.alpha = 1f;

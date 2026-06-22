@@ -44,6 +44,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Load();
             ApplyMoneyMultiplier();
             WireButtons();
+            ApplyTheme();
             CloseWindow();
             Refresh();
         }
@@ -153,6 +154,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
+        private void ApplyTheme()
+        {
+            KickLuckyCubeUiTheme.StyleTree(windowRoot);
+            KickLuckyCubeUiTheme.StyleButton(openButton, openButton != null ? openButton.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleButton(closeButton, closeButton != null ? closeButton.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleButton(rebirthButton, rebirthButton != null ? rebirthButton.gameObject.name : string.Empty);
+        }
+
         private void TryRebirthFromButton()
         {
             TryRebirth();
@@ -225,6 +234,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (Application.isPlaying && saveInPlayerPrefs)
             {
                 PlayerPrefs.SetInt(saveKeyPrefix + RebirthCountKey, rebirthCount);
+                PlayerPrefs.Save();
             }
         }
     }

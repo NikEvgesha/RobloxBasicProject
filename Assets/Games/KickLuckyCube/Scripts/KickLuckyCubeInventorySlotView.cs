@@ -48,6 +48,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             titleText = title;
             detailText = detail;
             badgeText = badge;
+            ApplyTheme();
+        }
+
+        public void SetIndex(int slotIndex)
+        {
+            index = slotIndex;
         }
 
         public void SetTool(string title, string detail, string badge, Color frameColor, Color iconColor)
@@ -130,6 +136,23 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 text.text = value;
             }
+        }
+
+        private void ApplyTheme()
+        {
+            if (frameImage != null)
+            {
+                KickLuckyCubeUiTheme.AddImage(frameImage.gameObject, frameImage.color);
+            }
+
+            if (iconImage != null)
+            {
+                KickLuckyCubeUiTheme.AddImage(iconImage.gameObject, iconImage.color);
+            }
+
+            KickLuckyCubeUiTheme.StyleText(titleText, titleText != null ? titleText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(detailText, detailText != null ? detailText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(badgeText, badgeText != null ? badgeText.gameObject.name : string.Empty);
         }
     }
 }

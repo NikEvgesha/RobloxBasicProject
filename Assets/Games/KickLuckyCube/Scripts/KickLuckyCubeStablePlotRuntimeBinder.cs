@@ -70,6 +70,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void ConfigureStableSlot(Transform slotRoot)
         {
             var stableSlot = GetOrAddComponent<KickLuckyCubeStableSlot>(slotRoot.gameObject);
+            stableSlot.ConfigurePersistence("Player." + slotRoot.name, true);
             stableSlot.ConfigureStableVisuals(
                 stableAnimalTargetHeight,
                 stableAnimalLocalPosition,

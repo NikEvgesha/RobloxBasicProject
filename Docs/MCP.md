@@ -83,20 +83,20 @@ http://localhost:26124
 Current project target:
 
 ```text
-com.ivanmurzak.unity.mcp = 0.80.0
-com.ivanmurzak.unity.mcp.animation = 1.2.17
-com.ivanmurzak.unity.mcp.particlesystem = 1.2.17
-com.ivanmurzak.unity.mcp.probuilder = 1.2.17
-com.ivanmurzak.unity.mcp.inputsystem = 1.0.3
+com.ivanmurzak.unity.mcp = 0.81.1
+com.ivanmurzak.unity.mcp.animation = 1.2.20
+com.ivanmurzak.unity.mcp.particlesystem = 1.2.20
+com.ivanmurzak.unity.mcp.probuilder = 1.2.20
+com.ivanmurzak.unity.mcp.inputsystem = 1.0.6
 ```
 
 These versions are pinned in `Packages/manifest.json` and `Packages/packages-lock.json`. When pulling work from another PC, keep the game changes from `develop` and resolve MCP package conflicts by taking the latest OpenUPM versions above rather than downgrading the MCP packages.
 
-The bundled NuGet MCP files under `Assets/Plugins/NuGet` should match the installed Unity MCP package. For `com.ivanmurzak.unity.mcp` 0.80.0, the project currently expects:
+The bundled NuGet MCP files under `Assets/Plugins/NuGet` should match the installed Unity MCP package. For `com.ivanmurzak.unity.mcp` 0.81.1, the project currently expects:
 
 ```text
-com.IvanMurzak.McpPlugin = 6.7.1
-com.IvanMurzak.McpPlugin.Common = 6.7.1
+com.IvanMurzak.McpPlugin = 6.10.0
+com.IvanMurzak.McpPlugin.Common = 6.10.0
 com.IvanMurzak.ReflectorNet = 5.3.1
 ```
 

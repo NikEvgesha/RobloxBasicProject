@@ -21,9 +21,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private Image musicTrack;
         [SerializeField] private Image sfxTrack;
         [SerializeField] private Image languageTrack;
-        [SerializeField] private Color enabledColor = new(0.28f, 0.95f, 0.16f, 1f);
-        [SerializeField] private Color disabledColor = new(0.94f, 0.12f, 0.27f, 1f);
-        [SerializeField] private Color languageColor = new(0.13f, 0.66f, 0.95f, 1f);
+        [SerializeField] private Color enabledColor = KickLuckyCubeUiTheme.Primary;
+        [SerializeField] private Color disabledColor = KickLuckyCubeUiTheme.Close;
+        [SerializeField] private Color languageColor = KickLuckyCubeUiTheme.Secondary;
         [SerializeField] private string[] languageCodes = { "EN", "RU" };
 
         private bool musicEnabled = true;
@@ -44,6 +44,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             LoadSettings();
             WireButtons();
+            ApplyTheme();
             RefreshView();
         }
 
@@ -150,6 +151,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             PlayerPrefs.SetInt(MusicKey, musicEnabled ? 1 : 0);
             PlayerPrefs.SetInt(SfxKey, sfxEnabled ? 1 : 0);
             PlayerPrefs.SetInt(LanguageKey, languageIndex);
+            PlayerPrefs.Save();
         }
 
         private void WireButtons()
@@ -171,6 +173,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 languageButton.onClick.RemoveListener(CycleLanguage);
                 languageButton.onClick.AddListener(CycleLanguage);
             }
+        }
+
+        private void ApplyTheme()
+        {
+            KickLuckyCubeUiTheme.StyleButton(musicButton, musicButton != null ? musicButton.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleButton(sfxButton, sfxButton != null ? sfxButton.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleButton(languageButton, languageButton != null ? languageButton.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(musicStateText, musicStateText != null ? musicStateText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(sfxStateText, sfxStateText != null ? sfxStateText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(languageStateText, languageStateText != null ? languageStateText.gameObject.name : string.Empty);
         }
 
         private void UnwireButtons()

@@ -164,7 +164,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>(FindObjectsInactive.Include);
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
             canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
-            uiFont ??= Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            uiFont ??= KickLuckyCubeUiTheme.Font;
         }
 
         private void ConfigureStyleAnchor()
@@ -301,9 +301,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Image AddImage(GameObject target, Color color)
         {
-            var image = target.AddComponent<Image>();
-            image.color = color;
-            return image;
+            return KickLuckyCubeUiTheme.AddImage(target, color);
         }
 
         private RectTransform CreateRect(string name, Transform parent)
@@ -329,6 +327,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             text.alignment = anchor;
             text.color = Color.white;
             text.raycastTarget = false;
+            KickLuckyCubeUiTheme.StyleText(text, name);
             return text;
         }
 
@@ -340,6 +339,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var image = AddImage(rect.gameObject, new Color(0.15f, 0.18f, 0.22f, 0.94f));
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
+            KickLuckyCubeUiTheme.StyleButton(button, name);
             CreateLabel(rect, "Label", value, 15, TextAnchor.MiddleCenter, size, Vector2.zero);
             return button;
         }

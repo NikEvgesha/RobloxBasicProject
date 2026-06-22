@@ -293,7 +293,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             speedLabel.alignment = TextAlignment.Center;
             speedLabel.fontSize = speedLabelFontSize;
             speedLabel.characterSize = speedLabelCharacterSize;
-            speedLabel.color = speedLabelColor;
+            KickLuckyCubeUiTheme.StyleWorldText(speedLabel, speedLabelColor, 0.01f);
         }
 
         private void RefreshSpeedLabel()
@@ -311,7 +311,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             speedLabel.transform.localPosition = speedLabelOffset;
             speedLabel.text = $"WAVE\n{waveSpeed.ToString("0.0", CultureInfo.InvariantCulture)} m/s";
-            speedLabel.color = speedLabelColor;
+            KickLuckyCubeUiTheme.StyleWorldText(speedLabel, speedLabelColor, 0.01f);
 
             var mainCamera = Camera.main;
             if (mainCamera != null)

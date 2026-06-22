@@ -26,11 +26,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private const string EpicMobBoughtKeyPrefix = "KickLuckyCube.Future.EpicMobBought.";
 
         private static readonly KickLuckyCubeInventoryAnimal[] EpicShopAnimals =
-        {
-            new("epic_shop_crystal_griffin", "Crystal Griffin", KickLuckyCubeRarity.Epic, new Color(0.24f, 0.86f, 1f), 3200, 115),
-            new("epic_shop_neon_hydra", "Neon Hydra", KickLuckyCubeRarity.Legendary, new Color(0.72f, 0.22f, 1f), 5200, 185),
-            new("epic_shop_sun_kaiju", "Sun Kaiju", KickLuckyCubeRarity.Legendary, new Color(1f, 0.66f, 0.08f), 7600, 260),
-        };
+            KickLuckyCubeAnimalCatalog.CreateEpicShopAnimals();
 
         private static readonly int[] EpicShopCosts = { 1800, 4200, 8600 };
 
@@ -324,13 +320,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var gift = new KickLuckyCubeInventoryAnimal(
-                "rating_gift_star_buddy",
-                "Star Review Buddy",
-                KickLuckyCubeRarity.Epic,
-                new Color(1f, 0.92f, 0.26f),
-                2400,
-                95);
+            var gift = KickLuckyCubeAnimalCatalog.CreateRatingGiftAnimal();
 
             if (inventory == null || !inventory.TryAddAnimal(gift, true))
             {
@@ -392,6 +382,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             return new KickLuckyCubeInventoryAnimal(
                 Guid.NewGuid().ToString("N"),
+                option.CatalogId,
                 option.AnimalName + " Trade",
                 rarity,
                 color,
@@ -407,7 +398,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             return FindObjectsByType<KickLuckyCubeStableSlot>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-                .Any(slot => slot != null && slot.PlacedAnimal != null && slot.PlacedAnimal.Rarity >= KickLuckyCubeRarity.Epic);
+                .Any(slot => slot != null
+                    && slot.IsPlayerPersistentSlot
+                    && slot.PlacedAnimal != null
+                    && slot.PlacedAnimal.Rarity >= KickLuckyCubeRarity.Epic);
         }
 
         private void RechargeExchangeCharges()
@@ -470,7 +464,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             inventory ??= FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
             canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
-            uiFont ??= Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            uiFont ??= KickLuckyCubeUiTheme.Font;
         }
 
         private void ConfigureFutureSpots()
@@ -573,8 +567,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 statusLayout.childForceExpandHeight = false;
                 statusLayout.spacing = 8f;
 
-                weatherLabel = CreateStatusPill(statusStrip, "WeatherPill", new Color(0.10f, 0.32f, 0.62f, 0.86f));
-                exchangeLabel = CreateStatusPill(statusStrip, "ExchangePill", new Color(0.42f, 0.20f, 0.66f, 0.86f));
+                weatherLabel = CreateStatusPill(statusStrip, "WeatherPill", KickLuckyCubeUiTheme.Secondary);
+                exchangeLabel = CreateStatusPill(statusStrip, "ExchangePill", KickLuckyCubeUiTheme.Warning);
             }
 
             if (exchangeWindow == null)
@@ -714,10 +708,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 {
                     var animal = EpicShopAnimals[index];
                     epicCardFrames[index].color = bought
-                        ? new Color(0.18f, 0.60f, 0.30f, 0.94f)
+                        ? KickLuckyCubeUiTheme.Primary
                         : canAfford
-                            ? new Color(animal.BodyColor.r * 0.48f, animal.BodyColor.g * 0.48f, animal.BodyColor.b * 0.48f, 0.94f)
-                            : new Color(0.14f, 0.14f, 0.18f, 0.88f);
+                            ? KickLuckyCubeUiTheme.CardColorForRarity(animal.Rarity)
+                            : KickLuckyCubeUiTheme.CardDark;
                 }
             }
         }
@@ -874,9 +868,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Image AddImage(GameObject target, Color color)
         {
-            var image = target.AddComponent<Image>();
-            image.color = color;
-            return image;
+            return KickLuckyCubeUiTheme.AddImage(target, color);
         }
 
         private RectTransform CreateRect(string name, Transform parent)
@@ -913,6 +905,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             text.alignment = anchor;
             text.color = Color.white;
             text.raycastTarget = false;
+            KickLuckyCubeUiTheme.StyleText(text, name);
             return text;
         }
 
@@ -924,6 +917,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var image = AddImage(rect.gameObject, new Color(0.15f, 0.18f, 0.22f, 0.94f));
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
+            KickLuckyCubeUiTheme.StyleButton(button, name);
 
             CreateLabel(rect, "Label", value, 16, TextAnchor.MiddleCenter, size, Vector2.zero);
             return button;

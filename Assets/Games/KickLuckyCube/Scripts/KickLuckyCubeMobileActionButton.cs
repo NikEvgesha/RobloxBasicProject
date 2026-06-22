@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace RobloxBasicProject.Games.KickLuckyCube
 {
@@ -17,6 +18,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void Awake()
         {
             input ??= FindFirstObjectByType<KickLuckyCubeMobileInput>(FindObjectsInactive.Include);
+            ApplyTheme();
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -50,6 +52,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (action == ActionKind.InteractHold)
             {
                 input?.SetInteractHeld(false);
+            }
+        }
+
+        private void ApplyTheme()
+        {
+            KickLuckyCubeUiTheme.StyleTree(gameObject);
+
+            var button = GetComponent<Button>();
+            if (button != null)
+            {
+                KickLuckyCubeUiTheme.StyleButton(button, action == ActionKind.InteractHold ? "ActionButton" : "SideButton");
             }
         }
     }

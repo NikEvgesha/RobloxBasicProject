@@ -45,10 +45,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private bool hideLegacyToolBelt = true;
         [SerializeField] private string carryAnchorName = "KLC_CarryAnchor";
         [SerializeField] private Vector3 handPreviewScale = new(0.48f, 0.38f, 0.62f);
-        [SerializeField] private Color toolFrameColor = new Color(0.20f, 0.26f, 0.32f, 0.86f);
-        [SerializeField] private Color animalFrameColor = new Color(0.18f, 0.38f, 0.12f, 0.84f);
-        [SerializeField] private Color selectedFrameColor = new Color(1f, 0.82f, 0.18f, 0.94f);
-        [SerializeField] private Color emptyFrameColor = new Color(0.06f, 0.08f, 0.08f, 0.58f);
+        [SerializeField] private Color toolFrameColor = KickLuckyCubeUiTheme.Secondary;
+        [SerializeField] private Color animalFrameColor = KickLuckyCubeUiTheme.Card;
+        [SerializeField] private Color selectedFrameColor = KickLuckyCubeUiTheme.Warning;
+        [SerializeField] private Color emptyFrameColor = KickLuckyCubeUiTheme.CardDark;
         [SerializeField] private string saveKeyPrefix = "KickLuckyCube.Inventory.";
         [SerializeField] private bool saveInPlayerPrefs = true;
 
@@ -146,7 +146,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
             else if (selectedSlot >= 2 && selectedSlot <= 5)
             {
-                var hotbarIndex = selectedSlot - 2;
+                var hotbarIndex = ResolveHotbarShortcutIndex(selectedSlot - 2);
+                if (hotbarIndex < 0)
+                {
+                    return;
+                }
+
                 if (selectedHotbarIndex == hotbarIndex && selectedInventoryIndex < 0)
                 {
                     ClearSelectedAnimal();
@@ -180,6 +185,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 return false;
             }
+
+            KickLuckyCubeAnimalCollection.MarkDiscovered(animal);
 
             for (var index = 0; index < hotbarAnimals.Length; index++)
             {
@@ -698,6 +705,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var image = AddImage(rect.gameObject, new Color(0.08f, 0.08f, 0.08f, 0.86f));
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
+            KickLuckyCubeUiTheme.StyleButton(button, name);
             CreateLabel(rect, "Label", label, 14, TextAnchor.MiddleCenter, size, Vector2.zero);
             return button;
         }
@@ -724,6 +732,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             label.color = Color.white;
             label.text = text;
             label.raycastTarget = false;
+            KickLuckyCubeUiTheme.StyleText(label, name);
             return label;
         }
 
@@ -749,11 +758,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     continue;
                 }
 
-                hotbarSlots[index].gameObject.SetActive(IsWindowOpen || hotbarAnimals[index].IsValid);
+                var sourceIndex = IsWindowOpen ? index : ResolveVisibleHotbarIndex(index);
+                var hasSource = sourceIndex >= 0 && sourceIndex < hotbarAnimals.Length;
+                hotbarSlots[index].SetIndex(IsWindowOpen ? index : sourceIndex);
+                hotbarSlots[index].gameObject.SetActive(IsWindowOpen || hasSource);
                 hotbarSlots[index].SetAnimal(
-                    hotbarAnimals[index],
-                    selectedHotbarIndex == index,
-                    selectedHotbarIndex == index ? selectedFrameColor : animalFrameColor,
+                    hasSource ? hotbarAnimals[sourceIndex] : default,
+                    hasSource && selectedHotbarIndex == sourceIndex,
+                    hasSource && selectedHotbarIndex == sourceIndex ? selectedFrameColor : animalFrameColor,
                     emptyFrameColor);
             }
 
@@ -771,6 +783,42 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     selectedInventoryIndex == index ? selectedFrameColor : animalFrameColor,
                     emptyFrameColor);
             }
+        }
+
+        private int ResolveHotbarShortcutIndex(int shortcutAnimalIndex)
+        {
+            if (shortcutAnimalIndex < 0 || shortcutAnimalIndex >= hotbarAnimals.Length)
+            {
+                return -1;
+            }
+
+            return IsWindowOpen ? shortcutAnimalIndex : ResolveVisibleHotbarIndex(shortcutAnimalIndex);
+        }
+
+        private int ResolveVisibleHotbarIndex(int visibleAnimalIndex)
+        {
+            if (visibleAnimalIndex < 0)
+            {
+                return -1;
+            }
+
+            var visibleIndex = 0;
+            for (var index = 0; index < hotbarAnimals.Length; index++)
+            {
+                if (!hotbarAnimals[index].IsValid)
+                {
+                    continue;
+                }
+
+                if (visibleIndex == visibleAnimalIndex)
+                {
+                    return index;
+                }
+
+                visibleIndex++;
+            }
+
+            return -1;
         }
 
         private void LoadInventory()
@@ -1202,11 +1250,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void ResolveUiFont()
         {
-            uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (uiFont == null)
-            {
-                uiFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            }
+            uiFont = KickLuckyCubeUiTheme.Font;
         }
 
         private static RectTransform CreateRect(string name, Transform parent)
@@ -1219,9 +1263,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private static Image AddImage(GameObject target, Color color)
         {
-            var image = target.AddComponent<Image>();
-            image.color = color;
-            return image;
+            return KickLuckyCubeUiTheme.AddImage(target, color);
         }
 
         private static int CountValid(KickLuckyCubeInventoryAnimal[] animals)

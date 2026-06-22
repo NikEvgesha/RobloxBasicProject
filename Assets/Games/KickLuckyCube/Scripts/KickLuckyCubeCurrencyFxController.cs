@@ -115,17 +115,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             text.text = isMain ? $"+{amount:0} {label}" : $"+{Mathf.Max(1, amount / burstCount):0}";
             text.alignment = TextAnchor.MiddleCenter;
             text.fontSize = isMain ? 38 : 24;
-            text.fontStyle = FontStyle.Bold;
-            text.color = color;
-            text.raycastTarget = false;
-
-            var shadow = textObject.GetComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.88f);
-            shadow.effectDistance = new Vector2(3f, -3f);
-
-            var outline = textObject.GetComponent<Outline>();
-            outline.effectColor = Color.black;
-            outline.effectDistance = new Vector2(2f, -2f);
+            KickLuckyCubeUiTheme.StyleFloatingText(text, color);
 
             var group = textObject.GetComponent<CanvasGroup>();
             group.blocksRaycasts = false;
@@ -143,8 +133,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void ResolveReferences()
         {
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>(FindObjectsInactive.Include);
-            uiFont ??= Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            uiFont ??= KickLuckyCubeUiTheme.Font;
             ResolveCanvas();
             ResolveSource();
             ResolveTargets();
@@ -281,12 +270,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private static Color ResolveSoftColor()
         {
-            return new Color(1f, 0.86f, 0.06f, 1f);
+            return KickLuckyCubeUiTheme.SoftCurrency;
         }
 
         private static Color ResolveHardColor()
         {
-            return new Color(0.35f, 0.95f, 1f, 1f);
+            return KickLuckyCubeUiTheme.HardCurrency;
         }
 
         private sealed class CurrencyFlyTextMotion : MonoBehaviour

@@ -25,6 +25,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             public ItemType ItemType => itemType;
             public Button BuyButton => buyButton;
 
+            public void ApplyTheme()
+            {
+                if (frameImage != null)
+                {
+                    KickLuckyCubeUiTheme.StyleTree(frameImage.gameObject);
+                }
+
+                KickLuckyCubeUiTheme.StyleButton(buyButton, buyButton != null ? buyButton.gameObject.name : string.Empty);
+                KickLuckyCubeUiTheme.StyleText(nameText, nameText != null ? nameText.gameObject.name : string.Empty);
+                KickLuckyCubeUiTheme.StyleText(priceText, priceText != null ? priceText.gameObject.name : string.Empty);
+            }
+
             public void Refresh(string name, string price, bool canBuy, bool maxed, Color availableColor, Color lockedColor, Color maxedColor)
             {
                 if (nameText != null)
@@ -61,15 +73,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(1)] private int maxStrengthToolTier = 5;
         [SerializeField, Min(0)] private int strengthBoostCost = 180;
         [SerializeField, Min(1f)] private float strengthBoostAmount = 75f;
-        [SerializeField] private Color availableColor = new(0.13f, 0.66f, 0.95f, 1f);
-        [SerializeField] private Color lockedColor = new(0.42f, 0.48f, 0.55f, 1f);
-        [SerializeField] private Color maxedColor = new(0.30f, 0.92f, 0.20f, 1f);
+        [SerializeField] private Color availableColor = KickLuckyCubeUiTheme.Secondary;
+        [SerializeField] private Color lockedColor = KickLuckyCubeUiTheme.CardDark;
+        [SerializeField] private Color maxedColor = KickLuckyCubeUiTheme.Primary;
 
         private void Awake()
         {
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>();
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
             WireButtons();
+            ApplyTheme();
             Refresh();
         }
 
@@ -235,6 +248,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 var itemType = item.ItemType;
                 item.BuyButton.onClick.RemoveAllListeners();
                 item.BuyButton.onClick.AddListener(() => Buy(itemType));
+            }
+        }
+
+        private void ApplyTheme()
+        {
+            KickLuckyCubeUiTheme.StyleText(statusText, statusText != null ? statusText.gameObject.name : string.Empty);
+
+            if (items == null)
+            {
+                return;
+            }
+
+            foreach (var item in items)
+            {
+                item?.ApplyTheme();
             }
         }
 

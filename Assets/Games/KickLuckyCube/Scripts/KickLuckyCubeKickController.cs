@@ -99,6 +99,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             CacheCubeOriginalTransform();
             ConfigureCubeTrail();
             ConfigurePowerMeterVisuals();
+            ApplyUiTheme();
             SortZones();
             ResolveKickOrigin(null, out lastKickOriginPosition, out lastKickOriginRotation);
             HidePowerMeter();
@@ -562,7 +563,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 powerMeterFill.type = Image.Type.Filled;
                 powerMeterFill.fillMethod = Image.FillMethod.Vertical;
                 powerMeterFill.fillOrigin = (int)Image.OriginVertical.Bottom;
-                powerMeterFill.color = new Color(0.22f, 1f, 0.14f, 0.92f);
+                powerMeterFill.color = KickLuckyCubeUiTheme.Primary;
                 powerMeterFill.fillAmount = Mathf.Clamp01(currentPower);
             }
 
@@ -627,7 +628,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             powerMeterFill.type = Image.Type.Filled;
             powerMeterFill.fillMethod = Image.FillMethod.Vertical;
             powerMeterFill.fillOrigin = (int)Image.OriginVertical.Bottom;
-            powerMeterFill.color = new Color(0.22f, 1f, 0.14f, 0.92f);
+            powerMeterFill.color = KickLuckyCubeUiTheme.Primary;
             powerMeterFill.raycastTarget = false;
             powerMeterFill.transform.SetAsLastSibling();
 
@@ -641,7 +642,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 powerMeterText.transform.SetAsLastSibling();
             }
 
+            ApplyUiTheme();
             powerMeterVisualsConfigured = true;
+        }
+
+        private void ApplyUiTheme()
+        {
+            KickLuckyCubeUiTheme.StyleHudText(hudText);
+            KickLuckyCubeUiTheme.StyleHudText(powerMeterText);
+
+            if (powerMeterGroup != null)
+            {
+                KickLuckyCubeUiTheme.StyleTree(powerMeterGroup.gameObject);
+            }
+
+            KickLuckyCubeUiTheme.StyleWorldText(worldStatusText, Color.white, 0.009f);
         }
 
         private static void CreatePowerBand(RectTransform parent, string bandName, float minY, float maxY, Color color)

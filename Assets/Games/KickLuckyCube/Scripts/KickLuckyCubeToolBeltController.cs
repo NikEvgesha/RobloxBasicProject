@@ -22,6 +22,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             public int Tier => Mathf.Max(1, tier);
             public Button Button => button;
 
+            public void ApplyTheme()
+            {
+                if (frameImage != null)
+                {
+                    KickLuckyCubeUiTheme.AddImage(frameImage.gameObject, frameImage.color);
+                }
+
+                if (iconImage != null)
+                {
+                    KickLuckyCubeUiTheme.AddImage(iconImage.gameObject, iconImage.color);
+                }
+
+                KickLuckyCubeUiTheme.StyleButton(button, button != null ? button.gameObject.name : string.Empty);
+                KickLuckyCubeUiTheme.StyleText(labelText, labelText != null ? labelText.gameObject.name : string.Empty);
+            }
+
             public void Refresh(KickLuckyCubePlayerStats stats, string displayName, Color unlocked, Color selected, Color locked)
             {
                 var owned = stats != null && Tier <= stats.StrengthToolTier;
@@ -52,13 +68,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private ToolSlot[] slots = Array.Empty<ToolSlot>();
         [SerializeField] private string[] toolNames = { "Kick", "Boots", "Hammer", "Rocket" };
-        [SerializeField] private Color unlockedColor = new(0.12f, 0.66f, 0.95f, 1f);
-        [SerializeField] private Color selectedColor = new(1f, 0.84f, 0.14f, 1f);
-        [SerializeField] private Color lockedColor = new(0.22f, 0.24f, 0.28f, 0.72f);
+        [SerializeField] private Color unlockedColor = KickLuckyCubeUiTheme.Secondary;
+        [SerializeField] private Color selectedColor = KickLuckyCubeUiTheme.Warning;
+        [SerializeField] private Color lockedColor = KickLuckyCubeUiTheme.CardDark;
 
         private void Awake()
         {
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
+            ApplyTheme();
             WireButtons();
             Refresh();
         }
@@ -134,6 +151,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 var tier = slot.Tier;
                 slot.Button.onClick.RemoveAllListeners();
                 slot.Button.onClick.AddListener(() => SelectTool(tier));
+            }
+        }
+
+        private void ApplyTheme()
+        {
+            if (slots == null)
+            {
+                return;
+            }
+
+            foreach (var slot in slots)
+            {
+                slot?.ApplyTheme();
             }
         }
 

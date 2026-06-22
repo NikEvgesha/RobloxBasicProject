@@ -7,6 +7,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     public struct KickLuckyCubeInventoryAnimal
     {
         [SerializeField] private string id;
+        [SerializeField] private string catalogId;
         [SerializeField] private string animalName;
         [SerializeField] private KickLuckyCubeRarity rarity;
         [SerializeField] private Color bodyColor;
@@ -20,8 +21,28 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Color bodyColor,
             int sellValue,
             int incomePerSecond)
+            : this(
+                id,
+                string.Empty,
+                animalName,
+                rarity,
+                bodyColor,
+                sellValue,
+                incomePerSecond)
+        {
+        }
+
+        public KickLuckyCubeInventoryAnimal(
+            string id,
+            string catalogId,
+            string animalName,
+            KickLuckyCubeRarity rarity,
+            Color bodyColor,
+            int sellValue,
+            int incomePerSecond)
         {
             this.id = id;
+            this.catalogId = catalogId;
             this.animalName = animalName;
             this.rarity = rarity;
             this.bodyColor = bodyColor;
@@ -31,6 +52,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public bool IsValid => !string.IsNullOrWhiteSpace(id);
         public string Id => id;
+        internal string RawCatalogId => catalogId;
+        public string CatalogId => string.IsNullOrWhiteSpace(catalogId)
+            ? KickLuckyCubeAnimalCatalog.ResolveCatalogId(this)
+            : catalogId;
         public string AnimalName => string.IsNullOrWhiteSpace(animalName) ? "Animal" : animalName;
         public KickLuckyCubeRarity Rarity => rarity;
         public Color BodyColor => bodyColor;
@@ -46,6 +71,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             return new KickLuckyCubeInventoryAnimal(
                 Guid.NewGuid().ToString("N"),
+                animal.CatalogId,
                 animal.AnimalName,
                 animal.Rarity,
                 animal.BodyColor,

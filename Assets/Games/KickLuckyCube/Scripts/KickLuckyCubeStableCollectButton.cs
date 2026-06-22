@@ -74,16 +74,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             statusLabel.text = PendingSoft > 0
                 ? $"Collect {PendingSoft} soft"
                 : "Stable collect";
+            KickLuckyCubeUiTheme.StyleWorldText(statusLabel, Color.white, 0.009f);
         }
 
         private void ResolveSlots()
         {
             if (stableSlots != null && stableSlots.Length > 0 && stableSlots.All(slot => slot != null))
             {
-                return;
+                if (stableSlots.All(slot => slot.IsPlayerPersistentSlot))
+                {
+                    return;
+                }
             }
 
-            stableSlots = FindObjectsByType<KickLuckyCubeStableSlot>(FindObjectsSortMode.None);
+            stableSlots = FindObjectsByType<KickLuckyCubeStableSlot>(FindObjectsSortMode.None)
+                .Where(slot => slot != null && slot.IsPlayerPersistentSlot)
+                .ToArray();
         }
     }
 }

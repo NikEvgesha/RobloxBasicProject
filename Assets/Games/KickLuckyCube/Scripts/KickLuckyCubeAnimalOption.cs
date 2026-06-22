@@ -12,6 +12,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0)] private int sellValue;
         [SerializeField, Min(0)] private int incomePerSecond;
         [SerializeField, Min(0.1f)] private float speedMultiplier;
+        [SerializeField] private string catalogId;
 
         public KickLuckyCubeAnimalOption(
             KickLuckyCubeRarity rarity,
@@ -19,7 +20,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Color bodyColor,
             int sellValue,
             int incomePerSecond,
-            float speedMultiplier)
+            float speedMultiplier,
+            string catalogId = "")
         {
             this.rarity = rarity;
             this.animalName = animalName;
@@ -27,8 +29,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             this.sellValue = sellValue;
             this.incomePerSecond = incomePerSecond;
             this.speedMultiplier = speedMultiplier;
+            this.catalogId = catalogId;
         }
 
+        public string CatalogId => string.IsNullOrWhiteSpace(catalogId)
+            ? KickLuckyCubeAnimalCatalog.MakeStableId(AnimalName, rarity)
+            : catalogId;
         public KickLuckyCubeRarity Rarity => rarity;
         public string AnimalName => string.IsNullOrWhiteSpace(animalName) ? rarity.ToString() + " Animal" : animalName;
         public Color BodyColor => bodyColor;

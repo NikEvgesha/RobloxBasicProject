@@ -31,11 +31,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             canvasGroup = GetComponent<CanvasGroup>();
             graphics = GetComponentsInChildren<Graphic>(true);
             mobileInput ??= GetComponentInChildren<KickLuckyCubeMobileInput>(true);
+            ApplyTheme();
             RefreshVisibility();
         }
 
         private void OnEnable()
         {
+            ApplyTheme();
             RefreshVisibility();
         }
 
@@ -99,6 +101,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     graphic.enabled = visible;
                 }
             }
+        }
+
+        private void ApplyTheme()
+        {
+            KickLuckyCubeUiTheme.StyleTree(gameObject);
         }
 
         private bool ShouldShowMobileControls()

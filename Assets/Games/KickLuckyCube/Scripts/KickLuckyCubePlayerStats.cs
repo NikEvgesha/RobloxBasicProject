@@ -166,6 +166,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             PlayerPrefs.SetInt(saveKeyPrefix + StrengthToolTierKey, strengthToolTier);
             PlayerPrefs.SetInt(saveKeyPrefix + SelectedStrengthToolTierKey, SelectedStrengthToolTier);
             PlayerPrefs.SetInt(saveKeyPrefix + SpeedUpgradeLevelKey, speedUpgradeLevel);
+            PlayerPrefs.Save();
         }
     }
 }

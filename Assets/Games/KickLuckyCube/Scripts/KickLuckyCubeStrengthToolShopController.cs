@@ -35,10 +35,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0)] private int baseToolCost = 90;
         [SerializeField, Min(1f)] private float toolCostMultiplier = 2f;
         [SerializeField, Min(1)] private int maxToolTier = 5;
-        [SerializeField] private Color selectedColor = new(1f, 0.82f, 0.18f, 0.96f);
-        [SerializeField] private Color ownedColor = new(0.20f, 0.62f, 0.92f, 0.92f);
-        [SerializeField] private Color buyColor = new(0.18f, 0.78f, 0.26f, 0.94f);
-        [SerializeField] private Color lockedColor = new(0.18f, 0.18f, 0.20f, 0.86f);
+        [SerializeField] private Color selectedColor = KickLuckyCubeUiTheme.Warning;
+        [SerializeField] private Color ownedColor = KickLuckyCubeUiTheme.Secondary;
+        [SerializeField] private Color buyColor = KickLuckyCubeUiTheme.Primary;
+        [SerializeField] private Color lockedColor = KickLuckyCubeUiTheme.CardDark;
         [SerializeField] private string worldPadName = "KLC_Kiosk_04_WeightsTraining_StandPad";
         [SerializeField] private Vector3 worldPadTriggerSize = new(2.4f, 2.4f, 2.0f);
 
@@ -141,8 +141,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>(FindObjectsInactive.Include);
             toolTraining ??= FindFirstObjectByType<KickLuckyCubeToolTrainingController>(FindObjectsInactive.Include);
             canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
-            uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            uiFont = KickLuckyCubeUiTheme.Font;
         }
 
         private void ConfigureWorldPad()
@@ -467,6 +466,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var image = AddImage(rect.gameObject, new Color(0.08f, 0.08f, 0.08f, 0.88f));
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
+            KickLuckyCubeUiTheme.StyleButton(button, name);
             CreateLabel(rect, "Label", label, 14, TextAnchor.MiddleCenter, size, Vector2.zero);
             return button;
         }
@@ -484,14 +484,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             label.color = Color.white;
             label.text = text;
             label.raycastTarget = false;
+            KickLuckyCubeUiTheme.StyleText(label, name);
             return label;
         }
 
         private static Image AddImage(GameObject target, Color color)
         {
-            var image = target.AddComponent<Image>();
-            image.color = color;
-            return image;
+            return KickLuckyCubeUiTheme.AddImage(target, color);
         }
 
         private static bool ReadTogglePressed()

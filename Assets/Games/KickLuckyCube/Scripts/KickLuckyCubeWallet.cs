@@ -124,6 +124,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 PlayerPrefs.SetInt(saveKeyPrefix + SoftKey, softCurrency);
                 PlayerPrefs.SetInt(saveKeyPrefix + HardKey, hardCurrency);
+                PlayerPrefs.Save();
             }
 
             Changed?.Invoke(softCurrency, hardCurrency);
