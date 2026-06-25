@@ -27,6 +27,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private Vector3 stableAnimalLocalPosition = Vector3.zero;
         [SerializeField, Min(0.1f)] private float stableAnimalTargetHeight = 1.05f;
         [SerializeField, Min(0f)] private float stableAnimalBottomOffset = 0.04f;
+        [SerializeField] private bool faceAnimalTowardPlotCenter = true;
+        [SerializeField] private float stableAnimalFacingFallbackCenterX;
+        [SerializeField, Min(0f)] private float stableAnimalFacingDeadZone = 0.25f;
         [SerializeField] private bool hideMobAnchorVisuals = true;
         [SerializeField, Min(1f)] private float labelVisibleDistance = 22f;
         [SerializeField] private Vector3 labelWorldOffset = new(0f, 0.62f, 0f);
@@ -37,6 +40,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private float pendingSoft;
         private float saveTimer;
         private long lastIncomeUnixSeconds;
+        private bool hasResolvedFacingCenterX;
+        private float resolvedFacingCenterX;
 
         public KickLuckyCubeSpawnedAnimal PlacedAnimal => placedAnimal;
         public string StableSlotId => stableSlotId;
@@ -158,6 +163,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             stableAnimalLocalPosition = animalLocalPosition;
             stableAnimalBottomOffset = Mathf.Max(0f, animalBottomOffset);
             labelWorldOffset = labelOffset;
+            hasResolvedFacingCenterX = false;
             ApplyStableAnimalPose();
             RefreshLabel();
         }
@@ -307,7 +313,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            statusLabel.text = $"{placedAnimal.AnimalName}\nLv {upgradeLevel}  +{IncomePerSecond}/s";
+            statusLabel.text = $"{placedAnimal.DisplayName}\nLv {upgradeLevel}  +{IncomePerSecond}/s";
             UpdateLabelView();
         }
 
@@ -376,7 +382,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 option.Rarity,
                 option.BodyColor,
                 option.SellValue,
-                option.IncomePerSecond);
+                option.IncomePerSecond,
+                option.Grade);
             placedAnimal = CreateStableAnimal(placedInventoryAnimal);
             pendingSoft = Mathf.Max(0f, PlayerPrefs.GetFloat(GetKey(PendingSoftKey), 0f));
             lastIncomeUnixSeconds = GetSavedIncomeUnixSeconds();
@@ -480,44 +487,32 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private KickLuckyCubeSpawnedAnimal CreateStableAnimal(KickLuckyCubeInventoryAnimal inventoryAnimal)
         {
-            var option = new KickLuckyCubeAnimalOption(
-                inventoryAnimal.Rarity,
-                inventoryAnimal.AnimalName,
-                inventoryAnimal.BodyColor,
-                inventoryAnimal.SellValue,
-                inventoryAnimal.IncomePerSecond,
-                1f,
-                inventoryAnimal.CatalogId);
-
-            return CreateStableAnimal(option);
+            return CreateStableAnimal(KickLuckyCubeAnimalCatalog.CreateOption(inventoryAnimal));
         }
 
         private KickLuckyCubeSpawnedAnimal CreateStableAnimal(KickLuckyCubeAnimalOption option)
         {
-            var root = new GameObject("KLC_Stable_" + Sanitize(option.AnimalName));
+            var root = new GameObject("KLC_Stable_" + Sanitize(option.DisplayName));
             root.transform.SetParent(animalAnchor, false);
             root.transform.localPosition = stableAnimalLocalPosition;
             root.transform.localRotation = Quaternion.identity;
             root.transform.localScale = Vector3.one;
 
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body";
-            body.transform.SetParent(root.transform, false);
-            body.transform.localPosition = Vector3.zero;
-            body.transform.localRotation = Quaternion.identity;
-            body.transform.localScale = new Vector3(0.72f, 0.58f, 1.05f);
-
-            var bodyCollider = body.GetComponent<Collider>();
-            if (bodyCollider != null)
-            {
-                DestroyAnimalCollider(bodyCollider);
-            }
+            var bodyRenderer = KickLuckyCubeAnimalVisualFactory.CreateVisual(
+                root.transform,
+                option,
+                stableAnimalTargetHeight,
+                out var usedImportedVisual);
 
             var animal = root.AddComponent<KickLuckyCubeSpawnedAnimal>();
-            animal.SetBodyRenderer(body.GetComponent<Renderer>());
-            animal.Configure(option, 0f);
+            animal.SetBodyRenderer(bodyRenderer);
+            animal.Configure(option, 0f, !usedImportedVisual);
             ApplyStableAnimalPose(animal);
-            animal.EnsureBlackOutline();
+            if (!usedImportedVisual)
+            {
+                animal.EnsureBlackOutline();
+            }
+
             ApplyStableAnimalPose(animal);
             return animal;
         }
@@ -542,7 +537,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             animal.transform.SetPositionAndRotation(
                 animalAnchor.TransformPoint(stableAnimalLocalPosition),
-                animalAnchor.rotation);
+                ResolveStableAnimalRotation());
             animal.transform.localScale = Vector3.one;
 
             if (!TryGetRendererBounds(animal.transform, out var bounds))
@@ -562,6 +557,77 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var targetBottomY = animalAnchor.position.y + stableAnimalBottomOffset;
             animal.transform.position += Vector3.up * (targetBottomY - bounds.min.y);
+        }
+
+        private Quaternion ResolveStableAnimalRotation()
+        {
+            if (!faceAnimalTowardPlotCenter || animalAnchor == null)
+            {
+                return animalAnchor != null ? animalAnchor.rotation : transform.rotation;
+            }
+
+            var xOffset = animalAnchor.position.x - ResolveStableAnimalFacingCenterX();
+            if (Mathf.Abs(xOffset) <= stableAnimalFacingDeadZone)
+            {
+                return animalAnchor.rotation;
+            }
+
+            var facingDirection = xOffset > 0f ? Vector3.left : Vector3.right;
+            return Quaternion.LookRotation(facingDirection, Vector3.up);
+        }
+
+        private float ResolveStableAnimalFacingCenterX()
+        {
+            if (hasResolvedFacingCenterX)
+            {
+                return resolvedFacingCenterX;
+            }
+
+            resolvedFacingCenterX = stableAnimalFacingFallbackCenterX;
+            var plotRoot = transform.parent;
+            if (plotRoot == null)
+            {
+                hasResolvedFacingCenterX = true;
+                return resolvedFacingCenterX;
+            }
+
+            var siblingSlotAnchors = Enumerable.Range(0, plotRoot.childCount)
+                .Select(index => plotRoot.GetChild(index))
+                .Where(IsStableSlotSibling)
+                .Select(ResolveStableSlotAnchorX)
+                .ToArray();
+            if (siblingSlotAnchors.Length <= 1)
+            {
+                hasResolvedFacingCenterX = true;
+                return resolvedFacingCenterX;
+            }
+
+            resolvedFacingCenterX = siblingSlotAnchors.Average();
+            hasResolvedFacingCenterX = true;
+            return resolvedFacingCenterX;
+        }
+
+        private bool IsStableSlotSibling(Transform sibling)
+        {
+            return sibling != null
+                && (sibling == transform
+                    || sibling.name.StartsWith("Template_StableSlot_", StringComparison.Ordinal)
+                    || sibling.GetComponent<KickLuckyCubeStableSlot>() != null);
+        }
+
+        private static float ResolveStableSlotAnchorX(Transform slotRoot)
+        {
+            if (slotRoot == null)
+            {
+                return 0f;
+            }
+
+            var anchor = slotRoot
+                .GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(child =>
+                    child != slotRoot
+                    && child.name.IndexOf("MobAnchor", StringComparison.OrdinalIgnoreCase) >= 0);
+            return anchor != null ? anchor.position.x : slotRoot.position.x;
         }
 
         private bool AccrueRealtimeIncome(bool applyOfflineCap)

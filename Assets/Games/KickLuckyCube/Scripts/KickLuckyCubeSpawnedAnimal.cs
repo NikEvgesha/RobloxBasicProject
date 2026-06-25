@@ -7,6 +7,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private string animalName;
         [SerializeField] private string catalogId;
         [SerializeField] private KickLuckyCubeRarity rarity;
+        [SerializeField] private KickLuckyCubeAnimalGrade grade;
         [SerializeField, Min(0)] private int sellValue;
         [SerializeField, Min(0)] private int incomePerSecond;
         [SerializeField, Min(0f)] private float runnerSpeed;
@@ -19,21 +20,27 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             ? KickLuckyCubeAnimalCatalog.MakeStableId(AnimalName, rarity)
             : catalogId;
         public KickLuckyCubeRarity Rarity => rarity;
+        public KickLuckyCubeAnimalGrade Grade => grade;
+        public string DisplayName => KickLuckyCubeAnimalGradeUtility.FormatAnimalName(AnimalName, Grade);
         public int SellValue => sellValue;
         public int IncomePerSecond => incomePerSecond;
         public float RunnerSpeed => runnerSpeed;
         public Color BodyColor => bodyColor;
 
-        public void Configure(KickLuckyCubeAnimalOption option, float baseRunnerSpeed)
+        public void Configure(KickLuckyCubeAnimalOption option, float baseRunnerSpeed, bool applyBodyColor = true)
         {
             animalName = option.AnimalName;
             catalogId = option.CatalogId;
             rarity = option.Rarity;
+            grade = option.Grade;
             sellValue = option.SellValue;
             incomePerSecond = option.IncomePerSecond;
             runnerSpeed = Mathf.Max(0f, baseRunnerSpeed) * option.SpeedMultiplier;
             bodyColor = option.BodyColor;
-            ApplyColor(option.BodyColor);
+            if (applyBodyColor)
+            {
+                ApplyColor(option.BodyColor);
+            }
         }
 
         public void SetBodyRenderer(Renderer renderer)

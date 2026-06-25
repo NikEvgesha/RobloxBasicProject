@@ -18,6 +18,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0f)] private float jumpHeight = 1.35f;
         [SerializeField] private float gravity = -30f;
         [SerializeField] private bool lockVerticalPosition;
+        [SerializeField] private bool useStealBrainrotPlayerVisual = true;
+        [SerializeField] private string importedPlayerVisualResourcePath = "KickLuckyCube/StealBrainrot/Models/Player/SadovnicOBJ";
+        [SerializeField] private string importedPlayerVisualName = "KLC_StealBrainrotPlayerVisual";
+        [SerializeField] private string generatedPlayerVisualName = "KLC_PlayerVisual";
+        [SerializeField, Min(0.1f)] private float importedPlayerVisualTargetHeight = 2.05f;
+        [SerializeField] private Vector3 importedPlayerVisualLocalPosition = Vector3.zero;
+        [SerializeField] private Vector3 importedPlayerVisualLocalEuler;
 
         private Rigidbody body;
         private float lockedY;
@@ -28,6 +35,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private static readonly int IsMovingHash = Animator.StringToHash("IsMoving");
         private static readonly int IsSprintingHash = Animator.StringToHash("IsSprinting");
         private static readonly int GroundedHash = Animator.StringToHash("Grounded");
+        private static readonly int ImportedSpeedHash = Animator.StringToHash("Speed");
 
         public Vector2 MoveInput { get; private set; }
         public bool IsSprinting { get; private set; }
@@ -61,6 +69,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             mobileInput ??= FindFirstObjectByType<KickLuckyCubeMobileInput>(FindObjectsInactive.Include);
             animator ??= GetComponentInChildren<Animator>(true);
+            SetupImportedPlayerVisual();
             lockedY = transform.position.y;
         }
 
@@ -140,10 +149,162 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             var isMoving = moveSpeed > 0.12f;
-            animator.SetFloat(MoveSpeedHash, moveSpeed, 0.08f, Time.unscaledDeltaTime);
-            animator.SetBool(IsMovingHash, isMoving);
-            animator.SetBool(IsSprintingHash, isMoving && IsSprinting);
-            animator.SetBool(GroundedHash, isGrounded);
+            SetFloatIfExists(animator, MoveSpeedHash, moveSpeed, 0.08f, Time.unscaledDeltaTime);
+            SetFloatIfExists(animator, ImportedSpeedHash, Mathf.Clamp01(moveSpeed / Mathf.Max(0.01f, sprintSpeed)), 0.08f, Time.unscaledDeltaTime);
+            SetBoolIfExists(animator, IsMovingHash, isMoving);
+            SetBoolIfExists(animator, IsSprintingHash, isMoving && IsSprinting);
+            SetBoolIfExists(animator, GroundedHash, isGrounded);
+        }
+
+        private void SetupImportedPlayerVisual()
+        {
+            if (!useStealBrainrotPlayerVisual || string.IsNullOrWhiteSpace(importedPlayerVisualResourcePath))
+            {
+                return;
+            }
+
+            var existing = transform.Find(importedPlayerVisualName);
+            if (existing != null)
+            {
+                var existingAnimator = existing.GetComponentInChildren<Animator>(true);
+                if (existingAnimator != null)
+                {
+                    animator = existingAnimator;
+                }
+
+                return;
+            }
+
+            var prefab = Resources.Load<GameObject>(importedPlayerVisualResourcePath);
+            if (prefab == null)
+            {
+                return;
+            }
+
+            HideGeneratedPlayerVisual();
+
+            var visual = Instantiate(prefab, transform);
+            visual.name = importedPlayerVisualName;
+            visual.transform.localPosition = importedPlayerVisualLocalPosition;
+            visual.transform.localRotation = Quaternion.Euler(importedPlayerVisualLocalEuler);
+            visual.transform.localScale = Vector3.one;
+            RemoveColliders(visual);
+            NormalizeVisualToHeight(visual.transform, importedPlayerVisualTargetHeight);
+
+            var importedAnimator = visual.GetComponentInChildren<Animator>(true);
+            if (importedAnimator != null)
+            {
+                animator = importedAnimator;
+            }
+        }
+
+        private void HideGeneratedPlayerVisual()
+        {
+            var generatedVisual = transform.Find(generatedPlayerVisualName);
+            if (generatedVisual == null)
+            {
+                generatedVisual = transform.Find("AvatarRoot");
+            }
+
+            if (generatedVisual == null)
+            {
+                return;
+            }
+
+            foreach (var renderer in generatedVisual.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.enabled = false;
+            }
+        }
+
+        private void NormalizeVisualToHeight(Transform visualRoot, float targetHeight)
+        {
+            if (visualRoot == null || !TryGetRendererBounds(visualRoot, out var bounds))
+            {
+                return;
+            }
+
+            var currentHeight = Mathf.Max(0.001f, bounds.size.y);
+            visualRoot.localScale = Vector3.one * Mathf.Clamp(Mathf.Max(0.1f, targetHeight) / currentHeight, 0.01f, 100f);
+
+            if (!TryGetRendererBounds(visualRoot, out bounds))
+            {
+                return;
+            }
+
+            visualRoot.position += Vector3.up * (transform.position.y - bounds.min.y);
+        }
+
+        private static void RemoveColliders(GameObject root)
+        {
+            foreach (var collider in root.GetComponentsInChildren<Collider>(true))
+            {
+                Destroy(collider);
+            }
+        }
+
+        private static bool TryGetRendererBounds(Transform root, out Bounds bounds)
+        {
+            bounds = new Bounds(root != null ? root.position : Vector3.zero, Vector3.zero);
+            if (root == null)
+            {
+                return false;
+            }
+
+            var hasBounds = false;
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null || !renderer.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
+        }
+
+        private static void SetFloatIfExists(Animator targetAnimator, int parameterHash, float value, float dampTime, float deltaTime)
+        {
+            if (HasAnimatorParameter(targetAnimator, parameterHash))
+            {
+                targetAnimator.SetFloat(parameterHash, value, dampTime, deltaTime);
+            }
+        }
+
+        private static void SetBoolIfExists(Animator targetAnimator, int parameterHash, bool value)
+        {
+            if (HasAnimatorParameter(targetAnimator, parameterHash))
+            {
+                targetAnimator.SetBool(parameterHash, value);
+            }
+        }
+
+        private static bool HasAnimatorParameter(Animator targetAnimator, int parameterHash)
+        {
+            if (targetAnimator == null)
+            {
+                return false;
+            }
+
+            foreach (var parameter in targetAnimator.parameters)
+            {
+                if (parameter.nameHash == parameterHash)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private Vector3 GetCameraRelativeMove(Vector2 input)

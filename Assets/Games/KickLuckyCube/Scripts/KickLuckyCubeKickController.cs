@@ -9,6 +9,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 {
     public sealed class KickLuckyCubeKickController : MonoBehaviour
     {
+        [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private Transform cube;
         [SerializeField] private Transform landingMarker;
@@ -29,7 +30,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0f)] private float baseKickDistance = 18f;
         [SerializeField, Min(0f)] private float distancePerStrength = 0.23f;
         [SerializeField, Min(1f)] private float minimumDistance = 10f;
-        [SerializeField, Min(1f)] private float maximumDistance = 132f;
+        [SerializeField, Min(1f)] private float maximumDistance = 735f;
         [SerializeField, Min(0.05f)] private float flightSeconds = 1.85f;
         [SerializeField, Min(0f)] private float arcHeight = 11f;
         [SerializeField, Range(0f, 1f)] private float initialPower = 0.5f;
@@ -361,6 +362,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public float CalculateDistance(float strength)
         {
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.CalculateKickDistance(strength);
+            }
+
             var rawDistance = baseKickDistance + Mathf.Max(0f, strength) * distancePerStrength;
             return Mathf.Clamp(rawDistance, minimumDistance, maximumDistance);
         }
@@ -368,11 +375,23 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public float CalculatePoweredDistance(float strength, float normalizedPower)
         {
             var baseDistance = CalculateDistance(strength);
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.ApplyKickPower(baseDistance, normalizedPower);
+            }
+
             var powerMultiplier = Mathf.Lerp(
                 minimumPowerMultiplier,
                 Mathf.Max(minimumPowerMultiplier, maximumPowerMultiplier),
                 Mathf.Clamp01(normalizedPower));
             return Mathf.Clamp(baseDistance * powerMultiplier, minimumDistance, maximumDistance);
+        }
+
+        private KickLuckyCubeBalanceConfig ResolveBalanceConfig()
+        {
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
+            return balanceConfig;
         }
 
         public KickLuckyCubeRarityZone ResolveLandingZone(float distance)
@@ -661,21 +680,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private static void CreatePowerBand(RectTransform parent, string bandName, float minY, float maxY, Color color)
         {
-            var existing = parent.Find(bandName);
-            var bandTransform = existing as RectTransform;
-            Image bandImage;
-
-            if (bandTransform == null)
-            {
-                var bandObject = new GameObject(bandName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                bandTransform = bandObject.GetComponent<RectTransform>();
-                bandTransform.SetParent(parent, false);
-                bandImage = bandObject.GetComponent<Image>();
-            }
-            else
-            {
-                bandImage = bandTransform.GetComponent<Image>() ?? bandTransform.gameObject.AddComponent<Image>();
-            }
+            var bandTransform = KickLuckyCubeUiPrefabFactory.CreateRect(bandName, parent);
+            var bandImage = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<Image>(bandTransform.gameObject);
 
             bandTransform.anchorMin = new Vector2(0f, minY);
             bandTransform.anchorMax = new Vector2(1f, maxY);

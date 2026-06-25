@@ -5,6 +5,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     [RequireComponent(typeof(TextMesh))]
     public sealed class KickLuckyCubeWorldTextOutline : MonoBehaviour
     {
+        private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorProperty = Shader.PropertyToID("_Color");
+
         private static readonly Vector3[] OffsetDirections =
         {
             Vector3.right,
@@ -135,21 +138,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var material = renderer.material;
-            if (material == null)
-            {
-                return;
-            }
-
-            if (material.HasProperty("_BaseColor"))
-            {
-                material.SetColor("_BaseColor", color);
-            }
-
-            if (material.HasProperty("_Color"))
-            {
-                material.SetColor("_Color", color);
-            }
+            var propertyBlock = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetColor(BaseColorProperty, color);
+            propertyBlock.SetColor(ColorProperty, color);
+            renderer.SetPropertyBlock(propertyBlock);
         }
 
         public static Transform ResolveRuntimeLabelRoot()

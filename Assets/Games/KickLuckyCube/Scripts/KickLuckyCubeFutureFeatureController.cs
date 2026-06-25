@@ -28,7 +28,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private static readonly KickLuckyCubeInventoryAnimal[] EpicShopAnimals =
             KickLuckyCubeAnimalCatalog.CreateEpicShopAnimals();
 
-        private static readonly int[] EpicShopCosts = { 1800, 4200, 8600 };
+        private static readonly int[] EpicShopCosts = { 25, 60, 120, 350, 750, 1500 };
 
         private static KickLuckyCubeFutureFeatureController instance;
 
@@ -243,7 +243,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             exchangeCharges = Mathf.Max(0, exchangeCharges - 1);
             exchangeLastAtUnix = GetUnixNow();
             SaveExchangeState();
-            ShowStatus($"Exchanged {removedAnimal.AnimalName} -> {replacement.AnimalName}.\nCharges: {exchangeCharges}/{maxExchangeCharges}");
+            ShowStatus($"Exchanged {removedAnimal.DisplayName} -> {replacement.DisplayName}.\nCharges: {exchangeCharges}/{maxExchangeCharges}");
             RefreshAll();
             RefreshExchangeWindow();
         }
@@ -264,7 +264,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             epicShopWindow.gameObject.SetActive(true);
             epicShopWindow.SetAsLastSibling();
-            SetEpicShopStatus("Three exclusive mobs can only be bought here.");
+            SetEpicShopStatus("Elite donate mobs are bought with hard currency.");
             RefreshEpicShop();
         }
 
@@ -278,13 +278,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (IsEpicMobBought(index))
             {
-                SetEpicShopStatus($"{EpicShopAnimals[index].AnimalName} is already owned.");
+                SetEpicShopStatus($"{EpicShopAnimals[index].DisplayName} is already owned.");
                 return;
             }
 
-            if (wallet == null || wallet.SoftCurrency < EpicShopCosts[index])
+            var cost = GetEpicShopCost(index);
+            if (wallet == null || wallet.HardCurrency < cost)
             {
-                SetEpicShopStatus($"Need {EpicShopCosts[index]} soft for {EpicShopAnimals[index].AnimalName}.");
+                SetEpicShopStatus($"Need {cost} hard for {EpicShopAnimals[index].DisplayName}.");
                 RefreshEpicShop();
                 return;
             }
@@ -296,7 +297,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            if (!wallet.TrySpendSoft(EpicShopCosts[index]))
+            if (!wallet.TrySpendHard(cost))
             {
                 inventory.TryRemoveAnimalById(EpicShopAnimals[index].Id, out _);
                 SetEpicShopStatus("Purchase failed. Try again.");
@@ -306,8 +307,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             PlayerPrefs.SetInt(EpicMobBoughtKeyPrefix + index, 1);
             PlayerPrefs.Save();
-            SetEpicShopStatus($"{EpicShopAnimals[index].AnimalName} added and selected.");
-            ShowStatus($"{EpicShopAnimals[index].AnimalName} bought!");
+            SetEpicShopStatus($"{EpicShopAnimals[index].DisplayName} added and selected.");
+            ShowStatus($"{EpicShopAnimals[index].DisplayName} bought!");
             RefreshEpicShop();
         }
 
@@ -387,7 +388,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 rarity,
                 color,
                 sellValue,
-                income);
+                income,
+                option.Grade);
         }
 
         private bool HasWeatherKeyMob()
@@ -477,7 +479,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             ConfigureSpot(root.transform, "WeatherMachine", KickLuckyCubeFutureFeature.WeatherMachine, "Start weather", 22);
             ConfigureSpot(root.transform, "ExchangeBooth", KickLuckyCubeFutureFeature.ExchangeBooth, "Exchange selected mob", 22);
-            ConfigureSpot(root.transform, "EpicMobShop", KickLuckyCubeFutureFeature.EpicMobShop, "Open epic mob shop", 22);
+            ConfigureSpot(root.transform, "EpicMobShop", KickLuckyCubeFutureFeature.EpicMobShop, "Open elite mob shop", 22);
             ConfigureSpot(root.transform, "RatingGiftStand", KickLuckyCubeFutureFeature.RatingGift, "Claim rating gift", 22);
         }
 
@@ -520,7 +522,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 KickLuckyCubeFutureFeature.WeatherMachine => "Weather Machine\nEpic+ mob required",
                 KickLuckyCubeFutureFeature.ExchangeBooth => "Animal Exchange\n10 charges, +1 / 5 min",
-                KickLuckyCubeFutureFeature.EpicMobShop => "Epic Mob Shop\n3 exclusives",
+                KickLuckyCubeFutureFeature.EpicMobShop => "Elite Mob Shop\nhard exclusives",
                 KickLuckyCubeFutureFeature.RatingGift => "Rating Gift\n1 free mob",
                 _ => label.text,
             };
@@ -605,26 +607,26 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             epicShopWindow.anchorMax = new Vector2(0.5f, 0.5f);
             epicShopWindow.pivot = new Vector2(0.5f, 0.5f);
             epicShopWindow.anchoredPosition = new Vector2(0f, 26f);
-            epicShopWindow.sizeDelta = new Vector2(760f, 430f);
+            epicShopWindow.sizeDelta = new Vector2(760f, 600f);
             AddImage(epicShopWindow.gameObject, new Color(0.045f, 0.035f, 0.065f, 0.94f));
 
-            CreateLabel(epicShopWindow, "Title", "Epic Mob Shop", 36, TextAnchor.MiddleLeft, new Vector2(420f, 50f), new Vector2(-145f, 172f));
-            epicShopStatusText = CreateLabel(epicShopWindow, "Status", "Three exclusive mobs can only be bought here.", 18, TextAnchor.MiddleLeft, new Vector2(520f, 30f), new Vector2(-55f, -178f));
+            CreateLabel(epicShopWindow, "Title", "Elite Mob Shop", 36, TextAnchor.MiddleLeft, new Vector2(420f, 50f), new Vector2(-145f, 252f));
+            epicShopStatusText = CreateLabel(epicShopWindow, "Status", "Elite donate mobs are bought with hard currency.", 18, TextAnchor.MiddleLeft, new Vector2(560f, 30f), new Vector2(-35f, -260f));
 
             var closeButton = CreateButton(epicShopWindow, "Close", "X", new Vector2(44f, 36f));
-            closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(342f, 172f);
+            closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(342f, 252f);
             closeButton.onClick.AddListener(CloseEpicShop);
 
             var grid = CreateRect("EpicCards", epicShopWindow);
             grid.anchorMin = new Vector2(0.5f, 0.5f);
             grid.anchorMax = new Vector2(0.5f, 0.5f);
             grid.pivot = new Vector2(0.5f, 0.5f);
-            grid.anchoredPosition = new Vector2(0f, -12f);
-            grid.sizeDelta = new Vector2(650f, 260f);
+            grid.anchoredPosition = new Vector2(0f, -10f);
+            grid.sizeDelta = new Vector2(650f, 460f);
 
             var layout = grid.gameObject.AddComponent<GridLayoutGroup>();
-            layout.cellSize = new Vector2(196f, 246f);
-            layout.spacing = new Vector2(18f, 0f);
+            layout.cellSize = new Vector2(196f, 216f);
+            layout.spacing = new Vector2(18f, 14f);
             layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             layout.constraintCount = 3;
 
@@ -646,9 +648,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var preview = CreateRect("Preview", card);
             preview.sizeDelta = new Vector2(88f, 74f);
             preview.anchoredPosition = new Vector2(0f, 70f);
-            AddImage(preview.gameObject, animal.BodyColor);
+            var previewImage = AddImage(preview.gameObject, animal.BodyColor);
+            var iconSprite = KickLuckyCubeAnimalCatalog.LoadIcon(animal);
+            if (iconSprite != null)
+            {
+                previewImage.sprite = iconSprite;
+                previewImage.preserveAspect = true;
+                previewImage.color = Color.white;
+            }
 
-            CreateLabel(card, "Name", animal.AnimalName, 20, TextAnchor.MiddleCenter, new Vector2(178f, 42f), new Vector2(0f, 18f));
+            CreateLabel(card, "Name", animal.DisplayName, 20, TextAnchor.MiddleCenter, new Vector2(178f, 42f), new Vector2(0f, 18f));
             CreateLabel(card, "Detail", $"{animal.Rarity}\n+{animal.IncomePerSecond}/s\nSell {animal.SellValue}", 16, TextAnchor.MiddleCenter, new Vector2(176f, 74f), new Vector2(0f, -42f));
 
             var button = CreateButton(card, "Buy", string.Empty, new Vector2(154f, 40f));
@@ -689,14 +698,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             for (var index = 0; index < epicButtonTexts.Length; index++)
             {
                 var bought = IsEpicMobBought(index);
-                var canAfford = wallet != null && wallet.SoftCurrency >= EpicShopCosts[index];
+                var cost = GetEpicShopCost(index);
+                var canAfford = wallet != null && wallet.HardCurrency >= cost;
                 if (epicButtonTexts[index] != null)
                 {
                     epicButtonTexts[index].text = bought
                         ? "Owned"
                         : canAfford
-                            ? $"Buy ${EpicShopCosts[index]}"
-                            : $"Need ${EpicShopCosts[index]}";
+                            ? $"Buy {cost} hard"
+                            : $"Need {cost} hard";
                 }
 
                 if (epicButtons != null && index < epicButtons.Length && epicButtons[index] != null)
@@ -737,11 +747,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 }
                 else if (!hasCharges)
                 {
-                    exchangeStatusText.text = $"{selectedAnimal.AnimalName}\nNo exchange charges.\nNext charge in {FormatTime(GetNextExchangeChargeSeconds())}";
+                    exchangeStatusText.text = $"{selectedAnimal.DisplayName}\nNo exchange charges.\nNext charge in {FormatTime(GetNextExchangeChargeSeconds())}";
                 }
                 else
                 {
-                    exchangeStatusText.text = $"{selectedAnimal.AnimalName}\n{selectedAnimal.Rarity}  +{selectedAnimal.IncomePerSecond}/s\nCharges: {exchangeCharges}/{maxExchangeCharges}";
+                    exchangeStatusText.text = $"{selectedAnimal.DisplayName}\n{selectedAnimal.Rarity} / {selectedAnimal.Grade}  +{selectedAnimal.IncomePerSecond}/s\nCharges: {exchangeCharges}/{maxExchangeCharges}";
                 }
             }
 
@@ -848,6 +858,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return PlayerPrefs.GetInt(EpicMobBoughtKeyPrefix + index, 0) != 0;
         }
 
+        private static int GetEpicShopCost(int index)
+        {
+            if (EpicShopCosts.Length == 0)
+            {
+                return 1;
+            }
+
+            return EpicShopCosts[Mathf.Clamp(index, 0, EpicShopCosts.Length - 1)];
+        }
+
         private static double GetUnixNow()
         {
             return DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -873,11 +893,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private RectTransform CreateRect(string name, Transform parent)
         {
-            var rectObject = new GameObject(name, typeof(RectTransform));
-            var rect = rectObject.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            rect.localScale = Vector3.one;
-            return rect;
+            return KickLuckyCubeUiPrefabFactory.CreateRect(name, parent);
         }
 
         private Text CreateStatusPill(RectTransform parent, string name, Color color)
@@ -893,34 +909,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Text CreateLabel(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, Vector2 size, Vector2 position)
         {
-            var rect = CreateRect(name, parent);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = position;
-
-            var text = rect.gameObject.AddComponent<Text>();
-            text.text = value;
-            text.font = uiFont;
-            text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
-            text.alignment = anchor;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            KickLuckyCubeUiTheme.StyleText(text, name);
-            return text;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateLabel(parent, name, uiFont, value, fontSize, anchor, size, position);
         }
 
         private Button CreateButton(RectTransform parent, string name, string value, Vector2 size)
         {
-            var rect = CreateRect(name, parent);
-            rect.sizeDelta = size;
-
-            var image = AddImage(rect.gameObject, new Color(0.15f, 0.18f, 0.22f, 0.94f));
-            var button = rect.gameObject.AddComponent<Button>();
-            button.targetGraphic = image;
-            KickLuckyCubeUiTheme.StyleButton(button, name);
-
-            CreateLabel(rect, "Label", value, 16, TextAnchor.MiddleCenter, size, Vector2.zero);
-            return button;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, value, uiFont, size, new Color(0.15f, 0.18f, 0.22f, 0.94f), 16);
         }
     }
 

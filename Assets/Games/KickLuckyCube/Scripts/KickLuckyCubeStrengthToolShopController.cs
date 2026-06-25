@@ -29,6 +29,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeToolTrainingController toolTraining;
+        [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private Canvas canvas;
         [SerializeField] private string[] toolNames = DefaultToolNames;
         [SerializeField] private float[] strengthPerSecondByTier = DefaultStrengthPerSecond;
@@ -140,7 +141,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>(FindObjectsInactive.Include);
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>(FindObjectsInactive.Include);
             toolTraining ??= FindFirstObjectByType<KickLuckyCubeToolTrainingController>(FindObjectsInactive.Include);
-            canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
+            canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas(canvas);
             uiFont = KickLuckyCubeUiTheme.Font;
         }
 
@@ -243,32 +245,31 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             windowRoot.anchorMax = new Vector2(0.5f, 0.5f);
             windowRoot.pivot = new Vector2(0.5f, 0.5f);
             windowRoot.anchoredPosition = new Vector2(0f, 18f);
-            windowRoot.sizeDelta = new Vector2(760f, 410f);
+            windowRoot.sizeDelta = new Vector2(820f, 560f);
             AddImage(windowRoot.gameObject, new Color(0.04f, 0.035f, 0.025f, 0.90f));
 
-            CreateLabel(windowRoot, "Title", "Training Equipment", 34, TextAnchor.MiddleLeft, new Vector2(430f, 46f), new Vector2(-150f, 172f));
-            statusText = CreateLabel(windowRoot, "Status", "Buy or equip training tools.", 18, TextAnchor.MiddleLeft, new Vector2(500f, 28f), new Vector2(-110f, -174f));
+            CreateLabel(windowRoot, "Title", "Training Equipment", 34, TextAnchor.MiddleLeft, new Vector2(430f, 46f), new Vector2(-170f, 242f));
+            statusText = CreateLabel(windowRoot, "Status", "Buy or equip training tools.", 18, TextAnchor.MiddleLeft, new Vector2(570f, 28f), new Vector2(-80f, -244f));
 
             var closeButton = CreateButton(windowRoot, "Close", "X", new Vector2(44f, 36f));
-            closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(342f, 172f);
+            closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(370f, 242f);
             closeButton.onClick.AddListener(CloseWindow);
 
             var grid = CreateRect("ToolCards", windowRoot);
             grid.anchorMin = new Vector2(0.5f, 0.5f);
             grid.anchorMax = new Vector2(0.5f, 0.5f);
             grid.pivot = new Vector2(0.5f, 0.5f);
-            grid.anchoredPosition = new Vector2(0f, -10f);
-            grid.sizeDelta = new Vector2(690f, 270f);
+            grid.anchoredPosition = new Vector2(0f, -12f);
+            grid.sizeDelta = new Vector2(710f, 400f);
 
-            var layout = grid.gameObject.AddComponent<HorizontalLayoutGroup>();
+            var layout = grid.gameObject.AddComponent<GridLayoutGroup>();
+            layout.cellSize = new Vector2(132f, 124f);
+            layout.spacing = new Vector2(10f, 10f);
             layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childControlWidth = false;
-            layout.childControlHeight = false;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
-            layout.spacing = 12f;
+            layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            layout.constraintCount = 5;
 
-            var tierCount = Mathf.Max(1, maxToolTier);
+            var tierCount = ResolvedMaxToolTier;
             tierButtons = new Button[tierCount];
             tierNameTexts = new Text[tierCount];
             tierDetailTexts = new Text[tierCount];
@@ -283,33 +284,34 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void CreateOpenButton(Transform parent)
         {
-            var button = CreateButton(parent as RectTransform, "KLC_StrengthToolShopOpenButton", "Tools\nT", new Vector2(72f, 76f));
+            var button = CreateButton(parent as RectTransform, "KLC_StrengthToolShopOpenButton", "Tools\nT", new Vector2(118f, 118f));
             var rect = button.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0f);
-            rect.anchorMax = new Vector2(0.5f, 0f);
-            rect.pivot = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = new Vector2(350f, 18f);
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(152f, -538f);
+            button.onClick.RemoveListener(ToggleWindow);
             button.onClick.AddListener(ToggleWindow);
         }
 
         private void CreateToolCard(RectTransform parent, int tier)
         {
             var card = CreateRect("ToolTier_" + tier, parent);
-            card.sizeDelta = new Vector2(126f, 246f);
+            card.sizeDelta = new Vector2(132f, 124f);
             var layoutElement = card.gameObject.AddComponent<LayoutElement>();
-            layoutElement.preferredWidth = 126f;
-            layoutElement.preferredHeight = 246f;
+            layoutElement.preferredWidth = 132f;
+            layoutElement.preferredHeight = 124f;
             tierFrames[tier - 1] = AddImage(card.gameObject, lockedColor);
 
             var icon = CreateRect("Icon", card);
-            icon.anchoredPosition = new Vector2(0f, 58f);
-            icon.sizeDelta = new Vector2(72f, 58f);
+            icon.anchoredPosition = new Vector2(0f, 38f);
+            icon.sizeDelta = new Vector2(60f, 34f);
             AddImage(icon.gameObject, ColorForTier(tier));
 
-            tierNameTexts[tier - 1] = CreateLabel(card, "Name", GetToolName(tier), 14, TextAnchor.MiddleCenter, new Vector2(116f, 42f), new Vector2(0f, 8f));
-            tierDetailTexts[tier - 1] = CreateLabel(card, "Detail", string.Empty, 13, TextAnchor.MiddleCenter, new Vector2(116f, 54f), new Vector2(0f, -42f));
-            var actionButton = CreateButton(card, "Action", string.Empty, new Vector2(104f, 36f));
-            actionButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -94f);
+            tierNameTexts[tier - 1] = CreateLabel(card, "Name", GetToolName(tier), 12, TextAnchor.MiddleCenter, new Vector2(122f, 26f), new Vector2(0f, 12f));
+            tierDetailTexts[tier - 1] = CreateLabel(card, "Detail", string.Empty, 12, TextAnchor.MiddleCenter, new Vector2(122f, 28f), new Vector2(0f, -16f));
+            var actionButton = CreateButton(card, "Action", string.Empty, new Vector2(110f, 28f));
+            actionButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -46f);
             var capturedTier = tier;
             actionButton.onClick.AddListener(() => HandleTierPressed(capturedTier));
             tierButtons[tier - 1] = actionButton;
@@ -399,11 +401,23 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private int GetToolCost(int tier)
         {
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.GetToolCost(tier);
+            }
+
             return tier <= 1 ? 0 : Mathf.RoundToInt(baseToolCost * Mathf.Pow(toolCostMultiplier, tier - 2));
         }
 
         private float GetStrengthPerSecond(int tier)
         {
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.GetToolStrengthPerSecond(tier);
+            }
+
             if (strengthPerSecondByTier != null)
             {
                 var index = Mathf.Clamp(tier, 1, Mathf.Max(1, strengthPerSecondByTier.Length)) - 1;
@@ -418,6 +432,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private string GetToolName(int tier)
         {
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.GetToolName(tier);
+            }
+
             if (toolNames != null)
             {
                 var index = Mathf.Clamp(tier, 1, Mathf.Max(1, toolNames.Length)) - 1;
@@ -432,7 +452,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Color ColorForTier(int tier)
         {
-            return Color.Lerp(new Color(0.58f, 0.64f, 0.78f, 1f), new Color(1f, 0.75f, 0.15f, 1f), Mathf.InverseLerp(1f, Mathf.Max(1f, maxToolTier), tier));
+            return Color.Lerp(new Color(0.58f, 0.64f, 0.78f, 1f), new Color(1f, 0.75f, 0.15f, 1f), Mathf.InverseLerp(1f, Mathf.Max(1f, ResolvedMaxToolTier), tier));
+        }
+
+        private int ResolvedMaxToolTier => ResolveBalanceConfig() != null
+            ? ResolveBalanceConfig().MaxToolTier
+            : Mathf.Max(1, maxToolTier);
+
+        private KickLuckyCubeBalanceConfig ResolveBalanceConfig()
+        {
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
+            return balanceConfig;
         }
 
         private void OnWalletChanged(int soft, int hard)
@@ -450,9 +480,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private RectTransform CreateRect(string name, Transform parent)
         {
-            var rectObject = new GameObject(name, typeof(RectTransform));
-            var rect = rectObject.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
+            var rect = KickLuckyCubeUiPrefabFactory.CreateRect(name, parent);
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
@@ -461,31 +489,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Button CreateButton(RectTransform parent, string name, string label, Vector2 size)
         {
-            var rect = CreateRect(name, parent);
-            rect.sizeDelta = size;
-            var image = AddImage(rect.gameObject, new Color(0.08f, 0.08f, 0.08f, 0.88f));
-            var button = rect.gameObject.AddComponent<Button>();
-            button.targetGraphic = image;
-            KickLuckyCubeUiTheme.StyleButton(button, name);
-            CreateLabel(rect, "Label", label, 14, TextAnchor.MiddleCenter, size, Vector2.zero);
-            return button;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, label, uiFont, size, new Color(0.08f, 0.08f, 0.08f, 0.88f), 14);
         }
 
         private Text CreateLabel(RectTransform parent, string name, string text, int fontSize, TextAnchor anchor, Vector2 size, Vector2 position)
         {
-            var rect = CreateRect(name, parent);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = position;
-            var label = rect.gameObject.AddComponent<Text>();
-            label.font = uiFont;
-            label.fontSize = fontSize;
-            label.fontStyle = FontStyle.Bold;
-            label.alignment = anchor;
-            label.color = Color.white;
-            label.text = text;
-            label.raycastTarget = false;
-            KickLuckyCubeUiTheme.StyleText(label, name);
-            return label;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateLabel(parent, name, uiFont, text, fontSize, anchor, size, position);
         }
 
         private static Image AddImage(GameObject target, Color color)

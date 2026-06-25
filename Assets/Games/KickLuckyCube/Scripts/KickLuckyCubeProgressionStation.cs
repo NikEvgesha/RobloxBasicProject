@@ -19,6 +19,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
         [SerializeField] private KickLuckyCubeSpeedShopController speedShop;
         [SerializeField] private KickLuckyCubeTrainingBonusPrompt trainingBonusPrompt;
+        [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private TextMesh statusLabel;
         [SerializeField, Min(0)] private int baseSpeedCost = 60;
         [SerializeField, Min(0)] private int speedCostStep = 55;
@@ -33,9 +34,59 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public StationMode Mode => mode;
 
-        private int SpeedCost => Mathf.RoundToInt(baseSpeedCost + stats.SpeedUpgradeLevel * speedCostStep);
-        private int ToolCost => Mathf.RoundToInt(baseToolCost * Mathf.Pow(toolCostMultiplier, stats.StrengthToolTier - 1));
-        private float TrainStrengthGain => baseStrengthGain * Mathf.Pow(strengthGainMultiplier, stats.SelectedStrengthToolTier - 1);
+        private int SpeedCost
+        {
+            get
+            {
+                if (stats == null)
+                {
+                    return baseSpeedCost;
+                }
+
+                var balance = ResolveBalanceConfig();
+                return balance != null
+                    ? ClampCostToInt(balance.GetSpeedLevelCost(stats.SpeedUpgradeLevel + 1))
+                    : Mathf.RoundToInt(baseSpeedCost + stats.SpeedUpgradeLevel * speedCostStep);
+            }
+        }
+
+        private int ToolCost
+        {
+            get
+            {
+                if (stats == null)
+                {
+                    return baseToolCost;
+                }
+
+                var balance = ResolveBalanceConfig();
+                return balance != null
+                    ? balance.GetToolCost(stats.StrengthToolTier + 1)
+                    : Mathf.RoundToInt(baseToolCost * Mathf.Pow(toolCostMultiplier, stats.StrengthToolTier - 1));
+            }
+        }
+
+        private float TrainStrengthGain
+        {
+            get
+            {
+                if (stats == null)
+                {
+                    return baseStrengthGain;
+                }
+
+                var balance = ResolveBalanceConfig();
+                return balance != null
+                    ? balance.GetToolStrengthPerSecond(stats.SelectedStrengthToolTier)
+                    : baseStrengthGain * Mathf.Pow(strengthGainMultiplier, stats.SelectedStrengthToolTier - 1);
+            }
+        }
+        private float SpeedGainPerLevel => ResolveBalanceConfig() != null
+            ? ResolveBalanceConfig().SpeedGainPerLevel
+            : speedGain;
+        private int ResolvedMaxStrengthToolTier => ResolveBalanceConfig() != null
+            ? ResolveBalanceConfig().MaxToolTier
+            : Mathf.Max(1, maxStrengthToolTier);
 
         private void Awake()
         {
@@ -44,6 +95,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>();
             speedShop ??= FindFirstObjectByType<KickLuckyCubeSpeedShopController>(FindObjectsInactive.Include);
             trainingBonusPrompt ??= FindFirstObjectByType<KickLuckyCubeTrainingBonusPrompt>(FindObjectsInactive.Include);
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
             interactionTarget = GetComponent<GameKitInteractionTarget>();
             interactionTarget.ActorInteracted.AddListener(Interact);
             RefreshLabel();
@@ -76,7 +128,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     || (wallet != null
                         && wallet.SoftCurrency >= SpeedCost),
                 StationMode.BuyStrengthTool => wallet != null
-                    && stats.StrengthToolTier < maxStrengthToolTier
+                    && stats.StrengthToolTier < ResolvedMaxStrengthToolTier
                     && wallet.SoftCurrency >= ToolCost,
                 _ => false
             };
@@ -107,7 +159,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
                     if (wallet.TrySpendSoft(SpeedCost))
                     {
-                        stats.AddAnimalSpeed(speedGain);
+                        stats.AddAnimalSpeed(SpeedGainPerLevel);
                     }
                     break;
                 case StationMode.BuyStrengthTool:
@@ -137,11 +189,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 StationMode.TrainStrength => $"Train strength\n+{TrainStrengthGain:0} per hold\nTool {stats.SelectedStrengthToolTier}/{stats.StrengthToolTier}\nX for x2",
                 StationMode.BuySpeedUpgrade => $"Open speed shop\nNext {SpeedCost} soft\nLv {stats.SpeedUpgradeLevel}",
-                StationMode.BuyStrengthTool => stats.StrengthToolTier >= maxStrengthToolTier
-                    ? $"Tool maxed\nLv {stats.StrengthToolTier}/{maxStrengthToolTier}\n+{TrainStrengthGain:0}/hold"
+                StationMode.BuyStrengthTool => stats.StrengthToolTier >= ResolvedMaxStrengthToolTier
+                    ? $"Tool maxed\nLv {stats.StrengthToolTier}/{ResolvedMaxStrengthToolTier}\n+{TrainStrengthGain:0}/hold"
                     : $"Buy tool\nCost {ToolCost} soft\nNext Lv {stats.StrengthToolTier + 1}",
                 _ => statusLabel.text
             };
+        }
+
+        private KickLuckyCubeBalanceConfig ResolveBalanceConfig()
+        {
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
+            return balanceConfig;
+        }
+
+        private static int ClampCostToInt(long cost)
+        {
+            return cost > int.MaxValue ? int.MaxValue : Mathf.Max(0, (int)cost);
         }
     }
 }

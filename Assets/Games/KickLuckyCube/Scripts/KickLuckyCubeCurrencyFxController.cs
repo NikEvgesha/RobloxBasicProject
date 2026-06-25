@@ -102,22 +102,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             int index)
         {
             var isMain = index == 0;
-            var textObject = new GameObject("KLC_CurrencyGainFlyText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text), typeof(CanvasGroup), typeof(Shadow), typeof(Outline));
-            var rect = textObject.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
+            var rect = KickLuckyCubeUiPrefabFactory.CreateRectInstance("KLC_CurrencyGainFlyText", "KLC_CurrencyGainFlyText", parent);
+            var textObject = rect.gameObject;
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = isMain ? new Vector2(190f, 56f) : new Vector2(104f, 36f);
 
-            var text = textObject.GetComponent<Text>();
+            var text = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<Text>(textObject);
             text.font = uiFont;
             text.text = isMain ? $"+{amount:0} {label}" : $"+{Mathf.Max(1, amount / burstCount):0}";
             text.alignment = TextAnchor.MiddleCenter;
             text.fontSize = isMain ? 38 : 24;
             KickLuckyCubeUiTheme.StyleFloatingText(text, color);
 
-            var group = textObject.GetComponent<CanvasGroup>();
+            var group = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<CanvasGroup>(textObject);
             group.blocksRaycasts = false;
             group.interactable = false;
 
@@ -127,7 +126,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var delay = isMain ? 0f : UnityEngine.Random.Range(0.025f, 0.16f);
             var duration = flySeconds + UnityEngine.Random.Range(-0.06f, 0.1f);
             rect.anchoredPosition = start;
-            textObject.AddComponent<CurrencyFlyTextMotion>().Initialize(rect, group, start, burst, target, duration, delay, isMain ? 1.3f : 0.95f);
+            KickLuckyCubeUiPrefabFactory.GetOrAddComponent<CurrencyFlyTextMotion>(textObject)
+                .Initialize(rect, group, start, burst, target, duration, delay, isMain ? 1.3f : 0.95f);
         }
 
         private void ResolveReferences()
@@ -193,6 +193,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            softTarget ??= FindUiTarget("KLC_BottomLeftSoftValue");
+            hardTarget ??= FindUiTarget("KLC_BottomLeftHardValue");
+            if (softTarget != null && hardTarget != null)
+            {
+                return;
+            }
+
             var texts = FindObjectsByType<Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             for (var index = 0; index < texts.Length; index++)
             {
@@ -215,6 +222,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
+        private static RectTransform FindUiTarget(string objectName)
+        {
+            var target = GameObject.Find(objectName);
+            return target != null ? target.GetComponent<RectTransform>() : null;
+        }
+
         private RectTransform GetLayer()
         {
             if (layer != null)
@@ -226,9 +239,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             layer = canvasRect.Find("KLC_CurrencyFlyTextLayer") as RectTransform;
             if (layer == null)
             {
-                var layerObject = new GameObject("KLC_CurrencyFlyTextLayer", typeof(RectTransform));
-                layer = layerObject.GetComponent<RectTransform>();
-                layer.SetParent(canvasRect, false);
+                layer = KickLuckyCubeUiPrefabFactory.CreateRect("KLC_CurrencyFlyTextLayer", canvasRect);
                 layer.anchorMin = Vector2.zero;
                 layer.anchorMax = Vector2.one;
                 layer.offsetMin = Vector2.zero;

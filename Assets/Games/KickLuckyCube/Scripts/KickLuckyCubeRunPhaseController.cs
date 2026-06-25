@@ -35,8 +35,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private Coroutine runStartRoutine;
         private GameObject roulettePreview;
         private Transform roulettePreviewBody;
-        private Renderer roulettePreviewRenderer;
+        private Renderer[] roulettePreviewRenderers;
         private TextMesh roulettePreviewLabel;
+        private string roulettePreviewVariantId;
+        private bool roulettePreviewShowsSelected;
         private Vector3 currentReturnPosition;
         private bool hasCurrentReturnPosition;
         private string carriedInventoryAnimalId;
@@ -113,7 +115,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 if (PrepareRun(result))
                 {
-                    StartRunWithAnimal(result, animalSpawner.PickRandomAnimal(result.Rarity));
+                    StartRunWithAnimal(result, animalSpawner.PickRandomAnimal(result));
                 }
 
                 return;
@@ -161,7 +163,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var soldAnimal = carriedAnimal;
             var sellValue = soldAnimal.SellValue;
-            var animalName = soldAnimal.AnimalName;
+            var animalName = soldAnimal.DisplayName;
             animalSpawner?.ReleaseCurrentAnimal(soldAnimal);
             carriedAnimal = null;
             RemoveCarriedInventoryItem();
@@ -188,7 +190,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             animalSpawner?.ReleaseCurrentAnimal(animal);
             carriedAnimal = null;
             RemoveCarriedInventoryItem();
-            FinishCarriedAnimalFlow($"{animal.AnimalName} placed in stable.\nIt now earns {animal.IncomePerSecond} soft/s.");
+            FinishCarriedAnimalFlow($"{animal.DisplayName} placed in stable.\nIt now earns {animal.IncomePerSecond} soft/s.");
             return true;
         }
 
@@ -200,7 +202,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 yield break;
             }
 
-            var selectedOption = animalSpawner.PickRandomAnimal(result.Rarity);
+            var selectedOption = animalSpawner.PickRandomAnimal(result);
             yield return PlayAnimalRoulette(result, selectedOption);
             yield return StartRunWithAnimalAfterIntro(result, selectedOption);
             runStartRoutine = null;
@@ -253,7 +255,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     waveIntroCameraDistance,
                     waveIntroCameraPitch,
                     waveIntroCameraYawOffset);
-                SetStatus($"Wave is rising...\nSpeed: {waveChase.WaveSpeed:0.0} m/s\nGet ready!");
+                SetStatus($"Wave is rising...\n{waveChase.WaveSpeedTierName} | Location {waveChase.WaveLocationIndex}\nSpeed: {waveChase.WaveSpeed:0.0} m/s\nGet ready!");
                 yield return waveChase.PlayPreparedRise(waveIntroSeconds);
 
                 if (waveIntroHoldSeconds > 0f)
@@ -292,12 +294,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void SetRunStartedStatus(KickLuckyCubeSpawnedAnimal spawnedAnimal)
         {
-            SetStatus($"Run back as {spawnedAnimal.AnimalName}!\nRarity: {spawnedAnimal.Rarity}\nWave speed: {waveChase.WaveSpeed:0.0} m/s");
+            SetStatus($"Run back as {spawnedAnimal.DisplayName}!\n{spawnedAnimal.Rarity} / {spawnedAnimal.Grade}\n{waveChase.WaveSpeedTierName}: {waveChase.WaveSpeed:0.0} m/s");
         }
 
         private IEnumerator PlayAnimalRoulette(KickLuckyCubeKickResult result, KickLuckyCubeAnimalOption selectedOption)
         {
-            var candidates = animalSpawner.GetCandidateOptions(result.Rarity);
+            var candidates = animalSpawner.GetCandidateOptions(result);
             if (candidates.Length == 0 || animalRouletteSeconds <= 0f)
             {
                 yield break;
@@ -312,7 +314,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 var progress = Mathf.Clamp01(elapsed / animalRouletteSeconds);
                 var option = candidates[index % candidates.Length];
                 ApplyRoulettePreview(option, false);
-                SetStatus($"Choosing animal...\n{option.AnimalName}\nPool: {result.Rarity}");
+                SetStatus($"Choosing animal...\n???\nLocation {ResolveLocationIndex(result)} pool");
 
                 var stepSeconds = Mathf.Lerp(
                     animalRouletteMinimumStepSeconds,
@@ -325,7 +327,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             ApplyRoulettePreview(selectedOption, true);
-            SetStatus($"Selected: {selectedOption.AnimalName}!\nRarity: {selectedOption.Rarity}");
+            SetStatus($"Selected: {selectedOption.DisplayName}!\n+{selectedOption.IncomePerSecond}/s");
             yield return new WaitForSeconds(0.45f);
 
             DestroyRoulettePreview();
@@ -336,27 +338,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             DestroyRoulettePreview();
 
             roulettePreview = new GameObject("KLC_AnimalRoulettePreview");
-            roulettePreview.transform.position = landingPosition + animalRoulettePreviewOffset;
-
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "ShadowSilhouette";
-            body.transform.SetParent(roulettePreview.transform, false);
-            body.transform.localPosition = Vector3.zero;
-            body.transform.localRotation = Quaternion.identity;
-            body.transform.localScale = animalRoulettePreviewScale;
-            roulettePreviewBody = body.transform;
-
-            var bodyCollider = body.GetComponent<Collider>();
-            if (bodyCollider != null)
-            {
-                DestroyUnityObject(bodyCollider);
-            }
-
-            roulettePreviewRenderer = body.GetComponent<Renderer>();
+            roulettePreview.transform.SetPositionAndRotation(
+                landingPosition,
+                Quaternion.LookRotation(Vector3.back, Vector3.up));
+            roulettePreviewVariantId = string.Empty;
+            roulettePreviewShowsSelected = false;
+            roulettePreviewRenderers = null;
 
             var labelObject = new GameObject("RouletteLabel");
             labelObject.transform.SetParent(roulettePreview.transform, false);
-            labelObject.transform.localPosition = new Vector3(0f, 1.55f, 0f);
+            labelObject.transform.localPosition = new Vector3(0f, 1.75f, 0f);
             roulettePreviewLabel = labelObject.AddComponent<TextMesh>();
             roulettePreviewLabel.anchor = TextAnchor.MiddleCenter;
             roulettePreviewLabel.alignment = TextAlignment.Center;
@@ -372,28 +363,27 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            if (roulettePreviewBody != null)
+            option = KickLuckyCubeAnimalCatalog.ResolveOption(option);
+            if (roulettePreviewBody == null
+                || !string.Equals(roulettePreviewVariantId, option.VariantId, System.StringComparison.Ordinal)
+                || roulettePreviewShowsSelected != selected)
             {
-                var scaleMultiplier = selected ? 1.16f : 1f;
-                roulettePreviewBody.localScale = animalRoulettePreviewScale * scaleMultiplier;
-                roulettePreviewBody.localPosition = new Vector3(
-                    0f,
-                    Mathf.Max(0f, roulettePreviewBody.localScale.y - animalRoulettePreviewOffset.y),
-                    0f);
+                RebuildRoulettePreviewVisual(option, selected);
             }
 
-            if (roulettePreviewRenderer != null)
+            if (roulettePreviewBody != null)
             {
-                var color = Color.Lerp(animalRouletteShadowColor, option.BodyColor, selected ? 0.58f : 0.28f);
-                color.a = animalRouletteShadowColor.a;
-                roulettePreviewRenderer.material.color = color;
+                roulettePreviewBody.localPosition = new Vector3(
+                    animalRoulettePreviewOffset.x,
+                    0f,
+                    animalRoulettePreviewOffset.z);
             }
 
             if (roulettePreviewLabel != null)
             {
                 roulettePreviewLabel.text = selected
-                    ? option.AnimalName
-                    : "???\n" + option.AnimalName;
+                    ? option.DisplayName
+                    : "???";
                 roulettePreviewLabel.color = selected ? new Color(1f, 0.88f, 0.22f) : Color.white;
 
                 var mainCamera = Camera.main;
@@ -404,6 +394,136 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                         Vector3.up);
                 }
             }
+        }
+
+        private void RebuildRoulettePreviewVisual(KickLuckyCubeAnimalOption option, bool selected)
+        {
+            if (roulettePreview == null)
+            {
+                return;
+            }
+
+            if (roulettePreviewBody != null)
+            {
+                DestroyUnityObject(roulettePreviewBody.gameObject);
+                roulettePreviewBody = null;
+            }
+
+            var visualRoot = new GameObject("RouletteVisual_" + Sanitize(option.AnimalName));
+            visualRoot.transform.SetParent(roulettePreview.transform, false);
+            visualRoot.transform.localPosition = Vector3.zero;
+            visualRoot.transform.localRotation = Quaternion.identity;
+            visualRoot.transform.localScale = Vector3.one;
+            roulettePreviewBody = visualRoot.transform;
+            roulettePreviewVariantId = option.VariantId;
+            roulettePreviewShowsSelected = selected;
+
+            var targetHeight = selected ? 1.48f : 1.28f;
+            var bodyRenderer = KickLuckyCubeAnimalVisualFactory.CreateVisual(
+                visualRoot.transform,
+                option,
+                targetHeight,
+                out var usedImportedVisual,
+                selected);
+            roulettePreviewRenderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+
+            if (!selected)
+            {
+                ApplyRouletteSilhouette();
+                return;
+            }
+
+            if (!usedImportedVisual && bodyRenderer != null)
+            {
+                bodyRenderer.material.color = option.BodyColor;
+            }
+        }
+
+        private void ApplyRouletteSilhouette()
+        {
+            if (roulettePreviewRenderers == null)
+            {
+                return;
+            }
+
+            foreach (var targetRenderer in roulettePreviewRenderers)
+            {
+                if (targetRenderer == null)
+                {
+                    continue;
+                }
+
+                var materials = targetRenderer.materials;
+                for (var index = 0; index < materials.Length; index++)
+                {
+                    materials[index] = CreateRouletteSilhouetteMaterial(materials[index]);
+                }
+
+                targetRenderer.materials = materials;
+            }
+        }
+
+        private Material CreateRouletteSilhouetteMaterial(Material source)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+            {
+                shader = Shader.Find("Standard");
+            }
+
+            if (shader == null && source != null)
+            {
+                shader = source.shader;
+            }
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Sprites/Default");
+            }
+
+            var material = shader != null
+                ? new Material(shader)
+                : new Material(source);
+            material.name = "KLC_RouletteBlackSilhouette_Runtime";
+
+            var color = animalRouletteShadowColor;
+            color.a = 1f;
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", color);
+            }
+
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", color);
+            }
+
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", Texture2D.blackTexture);
+            }
+
+            if (material.HasProperty("_MainTex"))
+            {
+                material.SetTexture("_MainTex", Texture2D.blackTexture);
+            }
+
+            return material;
+        }
+
+        private static string Sanitize(string value)
+        {
+            var source = string.IsNullOrWhiteSpace(value) ? "Animal" : value;
+            var chars = source.ToCharArray();
+            for (var index = 0; index < chars.Length; index++)
+            {
+                if (!char.IsLetterOrDigit(chars[index]))
+                {
+                    chars[index] = '_';
+                }
+            }
+
+            return new string(chars);
         }
 
         private void StopRunStartRoutine()
@@ -420,8 +540,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void DestroyRoulettePreview()
         {
             roulettePreviewBody = null;
-            roulettePreviewRenderer = null;
+            roulettePreviewRenderers = null;
             roulettePreviewLabel = null;
+            roulettePreviewVariantId = string.Empty;
+            roulettePreviewShowsSelected = false;
 
             if (roulettePreview == null)
             {
@@ -508,7 +630,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             var hasReturnedAnimal = returnedAnimal != null;
-            var returnedAnimalName = hasReturnedAnimal ? returnedAnimal.AnimalName : string.Empty;
+            var returnedAnimalName = hasReturnedAnimal ? returnedAnimal.DisplayName : string.Empty;
             var addedToInventory = false;
             carriedAnimal = null;
             carriedInventoryAnimalId = null;
@@ -567,7 +689,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var animalName = soldAnimal.AnimalName;
+            var animalName = soldAnimal.DisplayName;
             DestroyAnimalObject(carriedAnimal);
             carriedAnimal = null;
             carriedInventoryAnimalId = null;
@@ -618,6 +740,25 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 : returnLine != null
                     ? returnLine.position.z
                     : -2f;
+        }
+
+        private static int ResolveLocationIndex(KickLuckyCubeKickResult result)
+        {
+            var rarityLocationIndex = result.Rarity switch
+            {
+                KickLuckyCubeRarity.Uncommon => 2,
+                KickLuckyCubeRarity.Rare => 3,
+                KickLuckyCubeRarity.Epic => 4,
+                KickLuckyCubeRarity.Legendary => 5,
+                _ => 1,
+            };
+
+            if (result.Zone != null)
+            {
+                return Mathf.Max(1, Mathf.Max(result.Zone.ZoneIndex, rarityLocationIndex));
+            }
+
+            return rarityLocationIndex;
         }
 
         private Vector3 GetReturnPosition()

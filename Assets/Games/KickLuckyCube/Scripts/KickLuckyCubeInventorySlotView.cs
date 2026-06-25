@@ -68,11 +68,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public void SetAnimal(KickLuckyCubeInventoryAnimal animal, bool selected, Color frameColor, Color emptyFrameColor)
         {
-            SetFrameColor(animal.IsValid ? frameColor : emptyFrameColor);
+            SetFrameColor(animal.IsValid ? ResolveAnimalFrameColor(animal, frameColor) : emptyFrameColor);
 
             if (!animal.IsValid)
             {
                 SetVisible(false);
+                SetIconSprite(null);
                 SetText(titleText, string.Empty);
                 SetText(detailText, string.Empty);
                 SetText(badgeText, string.Empty);
@@ -80,10 +81,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             SetVisible(true);
-            SetIconColor(animal.BodyColor);
-            SetText(titleText, animal.AnimalName);
-            SetText(detailText, $"+{animal.IncomePerSecond}/s\n${animal.SellValue}");
-            SetText(badgeText, selected ? "Selected" : animal.Rarity.ToString());
+            var icon = KickLuckyCubeAnimalCatalog.LoadIcon(animal);
+            if (icon != null)
+            {
+                SetIconSprite(icon);
+                SetIconColor(Color.white);
+            }
+            else
+            {
+                SetIconSprite(null);
+                SetIconColor(animal.BodyColor);
+            }
+
+            SetText(titleText, animal.DisplayName);
+            SetText(detailText, $"+{animal.IncomePerSecond}/s\n{KickLuckyCubeAnimalGradeUtility.GetDisplayName(animal.Grade)}");
+            SetText(badgeText, selected ? "Selected" : GetBadgeText(animal));
         }
 
         public void OnPointerClick(PointerEventData eventData)
@@ -130,6 +142,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
+        private void SetIconSprite(Sprite sprite)
+        {
+            if (iconImage == null)
+            {
+                return;
+            }
+
+            iconImage.sprite = sprite;
+            iconImage.preserveAspect = sprite != null;
+        }
+
         private static void SetText(Text text, string value)
         {
             if (text != null)
@@ -153,6 +176,23 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             KickLuckyCubeUiTheme.StyleText(titleText, titleText != null ? titleText.gameObject.name : string.Empty);
             KickLuckyCubeUiTheme.StyleText(detailText, detailText != null ? detailText.gameObject.name : string.Empty);
             KickLuckyCubeUiTheme.StyleText(badgeText, badgeText != null ? badgeText.gameObject.name : string.Empty);
+        }
+
+        private static Color ResolveAnimalFrameColor(KickLuckyCubeInventoryAnimal animal, Color fallback)
+        {
+            if (animal.Grade == KickLuckyCubeAnimalGrade.Normal)
+            {
+                return fallback;
+            }
+
+            return Color.Lerp(fallback, KickLuckyCubeAnimalGradeUtility.GetTintColor(animal.Grade), 0.58f);
+        }
+
+        private static string GetBadgeText(KickLuckyCubeInventoryAnimal animal)
+        {
+            return animal.Grade == KickLuckyCubeAnimalGrade.Normal
+                ? animal.Rarity.ToString()
+                : KickLuckyCubeAnimalGradeUtility.GetShortName(animal.Grade);
         }
     }
 }

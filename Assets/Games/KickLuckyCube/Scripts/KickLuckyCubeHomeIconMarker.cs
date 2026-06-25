@@ -153,18 +153,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var iconObject = new GameObject("KLC_PlayerHomeIcon_Runtime", typeof(RectTransform));
-            iconRoot = iconObject.GetComponent<RectTransform>();
-            iconRoot.SetParent(canvas.transform, false);
+            iconRoot = KickLuckyCubeUiPrefabFactory.CreateRect("KLC_PlayerHomeIcon_Runtime", canvas.transform);
             iconRoot.anchorMin = Vector2.zero;
             iconRoot.anchorMax = Vector2.zero;
             iconRoot.pivot = new Vector2(0.5f, 0.5f);
             iconRoot.sizeDelta = iconSize;
 
-            var graphic = iconObject.AddComponent<KickLuckyCubeHomeIconGraphic>();
+            var graphic = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<KickLuckyCubeHomeIconGraphic>(iconRoot.gameObject);
             graphic.raycastTarget = false;
 
-            iconObject.SetActive(false);
+            iconRoot.gameObject.SetActive(false);
         }
 
         private Vector3 GetTargetWorldPosition()

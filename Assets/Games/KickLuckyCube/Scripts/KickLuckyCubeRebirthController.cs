@@ -11,6 +11,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
+        [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private GameObject windowRoot;
         [SerializeField] private Button openButton;
         [SerializeField] private Button closeButton;
@@ -30,7 +31,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public int RebirthCount => rebirthCount;
         public float MoneyMultiplier => 1f + rebirthCount;
-        public float RequiredStrength => baseStrengthRequirement * Mathf.Pow(requirementMultiplier, rebirthCount);
+        public float RequiredStrength => ResolveBalanceConfig() != null
+            ? ResolveBalanceConfig().GetRebirthRequirement(rebirthCount)
+            : baseStrengthRequirement * Mathf.Pow(requirementMultiplier, rebirthCount);
         public bool CanRebirth => stats != null
             && stats.Strength >= RequiredStrength
             && (runPhase == null || (!runPhase.HasActiveRun && !runPhase.HasCarriedAnimal));
@@ -40,6 +43,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>();
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>();
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
 
             Load();
             ApplyMoneyMultiplier();
@@ -236,6 +240,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 PlayerPrefs.SetInt(saveKeyPrefix + RebirthCountKey, rebirthCount);
                 PlayerPrefs.Save();
             }
+        }
+
+        private KickLuckyCubeBalanceConfig ResolveBalanceConfig()
+        {
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
+            return balanceConfig;
         }
     }
 }

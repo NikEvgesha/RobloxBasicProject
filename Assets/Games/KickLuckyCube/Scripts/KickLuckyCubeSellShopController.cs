@@ -108,7 +108,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void CreateAnimalCard(KickLuckyCubeInventoryController.AnimalSlot slot)
         {
-            var card = CreateRect("KLC_SellShopCard_" + slot.Animal.AnimalName, listRoot);
+            var card = CreateRect("KLC_SellShopCard_" + slot.Animal.DisplayName, listRoot);
             card.sizeDelta = new Vector2(CardSize, CardSize);
             var layoutElement = card.gameObject.AddComponent<LayoutElement>();
             layoutElement.preferredHeight = CardSize;
@@ -122,12 +122,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             icon.pivot = new Vector2(0.5f, 1f);
             icon.anchoredPosition = new Vector2(0f, -14f);
             icon.sizeDelta = new Vector2(86f, 66f);
-            AddImage(icon.gameObject, slot.Animal.BodyColor);
+            var iconImage = AddImage(icon.gameObject, slot.Animal.BodyColor);
+            var iconSprite = KickLuckyCubeAnimalCatalog.LoadIcon(slot.Animal);
+            if (iconSprite != null)
+            {
+                iconImage.sprite = iconSprite;
+                iconImage.preserveAspect = true;
+                iconImage.color = Color.white;
+            }
 
             CreateLabel(
                 card,
                 "Name",
-                slot.Animal.AnimalName,
+                slot.Animal.DisplayName,
                 16,
                 TextAnchor.MiddleCenter,
                 new Vector2(158f, 26f),
@@ -135,7 +142,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             CreateLabel(
                 card,
                 "Rarity",
-                slot.Animal.Rarity.ToString(),
+                slot.Animal.Grade == KickLuckyCubeAnimalGrade.Normal
+                    ? slot.Animal.Rarity.ToString()
+                    : $"{slot.Animal.Rarity} / {KickLuckyCubeAnimalGradeUtility.GetShortName(slot.Animal.Grade)}",
                 14,
                 TextAnchor.MiddleCenter,
                 new Vector2(158f, 22f),
@@ -178,7 +187,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            SetStatus($"Sold {soldAnimal.AnimalName} for ${soldAnimal.SellValue}.");
+            SetStatus($"Sold {soldAnimal.DisplayName} for ${soldAnimal.SellValue}.");
             RefreshRows();
         }
 
@@ -283,17 +292,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Button CreateButton(RectTransform parent, string name, string label, Vector2 size)
         {
-            var rect = CreateRect(name, parent);
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-            var image = AddImage(rect.gameObject, new Color(0.18f, 0.44f, 0.12f, 0.92f));
-            var button = rect.gameObject.AddComponent<Button>();
-            button.targetGraphic = image;
-            KickLuckyCubeUiTheme.StyleButton(button, name);
-            CreateLabel(rect, "Label", label, 16, TextAnchor.MiddleCenter, size, Vector2.zero);
-            return button;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, label, uiFont, size, new Color(0.18f, 0.44f, 0.12f, 0.92f), 16);
         }
 
         private Text CreateLabel(
@@ -305,21 +304,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Vector2 size,
             Vector2 anchoredPosition)
         {
-            var rect = CreateRect(name, parent);
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = anchoredPosition;
-            var label = rect.gameObject.AddComponent<Text>();
-            label.font = uiFont;
-            label.fontSize = fontSize;
-            label.alignment = anchor;
-            label.color = Color.white;
-            label.text = text;
-            label.raycastTarget = false;
-            KickLuckyCubeUiTheme.StyleText(label, name);
-            return label;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateLabel(parent, name, uiFont, text, fontSize, anchor, size, anchoredPosition);
         }
 
         private void ResolveUiFont()
@@ -329,10 +314,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private static RectTransform CreateRect(string name, Transform parent)
         {
-            var gameObject = new GameObject(name, typeof(RectTransform));
-            var rect = gameObject.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
+            return KickLuckyCubeUiPrefabFactory.CreateRect(name, parent);
         }
 
         private static Image AddImage(GameObject target, Color color)

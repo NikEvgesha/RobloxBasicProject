@@ -66,6 +66,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         }
 
         [SerializeField] private KickLuckyCubePlayerStats stats;
+        [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private ToolSlot[] slots = Array.Empty<ToolSlot>();
         [SerializeField] private string[] toolNames = { "Kick", "Boots", "Hammer", "Rocket" };
         [SerializeField] private Color unlockedColor = KickLuckyCubeUiTheme.Secondary;
@@ -75,6 +76,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void Awake()
         {
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
             ApplyTheme();
             WireButtons();
             Refresh();
@@ -182,10 +184,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private string GetToolName(int tier)
         {
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.GetToolName(tier);
+            }
+
             var index = tier - 1;
             return toolNames != null && index >= 0 && index < toolNames.Length && !string.IsNullOrWhiteSpace(toolNames[index])
                 ? toolNames[index]
                 : $"Tool {tier}";
+        }
+
+        private KickLuckyCubeBalanceConfig ResolveBalanceConfig()
+        {
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
+            return balanceConfig;
         }
 
         private static int ReadKeyboardTier()

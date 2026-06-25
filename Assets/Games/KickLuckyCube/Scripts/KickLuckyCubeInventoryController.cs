@@ -64,6 +64,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private Transform carryAnchor;
         private GameObject selectedAnimalHandPreview;
         private Renderer selectedAnimalHandRenderer;
+        private string selectedAnimalHandPreviewKey;
+        private bool selectedAnimalHandPreviewUsesImportedVisual;
         private Text statusText;
         private Font uiFont;
         private GameObject dragGhost;
@@ -85,7 +87,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>(FindObjectsInactive.Include);
             toolTraining ??= FindFirstObjectByType<KickLuckyCubeToolTrainingController>(FindObjectsInactive.Include);
-            canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas(canvas);
             inventoryAnimals = new KickLuckyCubeInventoryAnimal[Mathf.Max(HotbarAnimalSlotCount, inventorySlotCount)];
             LoadInventory();
             ResolveUiFont();
@@ -201,7 +203,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     SelectHotbarAnimal(index);
                 }
 
-                SetStatus($"{animal.AnimalName} added to hotbar.");
+                SetStatus($"{animal.DisplayName} added to hotbar.");
                 SaveInventory();
                 Refresh();
                 return true;
@@ -220,7 +222,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     SelectInventoryAnimal(index);
                 }
 
-                SetStatus($"{animal.AnimalName} added to inventory.");
+                SetStatus($"{animal.DisplayName} added to inventory.");
                 SaveInventory();
                 Refresh();
                 return true;
@@ -296,7 +298,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             wallet.AddSoft(soldAnimal.SellValue);
             AnimalSold?.Invoke(soldAnimal);
-            SetStatus($"Sold {soldAnimal.AnimalName} for ${soldAnimal.SellValue}.");
+            SetStatus($"Sold {soldAnimal.DisplayName} for ${soldAnimal.SellValue}.");
             return true;
         }
 
@@ -339,7 +341,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             wallet.AddSoft(soldAnimal.SellValue);
             AnimalSold?.Invoke(soldAnimal);
-            SetStatus($"Sold {soldAnimal.AnimalName} for ${soldAnimal.SellValue}.");
+            SetStatus($"Sold {soldAnimal.DisplayName} for ${soldAnimal.SellValue}.");
             return true;
         }
 
@@ -569,10 +571,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             root.anchorMin = new Vector2(0.5f, 0f);
             root.anchorMax = new Vector2(0.5f, 0f);
             root.pivot = new Vector2(0.5f, 0f);
-            root.anchoredPosition = new Vector2(0f, 18f);
+            root.anchoredPosition = new Vector2(0f, 16f);
             root.sizeDelta = new Vector2(500f, 82f);
 
-            var layout = root.gameObject.AddComponent<HorizontalLayoutGroup>();
+            var layout = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<HorizontalLayoutGroup>(root.gameObject);
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = false;
             layout.childControlHeight = false;
@@ -632,10 +634,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             grid.offsetMax = new Vector2(-24f, -58f);
             var gridImage = AddImage(grid.gameObject, new Color(0f, 0f, 0f, 0f));
             gridImage.raycastTarget = true;
-            inventoryDropZone = grid.gameObject.AddComponent<KickLuckyCubeInventoryDropZone>();
+            inventoryDropZone = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<KickLuckyCubeInventoryDropZone>(grid.gameObject);
             inventoryDropZone.Configure(this);
 
-            var gridLayout = grid.gameObject.AddComponent<GridLayoutGroup>();
+            var gridLayout = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<GridLayoutGroup>(grid.gameObject);
             gridLayout.cellSize = new Vector2(76f, 76f);
             gridLayout.spacing = new Vector2(8f, 8f);
             gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
@@ -664,7 +666,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             var slotRoot = CreateRect($"KLC_InventorySlot_{kind}_{index}", parent);
             slotRoot.sizeDelta = size;
-            var layoutElement = slotRoot.gameObject.AddComponent<LayoutElement>();
+            var layoutElement = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<LayoutElement>(slotRoot.gameObject);
             layoutElement.preferredWidth = size.x;
             layoutElement.preferredHeight = size.y;
 
@@ -684,7 +686,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var detail = CreateLabel(slotRoot, "Detail", string.Empty, 9, TextAnchor.UpperCenter, new Vector2(size.x - 8f, 26f), new Vector2(0f, -6f));
             var badge = CreateLabel(slotRoot, "Badge", string.Empty, 9, TextAnchor.MiddleCenter, new Vector2(size.x - 6f, 18f), new Vector2(0f, size.y * 0.5f - 12f));
 
-            var view = slotRoot.gameObject.AddComponent<KickLuckyCubeInventorySlotView>();
+            var view = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<KickLuckyCubeInventorySlotView>(slotRoot.gameObject);
             view.Configure(this, kind, index, frameImage, iconImage, title, detail, badge);
             return view;
         }
@@ -697,17 +699,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Button CreateButton(RectTransform parent, string name, string label, Vector2 size)
         {
-            var rect = CreateRect(name, parent);
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-            var image = AddImage(rect.gameObject, new Color(0.08f, 0.08f, 0.08f, 0.86f));
-            var button = rect.gameObject.AddComponent<Button>();
-            button.targetGraphic = image;
-            KickLuckyCubeUiTheme.StyleButton(button, name);
-            CreateLabel(rect, "Label", label, 14, TextAnchor.MiddleCenter, size, Vector2.zero);
-            return button;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, label, uiFont, size, new Color(0.08f, 0.08f, 0.08f, 0.86f), 14);
         }
 
         private Text CreateLabel(
@@ -719,21 +711,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Vector2 size,
             Vector2 anchoredPosition)
         {
-            var rect = CreateRect(name, parent);
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = anchoredPosition;
-            var label = rect.gameObject.AddComponent<Text>();
-            label.font = uiFont;
-            label.fontSize = fontSize;
-            label.alignment = anchor;
-            label.color = Color.white;
-            label.text = text;
-            label.raycastTarget = false;
-            KickLuckyCubeUiTheme.StyleText(label, name);
-            return label;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateLabel(parent, name, uiFont, text, fontSize, anchor, size, anchoredPosition);
         }
 
         private void Refresh()
@@ -1019,7 +997,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             StopTrainingForAnimalSelection();
             selectedHotbarIndex = index;
             selectedInventoryIndex = -1;
-            SetStatus($"Selected {hotbarAnimals[index].AnimalName}.");
+            SetStatus($"Selected {hotbarAnimals[index].DisplayName}.");
             ShowHandPreview(hotbarAnimals[index]);
             Refresh();
         }
@@ -1034,7 +1012,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             StopTrainingForAnimalSelection();
             selectedInventoryIndex = index;
             selectedHotbarIndex = -1;
-            SetStatus($"Selected {inventoryAnimals[index].AnimalName}.");
+            SetStatus($"Selected {inventoryAnimals[index].DisplayName}.");
             ShowHandPreview(inventoryAnimals[index]);
             Refresh();
         }
@@ -1130,20 +1108,26 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            if (selectedAnimalHandPreview == null)
+            var previewKey = animal.VariantId;
+            if (selectedAnimalHandPreview == null || !string.Equals(selectedAnimalHandPreviewKey, previewKey, StringComparison.Ordinal))
             {
-                selectedAnimalHandPreview = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                selectedAnimalHandPreview.name = "KLC_SelectedMobHandPreview";
+                ClearHandPreview();
+                selectedAnimalHandPreview = new GameObject("KLC_SelectedMobHandPreview");
                 selectedAnimalHandPreview.transform.SetParent(carryAnchor, false);
                 selectedAnimalHandPreview.transform.localPosition = Vector3.zero;
                 selectedAnimalHandPreview.transform.localRotation = Quaternion.identity;
-                selectedAnimalHandPreview.transform.localScale = handPreviewScale;
-                selectedAnimalHandRenderer = selectedAnimalHandPreview.GetComponent<Renderer>();
+                selectedAnimalHandPreview.transform.localScale = Vector3.one;
+                selectedAnimalHandRenderer = KickLuckyCubeAnimalVisualFactory.CreateVisual(
+                    selectedAnimalHandPreview.transform,
+                    animal,
+                    Mathf.Max(0.25f, handPreviewScale.y * 2f),
+                    out var usedImportedVisual);
+                selectedAnimalHandPreviewKey = previewKey;
+                selectedAnimalHandPreviewUsesImportedVisual = usedImportedVisual;
 
-                var previewCollider = selectedAnimalHandPreview.GetComponent<Collider>();
-                if (previewCollider != null)
+                if (!usedImportedVisual && selectedAnimalHandRenderer != null)
                 {
-                    Destroy(previewCollider);
+                    selectedAnimalHandRenderer.transform.localScale = handPreviewScale;
                 }
             }
 
@@ -1151,14 +1135,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             selectedAnimalHandPreview.transform.SetParent(carryAnchor, false);
             selectedAnimalHandPreview.transform.localPosition = Vector3.zero;
             selectedAnimalHandPreview.transform.localRotation = Quaternion.identity;
-            selectedAnimalHandPreview.transform.localScale = handPreviewScale;
+            selectedAnimalHandPreview.transform.localScale = Vector3.one;
 
             if (selectedAnimalHandRenderer == null)
             {
                 selectedAnimalHandRenderer = selectedAnimalHandPreview.GetComponent<Renderer>();
             }
 
-            if (selectedAnimalHandRenderer != null)
+            if (!selectedAnimalHandPreviewUsesImportedVisual && selectedAnimalHandRenderer != null)
             {
                 var material = new Material(selectedAnimalHandRenderer.sharedMaterial);
                 material.color = animal.BodyColor;
@@ -1169,6 +1153,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void ClearHandPreview()
         {
             selectedAnimalHandRenderer = null;
+            selectedAnimalHandPreviewKey = string.Empty;
+            selectedAnimalHandPreviewUsesImportedVisual = false;
             if (selectedAnimalHandPreview == null)
             {
                 return;
@@ -1192,7 +1178,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             group.alpha = 0.82f;
 
             dragGhostImage = AddImage(dragGhost, animal.BodyColor);
-            dragGhostText = CreateLabel(dragGhostRect, "Label", animal.AnimalName, 11, TextAnchor.LowerCenter, new Vector2(76f, 24f), new Vector2(0f, -25f));
+            var iconSprite = KickLuckyCubeAnimalCatalog.LoadIcon(animal);
+            if (iconSprite != null)
+            {
+                dragGhostImage.sprite = iconSprite;
+                dragGhostImage.preserveAspect = true;
+                dragGhostImage.color = Color.white;
+            }
+
+            dragGhostText = CreateLabel(dragGhostRect, "Label", animal.DisplayName, 11, TextAnchor.LowerCenter, new Vector2(76f, 24f), new Vector2(0f, -25f));
         }
 
         private void DestroyDragGhost()
@@ -1255,10 +1249,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private static RectTransform CreateRect(string name, Transform parent)
         {
-            var gameObject = new GameObject(name, typeof(RectTransform));
-            var rect = gameObject.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
+            return KickLuckyCubeUiPrefabFactory.CreateRect(name, parent);
         }
 
         private static Image AddImage(GameObject target, Color color)

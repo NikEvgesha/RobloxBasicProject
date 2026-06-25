@@ -18,6 +18,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeTrainingBonusPrompt trainingBonusPrompt;
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
+        [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private Transform carryAnchor;
         [SerializeField] private Transform playerRoot;
         [SerializeField] private Transform playerVisual;
@@ -182,7 +183,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>(FindObjectsInactive.Include);
             trainingBonusPrompt ??= FindFirstObjectByType<KickLuckyCubeTrainingBonusPrompt>(FindObjectsInactive.Include);
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
             floatingTextCanvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            trainingBonusPrompt ??= CreateTrainingBonusPrompt();
             SubscribeTrainingBonusPrompt();
 
             if (carryAnchor == null)
@@ -191,7 +194,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 carryAnchor = anchorObject != null ? anchorObject.transform : null;
             }
 
-            if (playerVisual == null)
+            var importedVisualObject = GameObject.Find("KLC_StealBrainrotPlayerVisual");
+            if (importedVisualObject != null && playerVisual != importedVisualObject.transform)
+            {
+                playerVisual = importedVisualObject.transform;
+                hasPlayerVisualDefaults = false;
+            }
+            else if (playerVisual == null)
             {
                 var visualObject = GameObject.Find("KLC_PlayerVisual");
                 playerVisual = visualObject != null ? visualObject.transform : null;
@@ -202,6 +211,29 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 var rootObject = GameObject.Find(playerRootName);
                 playerRoot = rootObject != null ? rootObject.transform : null;
             }
+        }
+
+        private KickLuckyCubeTrainingBonusPrompt CreateTrainingBonusPrompt()
+        {
+            if (floatingTextCanvas == null || !Application.isPlaying)
+            {
+                return null;
+            }
+
+            var canvasRect = floatingTextCanvas.transform as RectTransform;
+            if (canvasRect == null)
+            {
+                return null;
+            }
+
+            var promptRect = KickLuckyCubeUiPrefabFactory.CreateRect("KLC_TrainingBonusPrompt", canvasRect);
+            promptRect.anchorMin = new Vector2(0.5f, 0.5f);
+            promptRect.anchorMax = new Vector2(0.5f, 0.5f);
+            promptRect.pivot = new Vector2(0.5f, 0.5f);
+            promptRect.anchoredPosition = new Vector2(260f, 90f);
+            promptRect.sizeDelta = new Vector2(86f, 86f);
+
+            return KickLuckyCubeUiPrefabFactory.GetOrAddComponent<KickLuckyCubeTrainingBonusPrompt>(promptRect.gameObject);
         }
 
         private void SubscribeTrainingBonusPrompt()
@@ -323,7 +355,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             toolPreviewDefaultRotation = toolPreview.transform.localRotation;
             hasToolPreviewDefaults = true;
 
-            var tier01 = Mathf.InverseLerp(1f, 5f, selectedTier);
+            var maxTier = ResolveBalanceConfig() != null ? ResolveBalanceConfig().MaxToolTier : 5;
+            var tier01 = Mathf.InverseLerp(1f, Mathf.Max(1f, maxTier), selectedTier);
             var color = Color.Lerp(new Color(0.62f, 0.66f, 0.74f), new Color(1f, 0.78f, 0.20f), tier01);
             var barLength = 0.42f + selectedTier * 0.045f;
             var barWidth = 0.045f + selectedTier * 0.006f;
@@ -388,6 +421,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private float GetStrengthPerSecond(int tier)
         {
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.GetToolStrengthPerSecond(tier);
+            }
+
             if (strengthPerSecondByTier != null)
             {
                 var index = Mathf.Clamp(tier, 1, Mathf.Max(1, strengthPerSecondByTier.Length)) - 1;
@@ -402,6 +441,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private string GetToolName(int tier)
         {
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.GetToolName(tier);
+            }
+
             if (toolNames != null)
             {
                 var index = Mathf.Clamp(tier, 1, Mathf.Max(1, toolNames.Length)) - 1;
@@ -415,6 +460,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return defaultIndex >= 0 && defaultIndex < DefaultToolNames.Length
                 ? DefaultToolNames[defaultIndex]
                 : $"Tool {tier}";
+        }
+
+        private KickLuckyCubeBalanceConfig ResolveBalanceConfig()
+        {
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
+            return balanceConfig;
         }
 
         private void GrantStrength(float amount)
@@ -478,9 +529,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return strengthFlyLayer;
             }
 
-            var layerObject = new GameObject("KLC_StrengthFlyTextLayer", typeof(RectTransform));
-            strengthFlyLayer = layerObject.GetComponent<RectTransform>();
-            strengthFlyLayer.SetParent(canvasRect, false);
+            strengthFlyLayer = KickLuckyCubeUiPrefabFactory.CreateRect("KLC_StrengthFlyTextLayer", canvasRect);
             strengthFlyLayer.anchorMin = Vector2.zero;
             strengthFlyLayer.anchorMax = Vector2.one;
             strengthFlyLayer.offsetMin = Vector2.zero;
@@ -521,15 +570,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void CreateStrengthFlyText(RectTransform layer, RectTransform canvasRect, float amount, int burstIndex)
         {
-            var textObject = new GameObject("KLC_StrengthGainFlyText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text), typeof(CanvasGroup), typeof(Shadow), typeof(Outline));
-            var rectTransform = textObject.GetComponent<RectTransform>();
-            rectTransform.SetParent(layer, false);
+            var rectTransform = KickLuckyCubeUiPrefabFactory.CreateRectInstance("KLC_StrengthGainFlyText", "KLC_StrengthGainFlyText", layer);
+            var textObject = rectTransform.gameObject;
             rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
             rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
             rectTransform.sizeDelta = burstIndex == 0 ? new Vector2(170f, 52f) : new Vector2(86f, 34f);
 
-            var text = textObject.GetComponent<Text>();
+            var text = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<Text>(textObject);
             text.text = burstIndex == 0 ? $"+{amount:0}" : "+";
             text.alignment = TextAnchor.MiddleCenter;
             text.fontSize = burstIndex == 0 ? 46 : 30;
@@ -537,7 +585,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 text,
                 burstIndex == 0 ? KickLuckyCubeUiTheme.SoftCurrency : KickLuckyCubeUiTheme.Strength);
 
-            var group = textObject.GetComponent<CanvasGroup>();
+            var group = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<CanvasGroup>(textObject);
             group.alpha = 1f;
             group.interactable = false;
             group.blocksRaycasts = false;
@@ -552,7 +600,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var delay = burstIndex * 0.055f;
             var duration = burstIndex == 0 ? strengthFlySeconds : strengthFlySeconds * 0.82f;
             var startScale = burstIndex == 0 ? 1.38f : 1.05f;
-            textObject.AddComponent<StrengthFlyTextMotion>().Initialize(rectTransform, group, start, pop, end, duration, delay, startScale);
+            KickLuckyCubeUiPrefabFactory.GetOrAddComponent<StrengthFlyTextMotion>(textObject)
+                .Initialize(rectTransform, group, start, pop, end, duration, delay, startScale);
         }
 
         private Vector2 ResolveStrengthFlyStart(RectTransform canvasRect, int burstIndex)
@@ -613,7 +662,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             if (strengthFlyTarget == null)
             {
-                var targetObject = GameObject.Find("KLC_KickHud");
+                var targetObject = GameObject.Find("KLC_BottomLeftStrengthValue");
+                if (targetObject == null)
+                {
+                    targetObject = GameObject.Find("KLC_KickHud");
+                }
+
                 strengthFlyTarget = targetObject != null ? targetObject.GetComponent<RectTransform>() : null;
             }
 

@@ -18,6 +18,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
+        [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private Canvas canvas;
         [SerializeField] private string kioskStandPadName = "KLC_Kiosk_03_SpeedUpgrade_StandPad";
         [SerializeField] private bool autoAttachKioskPad = true;
@@ -154,7 +155,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return false;
             }
 
-            stats.AddAnimalSpeedLevels(normalizedLevels, speedGain);
+            var gainPerLevel = SpeedGainPerLevel;
+            stats.AddAnimalSpeedLevels(normalizedLevels, gainPerLevel);
             SetStatus($"Speed +{normalizedLevels} levels. Lv {stats.SpeedUpgradeLevel}, speed {stats.AnimalSpeed:0.0}.");
             Refresh();
             return true;
@@ -165,7 +167,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>(FindObjectsInactive.Include);
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>(FindObjectsInactive.Include);
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
-            canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas(canvas);
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
             uiFont = KickLuckyCubeUiTheme.Font;
         }
 
@@ -254,12 +257,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void CreateOpenButton(Transform parent)
         {
-            var button = CreateButton(parent as RectTransform, "KLC_SpeedShopOpenButton", "Speed\nY", new Vector2(72f, 76f));
+            var kickSpeedButtonObject = GameObject.Find("KLC_KickSpeedHudUpgradeButton");
+            if (kickSpeedButtonObject != null && kickSpeedButtonObject.TryGetComponent<Button>(out var kickSpeedButton))
+            {
+                kickSpeedButton.onClick.RemoveListener(ToggleWindow);
+                kickSpeedButton.onClick.AddListener(ToggleWindow);
+                return;
+            }
+
+            var button = CreateButton(parent as RectTransform, "KLC_SpeedShopOpenButton", "Speed\nY", new Vector2(92f, 92f));
             var rect = button.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0f);
-            rect.anchorMax = new Vector2(0.5f, 0f);
-            rect.pivot = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = new Vector2(438f, 18f);
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 0f);
+            rect.pivot = new Vector2(0f, 0f);
+            rect.anchoredPosition = new Vector2(266f, 182f);
+            button.onClick.RemoveListener(ToggleWindow);
             button.onClick.AddListener(ToggleWindow);
         }
 
@@ -326,7 +338,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
                 if (purchaseDetailTexts[index] != null)
                 {
-                    purchaseDetailTexts[index].text = $"+{speedGain * levels:0.0} speed";
+                    purchaseDetailTexts[index].text = $"+{SpeedGainPerLevel * levels:0.0} speed";
                 }
 
                 if (purchaseButtonTexts[index] != null)
@@ -425,11 +437,23 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private long GetLevelCost(int level)
         {
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.GetSpeedLevelCost(level);
+            }
+
             return Math.Max(0L, baseSpeedCost + Math.Max(0, level - 1) * (long)speedCostStep);
         }
 
         private long GetTotalCostForNextLevels(int levels)
         {
+            var balance = ResolveBalanceConfig();
+            if (balance != null)
+            {
+                return balance.GetTotalSpeedLevelCost(stats != null ? stats.SpeedUpgradeLevel : 0, levels);
+            }
+
             var total = 0L;
             var currentLevel = stats != null ? stats.SpeedUpgradeLevel : 0;
             for (var offset = 1; offset <= Mathf.Max(1, levels); offset++)
@@ -438,6 +462,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             return total;
+        }
+
+        private float SpeedGainPerLevel => ResolveBalanceConfig() != null
+            ? ResolveBalanceConfig().SpeedGainPerLevel
+            : speedGain;
+
+        private KickLuckyCubeBalanceConfig ResolveBalanceConfig()
+        {
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
+            return balanceConfig;
         }
 
         private static string FormatCost(long cost)
@@ -470,9 +504,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private RectTransform CreateRect(string name, Transform parent)
         {
-            var rectObject = new GameObject(name, typeof(RectTransform));
-            var rect = rectObject.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
+            var rect = KickLuckyCubeUiPrefabFactory.CreateRect(name, parent);
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
@@ -481,31 +513,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Button CreateButton(RectTransform parent, string name, string label, Vector2 size)
         {
-            var rect = CreateRect(name, parent);
-            rect.sizeDelta = size;
-            var image = AddImage(rect.gameObject, new Color(0.08f, 0.08f, 0.08f, 0.88f));
-            var button = rect.gameObject.AddComponent<Button>();
-            button.targetGraphic = image;
-            KickLuckyCubeUiTheme.StyleButton(button, name);
-            CreateLabel(rect, "Label", label, 14, TextAnchor.MiddleCenter, size, Vector2.zero);
-            return button;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, label, uiFont, size, new Color(0.08f, 0.08f, 0.08f, 0.88f), 14);
         }
 
         private Text CreateLabel(RectTransform parent, string name, string text, int fontSize, TextAnchor anchor, Vector2 size, Vector2 position)
         {
-            var rect = CreateRect(name, parent);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = position;
-            var label = rect.gameObject.AddComponent<Text>();
-            label.font = uiFont;
-            label.fontSize = fontSize;
-            label.fontStyle = FontStyle.Bold;
-            label.alignment = anchor;
-            label.color = Color.white;
-            label.text = text;
-            label.raycastTarget = false;
-            KickLuckyCubeUiTheme.StyleText(label, name);
-            return label;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateLabel(parent, name, uiFont, text, fontSize, anchor, size, position);
         }
 
         private static Image AddImage(GameObject target, Color color)

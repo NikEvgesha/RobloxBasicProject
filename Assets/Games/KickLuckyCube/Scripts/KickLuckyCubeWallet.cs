@@ -73,6 +73,20 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return true;
         }
 
+        public bool TrySpendHard(int amount)
+        {
+            EnsureInitialized();
+            if (amount <= 0 || hardCurrency < amount)
+            {
+                return false;
+            }
+
+            hardCurrency -= amount;
+            CurrencySpent?.Invoke(0, amount);
+            Save();
+            return true;
+        }
+
         public void ResetWallet()
         {
             softCurrency = initialSoftCurrency;

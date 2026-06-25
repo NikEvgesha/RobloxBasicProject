@@ -146,7 +146,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var styleColor = StyleColors[Mathf.Clamp(selectedStyle, 0, StyleColors.Length - 1)];
             foreach (var renderer in cube.GetComponentsInChildren<Renderer>(true))
             {
-                if (renderer == null)
+                if (!ShouldTintCubeRenderer(cube, renderer))
                 {
                     continue;
                 }
@@ -157,6 +157,39 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     material.color = styleColor;
                 }
             }
+        }
+
+        private static bool ShouldTintCubeRenderer(GameObject cube, Renderer renderer)
+        {
+            if (cube == null || renderer == null || renderer is TrailRenderer)
+            {
+                return false;
+            }
+
+            var objectName = renderer.gameObject.name;
+            if (objectName.IndexOf("Edge", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Question", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Corner", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Outline", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return false;
+            }
+
+            if (renderer.transform == cube.transform
+                || objectName.IndexOf("Face", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Body", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            return renderer.sharedMaterials != null
+                && Array.Exists(
+                    renderer.sharedMaterials,
+                    material => material != null
+                        && material.name.IndexOf("KLC_LuckyCube", StringComparison.OrdinalIgnoreCase) >= 0
+                        && material.name.IndexOf("Black", StringComparison.OrdinalIgnoreCase) < 0
+                        && material.name.IndexOf("Question", StringComparison.OrdinalIgnoreCase) < 0
+                        && material.name.IndexOf("Edge", StringComparison.OrdinalIgnoreCase) < 0);
         }
 
         private void ResolveReferences()
@@ -306,42 +339,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private RectTransform CreateRect(string name, Transform parent)
         {
-            var rectObject = new GameObject(name, typeof(RectTransform));
-            var rect = rectObject.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            rect.localScale = Vector3.one;
-            return rect;
+            return KickLuckyCubeUiPrefabFactory.CreateRect(name, parent);
         }
 
         private Text CreateLabel(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, Vector2 size, Vector2 position)
         {
-            var rect = CreateRect(name, parent);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = position;
-
-            var text = rect.gameObject.AddComponent<Text>();
-            text.text = value;
-            text.font = uiFont;
-            text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
-            text.alignment = anchor;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            KickLuckyCubeUiTheme.StyleText(text, name);
-            return text;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateLabel(parent, name, uiFont, value, fontSize, anchor, size, position);
         }
 
         private Button CreateButton(RectTransform parent, string name, string value, Vector2 size)
         {
-            var rect = CreateRect(name, parent);
-            rect.sizeDelta = size;
-
-            var image = AddImage(rect.gameObject, new Color(0.15f, 0.18f, 0.22f, 0.94f));
-            var button = rect.gameObject.AddComponent<Button>();
-            button.targetGraphic = image;
-            KickLuckyCubeUiTheme.StyleButton(button, name);
-            CreateLabel(rect, "Label", value, 15, TextAnchor.MiddleCenter, size, Vector2.zero);
-            return button;
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, value, uiFont, size, new Color(0.15f, 0.18f, 0.22f, 0.94f), 15);
         }
     }
 

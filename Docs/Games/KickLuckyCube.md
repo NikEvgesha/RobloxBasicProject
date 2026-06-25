@@ -27,6 +27,7 @@ Implemented in the overview scene:
 - prototype player placeholder near the kick area;
 - shared `GameKit` press/hold interaction prompt for `E`;
 - lucky cube hidden at Play Mode start, visible in Edit Mode for placement, and shown in the player's `KLC_CarryAnchor` while the player stands in the kick zone;
+- main lucky cube visual is an authored prefab at `Assets/Games/KickLuckyCube/Prefabs/KLC_LuckyCube.prefab` with black edge/corner geometry and block-built question marks on every face;
 - lucky cube flight from the kick position selected by the first `E` press;
 - flight trail FX on the lucky cube while it is in the air;
 - third-person camera target switches to the flying cube during flight;
@@ -37,14 +38,15 @@ Implemented in the overview scene:
 - lower landing on the active `Floor_FlatGreenGrass` gameplay floor collider, followed by hiding the cube after impact;
 - no persistent landing marker/platform is shown after cube impact;
 - rarity zone detection by corridor depth;
-- animal roulette phase after landing: shadow silhouettes cycle through the landed rarity pool at runner height, slow down, then select one random animal;
+- animal roulette phase after landing: imported catalog animal visuals cycle as black texture silhouettes from the landed rarity pool, hide names until reveal, slow down, then select one random animal;
 - third-person camera target switches to the roulette preview until selection ends;
 - animal spawn from the selected landed-rarity pool result;
 - runner phase for the spawned animal, with camera-relative controls matching the prototype player, jump support, side-boundary clamping, and ground snapping to the real `Floor_FlatGreenGrass` play surface;
 - third-person camera blends from the roulette preview to the spawned animal when control transfers after selection;
 - chasing wave visual behind the animal, started only after the roulette selection and a short wave-rise camera intro;
-- wave speed scales up from the kick distance and is shown as a world label above the wave;
+- wave speed scales up from the reached location and kick distance, with a named speed grade shown as a world label above the wave;
 - red screen-edge danger vignette that intensifies as the wave approaches the animal;
+- runtime wave visual is a prefab at `Assets/Games/KickLuckyCube/Prefabs/KLC_WavePreview_BehindRunner.prefab`; it is rebuilt as editable ProBuilder geometry with an S-shaped water wall, stacked blue gradient bands, foam ribbons, and a floor danger shadow in front of the wave so the player can read when the wave is about to catch them; the chase controller snaps the wave Y position to the floor under its start point and sinks it slightly to avoid a visible ground gap;
 - return success state respawns the prototype player at the animal's finish point, stores the returned animal through the inventory, and selects it as the active held mob;
 - runtime inventory UI with slot 1 reserved for the selected training tool and slots 2-5 reserved for up to four visible mobs;
 - inventory window opened by `I` or the `Bag` button, with drag/drop movement between full inventory slots and bottom mob slots;
@@ -73,8 +75,9 @@ Implemented in the overview scene:
 - runtime Training Equipment shop can unlock the next strength tool tier and equip already-owned tools through the `Tools` button, `T`, or the weights-training kiosk stand pad;
 - runtime Speed Upgrades shop opens from the speed kiosk stand pad or `Y` and buys affordable `+1`, `+5`, or `+10` animal speed level bundles;
 - runtime Style shop opens from the style kiosk hold-interaction anchor and buys/equips lucky cube color skins;
-- runtime Future Feature spots support weather rarity boosts, selected-mob exchange charges with confirmation UI, three exclusive epic-shop mobs, and a one-time rating gift mob;
-- runtime Animal Catalog defines the shared mob list used by kick spawns, epic shop animals, rating gift animals, and album discovery;
+- cube style recoloring only tints the lucky cube body/face renderers; black edges, corner caps, question marks, and trail renderers stay untouched;
+- runtime Future Feature spots support weather rarity boosts, selected-mob exchange charges with confirmation UI, hard-currency elite mob purchases, and a one-time rating gift mob;
+- runtime Animal Catalog defines the shared mob list used by kick spawns, elite shop animals, rating gift animals, and album discovery; 15 regular kick mobs now generate 60 grade variants across Normal, Golden, Diamond, and Fire, while the former top 3 mobs are elite hard-shop exclusives;
 - runtime Mob Album opens from a square UI button, closes through `X`, `Escape`, or backdrop click, and shows every catalog mob as a dark silhouette until it has been obtained at least once;
 - runtime Leaderboard board displays a live prototype score list based on strength, soft currency, and owned mobs;
 - working Shop card purchases for speed upgrades, strength tools, and one-shot strength boosts;
@@ -112,13 +115,15 @@ Current ProBuilder coverage:
 - stable building shell, roof, fences, hay blocks, and coin markers;
 - sell kiosk with counter, awning, and coin stacks;
 - training rack/tool placeholders;
-- stylized wave wall and foam crests;
+- active service prop layer for stable/sell/training readability;
+- ProBuilder S-shaped wave wall, foam crests, and floor danger shadow;
 - corridor fence details.
 
 Current verification:
 
 ```text
 KLC_ProBuilderVisuals -> 270 ProBuilderMesh objects
+03_ServicePropVisuals/KLC_ServicePropVisuals_StableSellTraining -> 222 ProBuilderMesh objects, 14 TextMesh labels, 0 colliders
 Visual bridge MeshColliders -> 32
 Main corridor floor guide MeshCollider -> 1
 ```
@@ -126,10 +131,9 @@ Main corridor floor guide MeshCollider -> 1
 Next visual priorities:
 
 1. Replace rough floor labels with diegetic 3D signs.
-2. Convert the main lucky cube visual into a single authored ProBuilder prefab.
-3. Add zone-specific props and animal silhouettes per rarity.
-4. Improve stable/sell/training areas with final scale and interaction-readable silhouettes.
-5. Reduce or hide old blockout primitives only after every gameplay reference is moved to dedicated anchors/triggers.
+2. Add zone-specific props and animal silhouettes per rarity.
+3. Improve stable/sell/training areas with final scale and interaction-readable silhouettes. First active service-prop pass done.
+4. Reduce or hide old blockout primitives only after every gameplay reference is moved to dedicated anchors/triggers.
 
 ## UI Visual Layer
 
@@ -141,21 +145,42 @@ KLC_UIVisualPass
 KLC_UIWindows
 ```
 
-This pass uses the imported casual Roblox UI toolkit from `Assets/SharedArt/UI` and keeps the existing gameplay HUD objects alive:
+This pass uses the imported casual Roblox UI toolkit from `Assets/SharedArt/UI` and keeps the existing gameplay HUD objects alive.
+Reusable runtime UI frame prefabs live under `Assets/Games/KickLuckyCube/Resources/KickLuckyCube/UI/Templates` so generated dynamic windows still start from editable prefab assets instead of bare code-created rectangles:
+
+```text
+KLC_UiBackdropFrame.prefab
+KLC_UiWindowFrame.prefab
+KLC_UiViewportFrame.prefab
+KLC_UiCardFrame.prefab
+KLC_UiButtonFrame.prefab
+KLC_UiIconFrame.prefab
+```
+
+`KickLuckyCubeUiPrefabFactory` is the current bridge for runtime UI. It selects the closest frame prefab by object name, then controllers fill dynamic text, icons, sizes, layout, and events. New UI should either be authored as a concrete prefab/window in the scene or use these frame prefabs through the factory; do not add new local `new GameObject(name, typeof(RectTransform))` helpers inside feature controllers.
+
+Concrete editable runtime UI element prefabs live under `Assets/Games/KickLuckyCube/Resources/KickLuckyCube/UI/Elements`. `KickLuckyCubeUiPrefabFactory` first looks for a prefab matching the requested UI object name, then falls back to a family prefab for dynamic lists such as `SpeedUpgradePlus_*`, `ToolTier_*`, `Style_*`, `EpicMob_*`, `KLC_AlbumCard_*`, `KLC_SellShopCard_*`, `KLC_InventorySlot_*`, `KLC_PowerBand_*`, and `KLC_WaveDangerVignette_*`, then finally falls back to the generic frame templates. Controllers should reuse existing `Text`, `Button`, `Image`, `CanvasGroup`, and custom effect components from those prefabs instead of adding duplicates, so designers can edit the prefab assets directly without entering Play Mode. Floating gain numbers and HUD/effect roots are also prefabs now: `KLC_CurrencyGainFlyText`, `KLC_StrengthGainFlyText`, `KLC_CurrencyFlyTextLayer`, `KLC_StrengthFlyTextLayer`, `KLC_PlayerHomeIcon_Runtime`, `KLC_WaveDangerVignette`, and `KLC_TrainingBonusPrompt`.
+
+The lower HUD is no longer the legacy `KLC_ToolBelt`. The edit-mode scene and the runtime controllers should use the editable element prefabs `KLC_InventoryHotbar_Runtime`, `KLC_InventorySlot`, `KLC_InventoryToggleButton`, `KLC_AnimalAlbumOpenButton`, `KLC_StrengthToolShopOpenButton`, `KLC_SpeedShopOpenButton`, `KLC_BottomLeftStatsVisual`, and `KLC_KickSpeedHudVisual`. These objects belong under `KLC_PrototypeCanvas`; the runtime currency/fly-text canvas must not receive permanent UI buttons. The current layout pass follows the Roblox reference placement: large action buttons in a left-side grid, status/strength/economy in a bottom-left stack, the interaction prompt above the bottom-center hotbar, the current animal speed directly above the kick prompt, and only compact strips near the top edge.
+
+`KLC_BottomLeftStatsVisual` is the first pass of the Roblox-reference bottom-left block. It intentionally has no window/backplate background: only sprite icons and outlined value text should be visible over the world. Do not build HUD icons from manual UI rectangles in this block. Prefer sprite assets from `Assets/SharedArt/UI` and game-local generated icons from `Assets/Games/KickLuckyCube/UI/Icons`. The current block uses generated `KLC_Icon_KickingFoot` for the top rebirth counter, generated `KLC_Icon_StrengthFlexArm` for kick strength, generated horizontal slider icon `KLC_Icon_KickPowerBarSettings` for the kick-power settings button, `ItemIcon_Coin` for soft, and `ItemIcon_Gem_Pentagon_Purple` for hard. The kick-strength row is intentionally compact so the value, label, `(MAXIMUM)` marker, and settings button fit on one line. The visible rows are rebirth count, kick strength, soft currency, and hard currency. The old question/reward row and friend bonus row are not part of this game UI. Runtime soft/hard gain effects target `KLC_BottomLeftSoftValue` and `KLC_BottomLeftHardValue`; runtime strength gain effects target `KLC_BottomLeftStrengthValue`. The `KLC_BottomLeftMasteryInfoButton` opens `KLC_KickMasteryInfoWindow`; it should remain a filled cyan circle with the `i` text centered inside. The `(MAXIMUM)` label currently remains visual-only and will become the selected kick-power setting in a later functional pass.
+
+`KLC_KickSpeedHudVisual` is an editable speed strip above the kick interaction prompt. It shows current animal speed and speed level through `KickLuckyCubeKickSpeedHud`; its volumetric `KLC_KickSpeedHudUpgradeButton` opens the same Speed Upgrades window as the speed kiosk and `Y`. When this scene object exists, `KickLuckyCubeSpeedShopController` reuses it and does not spawn the legacy standalone `KLC_SpeedShopOpenButton`.
 
 - `KLC_KickHud` still receives status text from gameplay scripts;
-- `KLC_EconomyHud` still receives economy text from gameplay scripts;
+- `KLC_EconomyHud` can still receive legacy economy text from gameplay scripts, but it is hidden in the current bottom-left visual pass;
 - `KLC_InteractionPrompt` still uses the shared `GameKitInteractionPromptView`.
 - runtime-generated UI should use `KickLuckyCubeUiTheme` for windows, cards, buttons, outlines, text, and shared colors instead of hardcoding unrelated local palettes;
 - HUD text, mobile controls, training bonus prompts, floating gain numbers, and world-space labels should also use `KickLuckyCubeUiTheme` helpers so buttons and labels stay visually consistent;
+- `KickLuckyCubeRuntimeBootstrap` guarantees one runtime `AudioListener` on `Camera.main` or the first scene camera if the scene starts without one;
 
 Current UI coverage:
 
-- top-left kick/status backplate;
+- compact kick/status backplate on the left side above the action grid;
 - top-center objective strip;
-- top-right soft/hard currency panel with toolkit icons;
-- left-side square icon buttons for Shop, Settings, Rewards, Rebirth, and Wheel;
-- bottom tool belt with four visual slots;
+- bottom-left outlined stat/currency cluster without a backplate;
+- left-side square icon grid for Album, Shop, Rebirth, Tools, Rewards, Wheel, and a compact Settings button;
+- bottom inventory hotbar with a training-tool slot, compact visible mob slots, and the `Bag` button;
 - restyled hold-`E` interaction prompt;
 - runtime home icon above the player's plot, drawn in its own high-order screen-space overlay canvas with a black outline, so it remains visible through walls and clamps to the screen edge when the home is off-camera;
 - runtime currency gain numbers burst around the player and fly to the wallet HUD after any soft/hard wallet gain;
@@ -217,12 +242,21 @@ Active clickable UI overlap audit: 0 overlaps on 1920x1080 Play Mode probe
 Album backdrop probe: open -> backdrop click -> closed
 ```
 
+Latest UI prefab smoke:
+
+```text
+Date: 2026-06-25
+Result: PASS
+Checked Resources UI prefabs, EventSystem, runtime AudioListener, Speed/Tool/Album/Sell/Style windows open-close, and currency fly-text prefab spawn.
+Fixed: SellValue labels no longer resolve as button frames; runtime bootstrap adds AudioListener when the scene has none.
+```
+
 The Rebirth side button is wired to a working window:
 
 - the window opens from the left-side `Rebirth` button;
 - the window closes through the red close button or backdrop click;
-- first rebirth requires 1000 strength;
-- each next rebirth requirement is 10x higher;
+- first rebirth requires 1500 strength;
+- each next rebirth requirement is 30x higher;
 - rebirth resets strength only while keeping speed upgrades and owned strength tools;
 - soft gain multiplier becomes `x2`, then `x3`, then `x4`, and so on.
 
@@ -260,20 +294,44 @@ colliders=0
 Default tuning:
 
 ```text
-distance = 18 + strength * 0.23
+balance source = Assets/Games/KickLuckyCube/Resources/KickLuckyCube/KickLuckyCubeBalanceConfig.asset
+distance = AnimationCurve(strength -> meters), front-loaded then heavily diminishing
 minimum distance = 10
-maximum distance = 132
+maximum distance = 735
 starter strength = 120
+speed upgrade = +0.1 runner speed per level
+speed level cost = ceil(35 * 1.06 ^ (level - 1))
+rebirth requirement = 1500 * 30 ^ rebirthCount
+regular mob income = 30 + progressionIndex * 6
 ```
 
 Expected test values:
 
 ```text
 0 strength -> Common
-120 strength -> Uncommon rarity pool; current main flow picks a random pool animal through the roulette
-500 strength -> Legendary
-Boar sell value -> 82 soft
-Boar stable income -> 3 soft/s
+120 strength -> early multi-zone landing; current main flow picks a random pool animal through the roulette
+1400 strength -> around location 9
+220000 strength -> around location 18
+2600000000 strength -> around location 30 before power-meter bonus
+Cat stable income -> 30 soft/s
+Cat sell value -> 540 soft
+```
+
+Latest balance probe:
+
+```text
+0 strength -> 10.0m
+120 strength -> 74.4m
+1400 strength -> 200.6m
+220000 strength -> 418.4m
+2600000000 strength -> 708.8m before power-meter bonus
+speed level 1 cost -> 35 soft
+speed level 10 cost -> 60 soft
+buy +10 speed levels from 0 -> 466 soft
+tool 1 -> +2/s, free
+tool 15 -> +231857/s, 555000000 soft
+regular kick mob income -> 30-384 soft/s
+rebirth requirements -> 1500, then 45000
 ```
 
 To test manually, open `KickLuckyCubeOverview`, enter Play Mode, and click bottom slot 1 or press `1` to start/stop tool training. The player should hold the tool, squat, gain strength each second, show strength gain text bursting from different points around the player and flying to the strength HUD, and show at most one pending `x2` circle every 5 seconds. Walking while training should immediately cancel training. Then stand near the kick interaction area; the lucky cube should appear in the player's hands.
@@ -318,8 +376,9 @@ Camera:
 
 - `KLC_OverviewCamera` uses `KickLuckyCubeThirdPersonCamera`;
 - on scene start it snaps behind `KLC_PrototypePlayer`;
-- `KLC_PrototypePlayer` uses `KickLuckyCubePlayerController` and a blocky child visual named `KLC_PlayerVisual`;
-- `KLC_PlayerVisual` has `KickLuckyCubePlayer.controller` with idle, move, walk, and run clips copied from the MechanicsTestbed prototype and stored under `Assets/Games/KickLuckyCube/Animations`;
+- `KLC_PrototypePlayer` uses `KickLuckyCubePlayerController`;
+- in Play Mode the player visual is replaced with the imported Steal Brainrot `SadovnicOBJ` prefab from `Assets/Games/KickLuckyCube/Resources/KickLuckyCube/StealBrainrot/Models/Player`;
+- the old blocky `KLC_PlayerVisual` / `AvatarRoot` children are kept only as editor/fallback visuals when the imported prefab is not available;
 - during animal run phase it follows the current spawned animal;
 - after run/fail/sell/stable flow it falls back to the prototype player target.
 
@@ -348,7 +407,7 @@ Location layout blockout:
 - stable `UpgradeBoard` objects are mouse-click targets, not `E` prompts, and their runtime text is limited to level plus compact price; the runtime label size is derived from the board mesh height so it stays proportional to the stable board;
 - spawned and stabled mob capsules use a black inverse-hull outline for clearer Roblox-style readability;
 - stable mob anchor placeholder visuals are hidden at runtime; only actual placed mobs should be visible on slots;
-- occupied stable slots normalize placed mobs to a target world height from renderer bounds, independent of the non-uniform `MobAnchor` scale, and show a white TextMesh with black outline above the mob; the label contains only mob name, stable level, and income per second, faces the camera from an unscaled runtime label root, and hides at distance to reduce visual clutter;
+- occupied stable slots normalize placed mobs to a target world height from renderer bounds, independent of the non-uniform `MobAnchor` scale, face placed mobs toward the center aisle of their own plot by default, and show a white TextMesh with black outline above the mob; the label contains only mob name, stable level, and income per second, faces the camera from an unscaled runtime label root, and hides at distance to reduce visual clutter;
 - `Template_FloorExpansion` contains visual-only posts, ladder, and outline beams for future upper-floor expansion;
 - `MOVE_PlotSlot_01..04` define placed plot locations;
 - `KLC_PlotSlot_StaticInstances` contains edit-mode plot copies placed from the reusable template on every current `MOVE_PlotSlot`;
@@ -360,6 +419,17 @@ Location layout blockout:
 - plot template, placed plot copies, and hub kiosk blockout meshes are converted to `ProBuilderMesh`; `TextMesh` labels remain regular text objects;
 - `00_BaseEnvelope_DoNotMoveAsAGroup` holds the flat green grass floor and tan boundary walls;
 - `02_ZoneAndRiverGuides` holds non-final zone, corridor, and river guides;
+- `02_ZoneAndRiverGuides/KLC_Generated30LocationLogic` contains generated logic-only guides for locations 6-30;
+- `KLC_ExtendedCorridorFloor_30Zones`, `KLC_ExtendedLeftWall_30Zones`, and `KLC_ExtendedRightWall_30Zones` extend the playable kick/run corridor to the 30-location endpoint while final biome art is still pending;
+- `02_ZoneAndRiverGuides/KLC_BiomeBlockout_30Locations` contains the current rough visual biome pass for all 30 locations;
+- `02_ZoneAndRiverGuides/KLC_ZoneGateSignage_30Locations` contains the disabled first draft of zone gate/sign groups for all 30 locations; this pass is intentionally inactive because the repeated beams and labels create too much visual noise down the corridor. Reuse only selectively for a few milestone gates or rebuild as sparse diegetic signs.
+- `03_ServicePropVisuals/KLC_ServicePropVisuals_StableSellTraining` contains active editable ProBuilder readability props for animal sell, weights training, and stable plots; children are named `MOVE_ServiceProp_*`, have no colliders, and should stay visual-only so kiosk, stable, and collect triggers remain owned by the existing gameplay objects;
+- biome blockout children are named `MOVE_Biome_XX_*` and are safe to reposition, reshape, replace, or delete during location art iteration;
+- biome blockout meshes are visual `ProBuilderMesh` objects with colliders removed, so gameplay collision still comes from the existing corridor floor/walls and logic zones;
+- the biome blockout root is slightly lowered on Y so colored floor plates sit closer to the existing corridor floor;
+- central black path-edge guide walls were removed from the biome blockout; use the outer corridor walls and river gaps for current spatial read;
+- river visuals are grouped as `MOVE_RiverGap_XX_To_YY` between physical locations;
+- biome materials live under `Assets/Games/KickLuckyCube/Art/Materials/Biomes` and can be tuned without changing gameplay logic;
 - older noisy prototype visual groups are disabled while this layout pass is being placed.
 
 Mobile controls:
@@ -392,23 +462,126 @@ Visibility: hidden on desktop/editor by default, shown on mobile/handheld platfo
 
 ## Rarity Corridor
 
-Initial zone direction:
+Current corridor direction:
 
-- Zone 1: Common;
-- Zone 2: Uncommon;
-- Zone 3: Rare;
-- Zone 4: Epic;
-- Zone 5: Legendary.
+- the corridor is expanded to 30 logical locations;
+- location guide spacing is `24.2m`, matching the original five-zone layout;
+- location 1 starts at `7m`; location 30 ends around `728.8m`;
+- max kick distance is currently `735m`;
+- zones 1-5 keep the original rarity labels for early readability, while zones 6-30 are Legendary-rarity logical guides whose `zoneIndex` drives the deeper animal pools.
 
 Each zone is separated by a river gap. The deeper the cube lands, the better the animal pool.
+
+Rough biome order:
+
+| Location | Biome |
+| ---: | --- |
+| 1 | Start Meadow |
+| 2 | Pine Forest |
+| 3 | Flower Grove |
+| 4 | Desert |
+| 5 | Canyon |
+| 6 | Oasis |
+| 7 | Swamp |
+| 8 | Dark Marsh |
+| 9 | Jungle |
+| 10 | Bamboo Valley |
+| 11 | Snowfield |
+| 12 | Ice Cliffs |
+| 13 | Crystal Cave |
+| 14 | Mushroom Forest |
+| 15 | Autumn Grove |
+| 16 | Savanna |
+| 17 | Badlands |
+| 18 | Volcano |
+| 19 | Lava River |
+| 20 | Ash Wastes |
+| 21 | Beach |
+| 22 | Pirate Cove |
+| 23 | Candy Land |
+| 24 | Toy City |
+| 25 | Neon City |
+| 26 | Sky Isles |
+| 27 | Magic Ruins |
+| 28 | Moon Crater |
+| 29 | Cosmic Rift |
+| 30 | Divine Garden |
+
+Kick mob grades:
+
+- Normal: base body color;
+- Golden: gold tint, grade glow/VFX;
+- Diamond: blue tint, grade glow/VFX;
+- Fire: red tint, grade glow/VFX.
+
+Animal income grows linearly across the full kick progression. The formula is:
+
+```text
+income = 30 + progressionIndex * 6
+```
+
+`progressionIndex` starts at `0` for Normal Cat and continues through all 60 regular kick variants. Color grades are visual/tier stages and do not multiply income directly.
+
+Normal-stage income ladder:
+
+| Mob | Income |
+| --- | ---: |
+| Cat | 30/s |
+| Dog | 36/s |
+| Chicken | 42/s |
+| Bee | 48/s |
+| Pudding | 54/s |
+| Finn | 60/s |
+| Bessie | 66/s |
+| Paca | 72/s |
+| Champ | 78/s |
+| Svinina | 84/s |
+| Chill | 90/s |
+| Wolfle | 96/s |
+| Bailey | 102/s |
+| Stripey | 108/s |
+| Gigi | 114/s |
+
+Full regular grade-stage ranges are Normal `30-114/s`, Golden `120-204/s`, Diamond `210-294/s`, and Fire `300-384/s`.
+
+Kick location pools are generated from all regular kick mobs in grade-stage order: all Normal variants, then Golden, then Diamond, then Fire. Every physical location gets 3 variants:
+
+- location 1 gets the first 3 variants from the current progression order;
+- location 2 gets the top variant from location 1 plus 2 new stronger variants;
+- location 3 gets the top variant from location 2 plus 2 new stronger variants;
+- later locations continue the same `previous top + 2 new` rule until the catalog runs out, then the last 3 strongest variants are reused.
+
+With the current 15 base kick mobs and 4 grades, this creates 60 regular kick variants and 30 progression location pools. The strongest regular variant is currently Fire Gigi at `384/s`.
+
+The former top 3 regular mobs are removed from lucky-cube progression and sold only through the Elite Mob Shop for hard currency:
+
+| Elite mob | Cost | Income |
+| --- | ---: | ---: |
+| Golden Elite Prism Thumper | 350 hard | 900/s |
+| Diamond Elite Aurora Penguin | 750 hard | 1400/s |
+| Fire Elite Inferno Jet | 1500 hard | 2200/s |
+
+Weather boosts still raise the landed rarity, but animal selection uses the stronger of the physical `zoneIndex` and boosted rarity tier, so a weather-boosted landing can pull from a deeper location pool.
+
+Wave speed grades:
+
+- the wave location index is resolved from the same `7m + 24.2m * locationIndex` corridor grid;
+- every 3 locations advance the displayed speed grade;
+- the label above the wave shows `WAVE`, speed grade, location index, and numeric speed;
+- the current grade sequence is Slow, Steady, Fast, Very Fast, Danger, Wild, Extreme, Insane, Mythic, Impossible;
+- the current wave formula starts from runner speed, adds `0.01 * kickDistance`, adds `1.15` speed for each 3-location tier, and caps at `34m/s`.
 
 ## Progression
 
 Strength:
 
+- progression balance is centralized in `Assets/Games/KickLuckyCube/Resources/KickLuckyCube/KickLuckyCubeBalanceConfig.asset`;
+- kick distance uses a non-linear `strength -> distance` curve: early strength quickly reaches the first locations, while late-game distance gains require much more strength;
+- default target gates are tuned around reaching location 30 after about 90 days at roughly 2 hours of daily play, with early rewards arriving much faster than late rewards;
 - current prototype trains from bottom slot 1: the selected named tool appears in-hand, the player squats, the tool moves with the squat, and tier-based strength is added every second;
 - the green `Train Strength` station remains as an older prototype fallback;
-- each tool level increases strength gained per hold;
+- tools currently have 15 configured tiers; early tools are cheap and visible quickly, while later tools become long-term goals;
+- each tool level increases strength gained per second/hold according to the balance config;
 - walking away from the training start position cancels tool training immediately;
 - every 5 seconds of active tool training can show one persistent `x2` UI prompt; if one is already visible, no new circle is spawned;
 - claiming `x2` via click/tap or `X` gives the pending bonus and triggers the same strength gain fly-text effect;
@@ -426,8 +599,8 @@ Speed:
 - the `+1` button is always shown as the baseline upgrade option, but is disabled when the wallet cannot afford it;
 - `+5` and `+10` purchase buttons are hidden when the wallet cannot afford that full bundle;
 - `+5` and `+10` prices are calculated as the sum of buying each next level one by one from the current level;
-- each next single level costs more than the previous level;
-- each bought level increases animal runner speed by the shop's configured gain and affects the animal while escaping the wave;
+- each next single level costs `ceil(35 * 1.06 ^ (level - 1))` soft by default;
+- each bought level currently adds `+0.1` runner speed, so the same long-term speed progression is split into many smaller visible upgrades;
 - the speed shop closes automatically when the player leaves the speed kiosk stand pad.
 
 Stable income:
@@ -486,13 +659,23 @@ Fresh Unity errors after final compile -> 0
 
 Animal catalog / album:
 
-- `KickLuckyCubeAnimalCatalog` is the current shared runtime source for regular kick mobs, epic-shop exclusives, and rating gift mobs;
-- every catalog mob has a stable `catalogId`, display name, rarity, body color, sell value, income per second, speed multiplier, and source;
-- `KickLuckyCubeInventoryAnimal` and `KickLuckyCubeSpawnedAnimal` carry `catalogId` while preserving old saves by falling back to name+rarity matching;
+- `KickLuckyCubeAnimalCatalog` is the current shared runtime source for 15 regular kick mobs, elite-shop exclusives, and rating gift mobs;
+- every catalog mob has a stable `catalogId`, display name, rarity, body color, sell value, income per second, speed multiplier, source, optional imported visual prefab path, and optional icon path;
+- regular kick mobs are expanded into four runtime grade variants through `KickLuckyCubeAnimalGrade`: Normal, Golden, Diamond, and Fire, for 60 kick variants total;
+- regular kick mob income is linear across the full progression through the balance config: `30 + progressionIndex * 6`, so the current regular total range is `30-384` soft/s;
+- regular kick mob sell value is derived from income through the balance config and currently equals 18 seconds of that mob's income;
+- `Elite Prism Thumper`, `Elite Aurora Penguin`, and `Elite Inferno Jet` are removed from regular kick progression and sold as high-income hard-currency elite mobs;
+- `KickLuckyCubeAnimalCatalog.CreateLocationOptions(locationIndex)` returns the 3-mob progression pool for that location using grade-stage ordering plus the `previous top + 2 new` rule;
+- legacy serialized prototype animal ids/names such as `uncommon_boar` / `Boar` are resolved to the current imported catalog entries before spawning or loading visuals;
+- imported Steal Brainrot animal visuals, animal icons, Zoo animations, Brainrot specials, and the player prefab are stored under `Assets/Games/KickLuckyCube/Resources/KickLuckyCube/StealBrainrot`;
+- `.vox` animal models require the copied `Assets/VoxelImporter` dependency; do not move or delete it while these imported animals are in use;
+- `KickLuckyCubeAnimalVisualFactory` creates spawned, held, and stable mob visuals from the catalog prefab paths, strips imported colliders, normalizes world height, applies grade tint/glow/VFX for colored variants, and falls back to the old capsule visual if a prefab is missing;
+- `KickLuckyCubeInventoryAnimal` and `KickLuckyCubeSpawnedAnimal` carry `catalogId` and `grade` while preserving old saves by falling back to name+rarity matching and defaulting missing grade data to Normal;
 - `KickLuckyCubeAnimalCollection` stores discovered flags in PlayerPrefs under `KickLuckyCube.AnimalCollection.Discovered.*`;
 - mobs are marked discovered when obtained through return-to-line, inventory add, stable placement, epic shop, rating gift, or exchange result;
 - `KickLuckyCubeAnimalAlbumController` creates a runtime square `Album` button and a scrollable album window with `X`, `Escape`, and backdrop-click close behavior;
-- undiscovered mobs appear as dark silhouettes with hidden names/stats, while discovered mobs show name, rarity, income, sell value, and source.
+- inventory slots, sell cards, epic shop cards, and the album use catalog icon sprites when available;
+- undiscovered mobs appear as dark silhouettes of their icon with hidden names/stats, while discovered mobs show name, rarity, income, sell value, and source.
 
 Shop:
 
@@ -502,14 +685,14 @@ Shop:
 - runtime Training Equipment shop also exposes strength tool unlock/equip flow through `T` / `Tools` / the weights-training kiosk pad;
 - Strength boost cards buy a one-shot strength increase with soft currency;
 - runtime Style shop buys and equips lucky cube color skins from the style kiosk hold-interaction anchor;
-- Epic Mob Shop sells three one-time exclusive mobs and immediately selects the purchased mob when inventory has space;
+- Elite Mob Shop sells one-time exclusive mobs for hard currency and immediately selects the purchased mob when inventory has space;
 - duplicated shop cards currently point to the same first-pass purchase actions and should become distinct final catalog items later.
 
 Future feature spots:
 
 - Weather Machine requires at least one Epic or Legendary mob in inventory or stable, lasts 10 minutes, gives landed cubes a chance to boost rarity before the animal roulette, and is shown in the future-feature status strip while active;
 - Exchange Booth opens a confirmation window for the currently selected mob, consumes one of 10 exchange charges after confirmation, restores one charge every 5 minutes, and swaps the selected inventory mob for a nearby-value random mob;
-- Epic Mob Shop sells `Crystal Griffin`, `Neon Hydra`, and `Sun Kaiju` as one-time exclusive purchases;
+- Elite Mob Shop sells the existing special exclusives plus `Elite Prism Thumper`, `Elite Aurora Penguin`, and `Elite Inferno Jet` as one-time hard-currency purchases;
 - Rating Gift Stand grants `Star Review Buddy` once per save file;
 - future feature save keys are included in the prototype save reset menu.
 
@@ -528,8 +711,8 @@ Settings:
 
 Rebirth:
 
-- first rebirth requires 1000 strength;
-- each next rebirth requirement is 10x higher;
+- first rebirth requires 1500 strength;
+- each next rebirth requirement is 30x higher;
 - multiplier increases from x2 to x3 to x4 and so on;
 - rebirth resets strength while keeping speed/tool ownership and increasing money gain.
 
@@ -748,8 +931,8 @@ Manual test focus for the next human pass:
 ## Visual Implementation Order
 
 1. First ProBuilder visual pass over the overview blockout. Done.
-2. ProBuilder-authored lucky cube prefab.
-3. ProBuilder-authored zone gates/signs per rarity.
+2. Authored lucky cube prefab with black edges and question marks. Done.
+3. ProBuilder-authored zone gates/signs per rarity. First rough pass is disabled as too noisy; next pass should use sparse milestone signs only.
 4. ProBuilder-authored stable/sell/training props.
 5. Final cleanup pass: remove or hide old visual blockout primitives after gameplay anchors are separated.
 

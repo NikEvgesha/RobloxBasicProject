@@ -32,7 +32,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             EnsureReady();
             ClearCurrentAnimal();
 
-            var option = PickAnimal(result.Rarity, result.Distance);
+            var option = PickAnimal(result);
             return SpawnConfiguredAnimal(result, baseRunnerSpeed, option);
         }
 
@@ -50,13 +50,25 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             EnsureReady();
 
-            var candidates = animalOptions
-                .Where(option => option.Rarity == rarity)
-                .ToArray();
+            var candidates = rarity == KickLuckyCubeRarity.None
+                ? Array.Empty<KickLuckyCubeAnimalOption>()
+                : KickLuckyCubeAnimalCatalog.CreateLocationOptions(RarityToLocationIndex(rarity));
 
             return candidates.Length > 0
                 ? candidates
-                : animalOptions.ToArray();
+                : animalOptions
+                    .Select(KickLuckyCubeAnimalCatalog.ResolveOption)
+                    .ToArray();
+        }
+
+        public KickLuckyCubeAnimalOption[] GetCandidateOptions(KickLuckyCubeKickResult result)
+        {
+            EnsureReady();
+
+            var candidates = KickLuckyCubeAnimalCatalog.CreateLocationOptions(ResolveLocationIndex(result));
+            return candidates.Length > 0
+                ? candidates
+                : GetCandidateOptions(result.Rarity);
         }
 
         public KickLuckyCubeAnimalOption PickRandomAnimal(KickLuckyCubeRarity rarity)
@@ -67,34 +79,44 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 : CreateFallbackOption();
         }
 
+        public KickLuckyCubeAnimalOption PickRandomAnimal(KickLuckyCubeKickResult result)
+        {
+            var candidates = GetCandidateOptions(result);
+            return candidates.Length > 0
+                ? candidates[UnityEngine.Random.Range(0, candidates.Length)]
+                : CreateFallbackOption();
+        }
+
         private KickLuckyCubeSpawnedAnimal SpawnConfiguredAnimal(
             KickLuckyCubeKickResult result,
             float baseRunnerSpeed,
             KickLuckyCubeAnimalOption option)
         {
-            var root = new GameObject("KLC_Runner_" + Sanitize(option.AnimalName));
+            option = KickLuckyCubeAnimalCatalog.ResolveOption(option);
+
+            var root = new GameObject("KLC_Runner_" + Sanitize(option.DisplayName));
             root.transform.SetParent(spawnRoot, true);
             root.transform.SetPositionAndRotation(
-                result.LandingPosition + spawnOffset,
+                result.LandingPosition,
                 Quaternion.LookRotation(Vector3.back, Vector3.up));
 
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body";
-            body.transform.SetParent(root.transform, false);
-            body.transform.localPosition = Vector3.zero;
-            body.transform.localRotation = Quaternion.identity;
-            body.transform.localScale = new Vector3(0.72f, 0.58f, 1.05f);
-
-            var bodyCollider = body.GetComponent<Collider>();
-            if (bodyCollider != null)
+            var bodyRenderer = KickLuckyCubeAnimalVisualFactory.CreateVisual(
+                root.transform,
+                option,
+                1.15f,
+                out var usedImportedVisual);
+            if (!usedImportedVisual && bodyRenderer != null)
             {
-                DestroyUnityObject(bodyCollider);
+                bodyRenderer.transform.localPosition = spawnOffset;
             }
 
             var animal = root.AddComponent<KickLuckyCubeSpawnedAnimal>();
-            animal.SetBodyRenderer(body.GetComponent<Renderer>());
-            animal.Configure(option, baseRunnerSpeed);
-            animal.EnsureBlackOutline();
+            animal.SetBodyRenderer(bodyRenderer);
+            animal.Configure(option, baseRunnerSpeed, !usedImportedVisual);
+            if (!usedImportedVisual)
+            {
+                animal.EnsureBlackOutline();
+            }
 
             var runner = root.AddComponent<KickLuckyCubeAnimalRunner>();
             runner.Configure(animal, animal.RunnerSpeed);
@@ -137,15 +159,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
-        private KickLuckyCubeAnimalOption PickAnimal(KickLuckyCubeRarity rarity, float distance)
+        private KickLuckyCubeAnimalOption PickAnimal(KickLuckyCubeKickResult result)
         {
-            var candidates = GetCandidateOptions(rarity);
+            var candidates = GetCandidateOptions(result);
             if (candidates.Length == 0)
             {
                 return CreateFallbackOption();
             }
 
-            var index = Mathf.Abs(Mathf.FloorToInt(distance)) % candidates.Length;
+            var index = Mathf.Abs(Mathf.FloorToInt(result.Distance)) % candidates.Length;
             return candidates[index];
         }
 
@@ -163,6 +185,29 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public static KickLuckyCubeAnimalOption[] CreateDefaultOptions()
         {
             return KickLuckyCubeAnimalCatalog.CreateDefaultOptions();
+        }
+
+        private static int ResolveLocationIndex(KickLuckyCubeKickResult result)
+        {
+            var rarityLocationIndex = RarityToLocationIndex(result.Rarity);
+            if (result.Zone != null)
+            {
+                return Mathf.Max(1, Mathf.Max(result.Zone.ZoneIndex, rarityLocationIndex));
+            }
+
+            return rarityLocationIndex;
+        }
+
+        private static int RarityToLocationIndex(KickLuckyCubeRarity rarity)
+        {
+            return rarity switch
+            {
+                KickLuckyCubeRarity.Uncommon => 2,
+                KickLuckyCubeRarity.Rare => 3,
+                KickLuckyCubeRarity.Epic => 4,
+                KickLuckyCubeRarity.Legendary => 5,
+                _ => 1,
+            };
         }
 
         private static string Sanitize(string value)

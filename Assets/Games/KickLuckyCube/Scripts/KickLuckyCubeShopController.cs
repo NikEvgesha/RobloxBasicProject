@@ -63,6 +63,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubePlayerStats stats;
+        [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private ShopItemView[] items = Array.Empty<ShopItemView>();
         [SerializeField] private Text statusText;
         [SerializeField, Min(0)] private int baseSpeedCost = 60;
@@ -81,6 +82,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>();
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
             WireButtons();
             ApplyTheme();
             Refresh();
@@ -149,14 +151,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return false;
             }
 
-            stats.AddAnimalSpeed(speedGain);
+            stats.AddAnimalSpeed(SpeedGainPerLevel);
             SetStatus($"Speed upgraded to Lv {stats.SpeedUpgradeLevel}.");
             return true;
         }
 
         private bool BuyStrengthTool()
         {
-            if (wallet == null || stats == null || stats.StrengthToolTier >= maxStrengthToolTier)
+            if (wallet == null || stats == null || stats.StrengthToolTier >= ResolvedMaxStrengthToolTier)
             {
                 SetStatus("Best tool already owned.");
                 return false;
@@ -208,7 +210,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     price = $"{SpeedCost} soft";
                     break;
                 case ItemType.StrengthTool:
-                    maxed = stats != null && stats.StrengthToolTier >= maxStrengthToolTier;
+                    maxed = stats != null && stats.StrengthToolTier >= ResolvedMaxStrengthToolTier;
                     canBuy = wallet != null && stats != null && wallet.SoftCurrency >= ToolCost && !maxed;
                     name = stats != null ? $"Tool Lv {stats.StrengthToolTier + 1}" : "Tool";
                     price = $"{ToolCost} soft";
@@ -223,13 +225,56 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             item.Refresh(name, price, canBuy, maxed, availableColor, lockedColor, maxedColor);
         }
 
-        private int SpeedCost => stats != null
-            ? Mathf.RoundToInt(baseSpeedCost + stats.SpeedUpgradeLevel * speedCostStep)
-            : baseSpeedCost;
+        private int SpeedCost
+        {
+            get
+            {
+                if (stats == null)
+                {
+                    return baseSpeedCost;
+                }
 
-        private int ToolCost => stats != null
-            ? Mathf.RoundToInt(baseToolCost * Mathf.Pow(toolCostMultiplier, stats.StrengthToolTier - 1))
-            : baseToolCost;
+                var balance = ResolveBalanceConfig();
+                return balance != null
+                    ? ClampCostToInt(balance.GetSpeedLevelCost(stats.SpeedUpgradeLevel + 1))
+                    : Mathf.RoundToInt(baseSpeedCost + stats.SpeedUpgradeLevel * speedCostStep);
+            }
+        }
+
+        private int ToolCost
+        {
+            get
+            {
+                if (stats == null)
+                {
+                    return baseToolCost;
+                }
+
+                var balance = ResolveBalanceConfig();
+                return balance != null
+                    ? balance.GetToolCost(stats.StrengthToolTier + 1)
+                    : Mathf.RoundToInt(baseToolCost * Mathf.Pow(toolCostMultiplier, stats.StrengthToolTier - 1));
+            }
+        }
+
+        private float SpeedGainPerLevel => ResolveBalanceConfig() != null
+            ? ResolveBalanceConfig().SpeedGainPerLevel
+            : speedGain;
+
+        private int ResolvedMaxStrengthToolTier => ResolveBalanceConfig() != null
+            ? ResolveBalanceConfig().MaxToolTier
+            : Mathf.Max(1, maxStrengthToolTier);
+
+        private KickLuckyCubeBalanceConfig ResolveBalanceConfig()
+        {
+            balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
+            return balanceConfig;
+        }
+
+        private static int ClampCostToInt(long cost)
+        {
+            return cost > int.MaxValue ? int.MaxValue : Mathf.Max(0, (int)cost);
+        }
 
         private void WireButtons()
         {

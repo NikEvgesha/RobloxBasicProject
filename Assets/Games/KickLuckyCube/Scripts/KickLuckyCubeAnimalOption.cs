@@ -12,7 +12,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0)] private int sellValue;
         [SerializeField, Min(0)] private int incomePerSecond;
         [SerializeField, Min(0.1f)] private float speedMultiplier;
+        [SerializeField] private KickLuckyCubeAnimalGrade grade;
         [SerializeField] private string catalogId;
+        [SerializeField] private string visualPrefabResourcePath;
+        [SerializeField] private string iconResourcePath;
 
         public KickLuckyCubeAnimalOption(
             KickLuckyCubeRarity rarity,
@@ -21,7 +24,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             int sellValue,
             int incomePerSecond,
             float speedMultiplier,
-            string catalogId = "")
+            string catalogId = "",
+            string visualPrefabResourcePath = "",
+            string iconResourcePath = "",
+            KickLuckyCubeAnimalGrade grade = KickLuckyCubeAnimalGrade.Normal)
         {
             this.rarity = rarity;
             this.animalName = animalName;
@@ -29,7 +35,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             this.sellValue = sellValue;
             this.incomePerSecond = incomePerSecond;
             this.speedMultiplier = speedMultiplier;
+            this.grade = grade;
             this.catalogId = catalogId;
+            this.visualPrefabResourcePath = visualPrefabResourcePath;
+            this.iconResourcePath = iconResourcePath;
         }
 
         public string CatalogId => string.IsNullOrWhiteSpace(catalogId)
@@ -37,9 +46,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             : catalogId;
         public KickLuckyCubeRarity Rarity => rarity;
         public string AnimalName => string.IsNullOrWhiteSpace(animalName) ? rarity.ToString() + " Animal" : animalName;
+        public string DisplayName => KickLuckyCubeAnimalGradeUtility.FormatAnimalName(AnimalName, Grade);
         public Color BodyColor => bodyColor;
         public int SellValue => sellValue;
         public int IncomePerSecond => incomePerSecond;
         public float SpeedMultiplier => Mathf.Max(0.1f, speedMultiplier);
+        public KickLuckyCubeAnimalGrade Grade => grade;
+        public string VariantId => KickLuckyCubeAnimalGradeUtility.MakeVariantId(CatalogId, Grade);
+        public string VisualPrefabResourcePath => visualPrefabResourcePath;
+        public string IconResourcePath => iconResourcePath;
     }
 }

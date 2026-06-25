@@ -13,6 +13,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private Color bodyColor;
         [SerializeField, Min(0)] private int sellValue;
         [SerializeField, Min(0)] private int incomePerSecond;
+        [SerializeField] private KickLuckyCubeAnimalGrade grade;
 
         public KickLuckyCubeInventoryAnimal(
             string id,
@@ -28,7 +29,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 rarity,
                 bodyColor,
                 sellValue,
-                incomePerSecond)
+                incomePerSecond,
+                KickLuckyCubeAnimalGrade.Normal)
         {
         }
 
@@ -39,7 +41,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             KickLuckyCubeRarity rarity,
             Color bodyColor,
             int sellValue,
-            int incomePerSecond)
+            int incomePerSecond,
+            KickLuckyCubeAnimalGrade grade = KickLuckyCubeAnimalGrade.Normal)
         {
             this.id = id;
             this.catalogId = catalogId;
@@ -48,6 +51,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             this.bodyColor = bodyColor;
             this.sellValue = Mathf.Max(0, sellValue);
             this.incomePerSecond = Mathf.Max(0, incomePerSecond);
+            this.grade = grade;
         }
 
         public bool IsValid => !string.IsNullOrWhiteSpace(id);
@@ -57,10 +61,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             ? KickLuckyCubeAnimalCatalog.ResolveCatalogId(this)
             : catalogId;
         public string AnimalName => string.IsNullOrWhiteSpace(animalName) ? "Animal" : animalName;
+        public string DisplayName => KickLuckyCubeAnimalGradeUtility.FormatAnimalName(AnimalName, Grade);
         public KickLuckyCubeRarity Rarity => rarity;
         public Color BodyColor => bodyColor;
         public int SellValue => sellValue;
         public int IncomePerSecond => incomePerSecond;
+        public KickLuckyCubeAnimalGrade Grade => grade;
+        public string VariantId => KickLuckyCubeAnimalGradeUtility.MakeVariantId(CatalogId, Grade);
 
         public static KickLuckyCubeInventoryAnimal FromSpawnedAnimal(KickLuckyCubeSpawnedAnimal animal)
         {
@@ -76,7 +83,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 animal.Rarity,
                 animal.BodyColor,
                 animal.SellValue,
-                animal.IncomePerSecond);
+                animal.IncomePerSecond,
+                animal.Grade);
         }
     }
 }

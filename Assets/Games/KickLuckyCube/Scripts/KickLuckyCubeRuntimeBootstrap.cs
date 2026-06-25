@@ -16,6 +16,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private bool ensureToolTraining = true;
         [SerializeField] private bool ensureInventoryUi = true;
         [SerializeField] private bool ensureSellShopUi = true;
+        [SerializeField] private bool ensureAudioListener = true;
         [SerializeField, Min(0)] private int startupFramesToNormalize = 5;
 
         private int remainingStartupFrames;
@@ -25,6 +26,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             EnsureToolTrainingController();
             EnsureInventoryController();
             EnsureSellShopController();
+            EnsureAudioListener();
             remainingStartupFrames = startupFramesToNormalize;
             NormalizeTimeScale();
         }
@@ -132,6 +134,25 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var sellShopObject = new GameObject("KLC_SellShopController_Runtime");
             sellShopObject.transform.SetParent(canvas.transform, false);
             sellShopObject.AddComponent<KickLuckyCubeSellShopController>();
+        }
+
+        private void EnsureAudioListener()
+        {
+            if (!Application.isPlaying || !ensureAudioListener)
+            {
+                return;
+            }
+
+            if (FindFirstObjectByType<AudioListener>(FindObjectsInactive.Include) != null)
+            {
+                return;
+            }
+
+            var targetCamera = Camera.main ?? FindFirstObjectByType<Camera>(FindObjectsInactive.Include);
+            if (targetCamera != null)
+            {
+                targetCamera.gameObject.AddComponent<AudioListener>();
+            }
         }
     }
 }
