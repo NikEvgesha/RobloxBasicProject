@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace RobloxBasicProject.Games.KickLuckyCube
 {
@@ -41,8 +42,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public static readonly Color Strength = new(0.24f, 1f, 0.14f, 0.95f);
 
         private static Font cachedFont;
+        private static TMP_FontAsset cachedTmpFont;
 
         public static Font Font => cachedFont != null ? cachedFont : cachedFont = ResolveFont();
+        public static TMP_FontAsset TmpFont => cachedTmpFont != null ? cachedTmpFont : cachedTmpFont = ResolveTmpFont();
 
         public static Image AddImage(GameObject target, Color color)
         {
@@ -71,6 +74,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             foreach (var text in root.GetComponentsInChildren<Text>(true))
+            {
+                StyleText(text, text.gameObject.name);
+            }
+
+            foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
             {
                 StyleText(text, text.gameObject.name);
             }
@@ -121,6 +129,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 StyleText(text, text.gameObject.name);
             }
+
+            foreach (var text in button.GetComponentsInChildren<TMP_Text>(true))
+            {
+                StyleText(text, text.gameObject.name);
+            }
         }
 
         public static void StyleText(Text text, string elementName)
@@ -166,6 +179,48 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             StyleText(text, "Title");
         }
 
+        public static void StyleText(TMP_Text text, string elementName)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.font = TmpFont;
+            text.fontStyle = FontStyles.Bold;
+            text.enableWordWrapping = true;
+            text.overflowMode = TextOverflowModes.Truncate;
+            text.raycastTarget = false;
+
+            var style = GuessTextStyle(elementName);
+            switch (style)
+            {
+                case KickLuckyCubeUiTextStyle.Body:
+                    text.color = Ink;
+                    ApplyTmpOutline(text, Color.white, 0.10f);
+                    break;
+                case KickLuckyCubeUiTextStyle.Muted:
+                    text.color = new Color(0.13f, 0.22f, 0.28f, 1f);
+                    ApplyTmpOutline(text, Color.white, 0.08f);
+                    break;
+                case KickLuckyCubeUiTextStyle.Title:
+                    text.color = Color.white;
+                    ApplyTmpOutline(text, Outline, 0.18f);
+                    break;
+                case KickLuckyCubeUiTextStyle.Button:
+                case KickLuckyCubeUiTextStyle.Card:
+                default:
+                    text.color = Color.white;
+                    ApplyTmpOutline(text, Outline, 0.14f);
+                    break;
+            }
+        }
+
+        public static void StyleHudText(TMP_Text text)
+        {
+            StyleText(text, "Title");
+        }
+
         public static void StyleFloatingText(Text text, Color color)
         {
             if (text == null)
@@ -179,6 +234,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             text.raycastTarget = false;
             ApplyOutline(text, Outline, new Vector2(2f, -2f));
             ApplyShadow(text, new Color(0f, 0f, 0f, 0.82f), new Vector2(3f, -3f));
+        }
+
+        public static void StyleFloatingText(TMP_Text text, Color color)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.font = TmpFont;
+            text.fontStyle = FontStyles.Bold;
+            text.color = color;
+            text.raycastTarget = false;
+            text.enableWordWrapping = false;
+            text.overflowMode = TextOverflowModes.Overflow;
+            ApplyTmpOutline(text, Outline, 0.16f);
         }
 
         public static void StyleWorldText(TextMesh textMesh, Color color, float outlineDistance)
@@ -362,10 +433,27 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             shadow.useGraphicAlpha = true;
         }
 
+        private static void ApplyTmpOutline(TMP_Text text, Color color, float width)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.outlineColor = color;
+            text.outlineWidth = Mathf.Max(0f, width);
+        }
+
         private static Font ResolveFont()
         {
             return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
                 ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+        }
+
+        private static TMP_FontAsset ResolveTmpFont()
+        {
+            return Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF")
+                ?? TMP_Settings.defaultFontAsset;
         }
 
         private static bool Contains(string source, string value)

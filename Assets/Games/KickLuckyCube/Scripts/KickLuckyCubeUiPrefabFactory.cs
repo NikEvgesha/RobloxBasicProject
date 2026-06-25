@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace RobloxBasicProject.Games.KickLuckyCube
 {
@@ -127,6 +128,27 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return text;
         }
 
+        public static TMP_Text GetOrCreateTmpLabel(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, Vector2 size, Vector2 position)
+        {
+            var rect = FindDirectChild(parent, name) ?? CreateRect(name, parent);
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = position;
+
+            var text = GetOrAddTmpText(rect.gameObject);
+            text.text = value;
+            text.font = KickLuckyCubeUiTheme.TmpFont;
+            text.fontSize = fontSize;
+            text.fontStyle = FontStyles.Bold;
+            text.alignment = ToTmpAlignment(anchor);
+            text.color = Color.white;
+            text.raycastTarget = false;
+            KickLuckyCubeUiTheme.StyleText(text, name);
+            return text;
+        }
+
         public static Button GetOrCreateButton(RectTransform parent, string name, string value, Font font, Vector2 size, Color fallbackColor, int labelFontSize)
         {
             var rect = FindDirectChild(parent, name) ?? CreateRect(name, parent);
@@ -192,6 +214,49 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             return target.AddComponent<Text>();
+        }
+
+        private static TMP_Text GetOrAddTmpText(GameObject target)
+        {
+            var text = target.GetComponent<TMP_Text>();
+            if (text != null)
+            {
+                return text;
+            }
+
+            var legacyText = target.GetComponent<Text>();
+            if (legacyText != null)
+            {
+                DestroyComponent(legacyText);
+            }
+
+            var graphics = target.GetComponents<Graphic>();
+            foreach (var graphic in graphics)
+            {
+                if (graphic != null && graphic is not TMP_Text)
+                {
+                    DestroyComponent(graphic);
+                }
+            }
+
+            return target.AddComponent<TextMeshProUGUI>();
+        }
+
+        private static TextAlignmentOptions ToTmpAlignment(TextAnchor anchor)
+        {
+            return anchor switch
+            {
+                TextAnchor.UpperLeft => TextAlignmentOptions.TopLeft,
+                TextAnchor.UpperCenter => TextAlignmentOptions.Top,
+                TextAnchor.UpperRight => TextAlignmentOptions.TopRight,
+                TextAnchor.MiddleLeft => TextAlignmentOptions.Left,
+                TextAnchor.MiddleCenter => TextAlignmentOptions.Center,
+                TextAnchor.MiddleRight => TextAlignmentOptions.Right,
+                TextAnchor.LowerLeft => TextAlignmentOptions.BottomLeft,
+                TextAnchor.LowerCenter => TextAlignmentOptions.Bottom,
+                TextAnchor.LowerRight => TextAlignmentOptions.BottomRight,
+                _ => TextAlignmentOptions.Center,
+            };
         }
 
         private static void DestroyComponent(Component component)

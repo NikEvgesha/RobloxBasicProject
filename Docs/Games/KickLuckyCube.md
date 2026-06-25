@@ -167,6 +167,8 @@ The lower HUD is no longer the legacy `KLC_ToolBelt`. The edit-mode scene and th
 
 `KLC_KickSpeedHudVisual` is an editable speed strip above the kick interaction prompt. It shows current animal speed and speed level through `KickLuckyCubeKickSpeedHud`; its volumetric `KLC_KickSpeedHudUpgradeButton` opens the same Speed Upgrades window as the speed kiosk and `Y`. When this scene object exists, `KickLuckyCubeSpeedShopController` reuses it and does not spawn the legacy standalone `KLC_SpeedShopOpenButton`.
 
+TextMeshPro migration has started with the persistent lower HUD. `KickLuckyCubeUiTheme` now supports both legacy `UnityEngine.UI.Text` and `TMPro.TMP_Text`, and `KickLuckyCubeUiPrefabFactory.GetOrCreateTmpLabel` is the preferred path for newly-authored runtime labels. `KLC_BottomLeftStatsVisual` and `KLC_KickSpeedHudVisual` are the first migrated editable prefabs and should use `TextMeshProUGUI` for their labels. Other windows may still use legacy `Text` until they are migrated in focused passes. Before a WebGL release, verify the TMP font asset/fallback contains every EN/RU localization character used by the game.
+
 - `KLC_KickHud` still receives status text from gameplay scripts;
 - `KLC_EconomyHud` can still receive legacy economy text from gameplay scripts, but it is hidden in the current bottom-left visual pass;
 - `KLC_InteractionPrompt` still uses the shared `GameKitInteractionPromptView`.

@@ -1,4 +1,5 @@
 using System.Globalization;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,9 +13,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeSpeedShopController speedShop;
-        [SerializeField] private Text speedText;
-        [SerializeField] private Text levelText;
-        [SerializeField] private Text upgradeButtonText;
+        [SerializeField] private TMP_Text speedText;
+        [SerializeField] private TMP_Text levelText;
+        [SerializeField] private TMP_Text upgradeButtonText;
         [SerializeField] private Button upgradeButton;
         [SerializeField] private bool useEditModePreviewValues = true;
         [SerializeField, Min(0f)] private float previewSpeed = 7f;
@@ -107,9 +108,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void ApplyTextStyle()
         {
-            StyleOutlinedText(speedText, new Color(0.35f, 1f, 1f, 1f), 27, TextAnchor.MiddleLeft);
-            StyleOutlinedText(levelText, Color.white, 17, TextAnchor.MiddleLeft);
-            StyleOutlinedText(upgradeButtonText, Color.white, 18, TextAnchor.MiddleCenter);
+            StyleOutlinedText(speedText, new Color(0.35f, 1f, 1f, 1f), 27, TextAlignmentOptions.Left);
+            StyleOutlinedText(levelText, Color.white, 17, TextAlignmentOptions.Left);
+            StyleOutlinedText(upgradeButtonText, Color.white, 18, TextAlignmentOptions.Center);
         }
 
         private void WireButton()
@@ -129,33 +130,29 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             speedShop?.OpenWindow();
         }
 
-        private static void StyleOutlinedText(Text text, Color color, int fontSize, TextAnchor alignment)
+        private static void StyleOutlinedText(TMP_Text text, Color color, int fontSize, TextAlignmentOptions alignment)
         {
             if (text == null)
             {
                 return;
             }
 
-            text.font = KickLuckyCubeUiTheme.Font;
+            text.font = KickLuckyCubeUiTheme.TmpFont;
             text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyles.Bold;
             text.alignment = alignment;
-            text.alignByGeometry = true;
-            text.horizontalOverflow = HorizontalWrapMode.Overflow;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.enableWordWrapping = false;
+            text.overflowMode = TextOverflowModes.Overflow;
             text.color = color;
             text.raycastTarget = false;
-
-            var outline = text.GetComponent<Outline>() ?? text.gameObject.AddComponent<Outline>();
-            outline.effectColor = Color.black;
-            outline.effectDistance = new Vector2(2.4f, -2.4f);
-            outline.useGraphicAlpha = false;
+            text.outlineColor = Color.black;
+            text.outlineWidth = 0.14f;
         }
 
-        private static Text FindText(string objectName)
+        private static TMP_Text FindText(string objectName)
         {
             var target = GameObject.Find(objectName);
-            return target != null ? target.GetComponent<Text>() : null;
+            return target != null ? target.GetComponent<TMP_Text>() : null;
         }
 
         private static Button FindButton(string objectName)

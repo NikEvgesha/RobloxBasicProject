@@ -1,4 +1,5 @@
 using System.Globalization;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,11 +14,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubeRebirthController rebirthController;
-        [SerializeField] private Text rebirthValueText;
-        [SerializeField] private Text strengthValueText;
-        [SerializeField] private Text strengthSuffixText;
-        [SerializeField] private Text softValueText;
-        [SerializeField] private Text hardValueText;
+        [SerializeField] private TMP_Text rebirthValueText;
+        [SerializeField] private TMP_Text strengthValueText;
+        [SerializeField] private TMP_Text strengthSuffixText;
+        [SerializeField] private TMP_Text softValueText;
+        [SerializeField] private TMP_Text hardValueText;
         [SerializeField] private Button masteryInfoButton;
         [SerializeField] private Button masteryInfoCloseButton;
         [SerializeField] private GameObject masteryInfoWindow;
@@ -153,11 +154,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void ApplyTextStyle()
         {
-            StyleOutlinedText(rebirthValueText, new Color(1f, 0.86f, 0.05f, 1f), 56, TextAnchor.MiddleLeft);
-            StyleOutlinedText(strengthValueText, new Color(1f, 0.66f, 0.02f, 1f), 36, TextAnchor.MiddleLeft);
-            StyleOutlinedText(strengthSuffixText, new Color(1f, 0.91f, 0.12f, 1f), 15, TextAnchor.MiddleLeft);
-            StyleOutlinedText(softValueText, new Color(0.42f, 1f, 0.03f, 1f), 58, TextAnchor.MiddleLeft);
-            StyleOutlinedText(hardValueText, new Color(1f, 0.54f, 1f, 1f), 54, TextAnchor.MiddleLeft);
+            StyleOutlinedText(rebirthValueText, new Color(1f, 0.86f, 0.05f, 1f), 56, TextAlignmentOptions.Left);
+            StyleOutlinedText(strengthValueText, new Color(1f, 0.66f, 0.02f, 1f), 36, TextAlignmentOptions.Left);
+            StyleOutlinedText(strengthSuffixText, new Color(1f, 0.91f, 0.12f, 1f), 15, TextAlignmentOptions.Left);
+            StyleOutlinedText(softValueText, new Color(0.42f, 1f, 0.03f, 1f), 58, TextAlignmentOptions.Left);
+            StyleOutlinedText(hardValueText, new Color(1f, 0.54f, 1f, 1f), 54, TextAlignmentOptions.Left);
         }
 
         private void WireButtons()
@@ -191,33 +192,29 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
-        private static void StyleOutlinedText(Text text, Color color, int fontSize, TextAnchor alignment)
+        private static void StyleOutlinedText(TMP_Text text, Color color, int fontSize, TextAlignmentOptions alignment)
         {
             if (text == null)
             {
                 return;
             }
 
-            text.font = KickLuckyCubeUiTheme.Font;
+            text.font = KickLuckyCubeUiTheme.TmpFont;
             text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyles.Bold;
             text.alignment = alignment;
-            text.alignByGeometry = true;
-            text.horizontalOverflow = HorizontalWrapMode.Overflow;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.enableWordWrapping = false;
+            text.overflowMode = TextOverflowModes.Overflow;
             text.color = color;
             text.raycastTarget = false;
-
-            var outline = text.GetComponent<Outline>() ?? text.gameObject.AddComponent<Outline>();
-            outline.effectColor = Color.black;
-            outline.effectDistance = new Vector2(3f, -3f);
-            outline.useGraphicAlpha = false;
+            text.outlineColor = Color.black;
+            text.outlineWidth = 0.16f;
         }
 
-        private static Text FindText(string objectName)
+        private static TMP_Text FindText(string objectName)
         {
             var target = GameObject.Find(objectName);
-            return target != null ? target.GetComponent<Text>() : null;
+            return target != null ? target.GetComponent<TMP_Text>() : null;
         }
 
         private static Button FindButton(string objectName)
