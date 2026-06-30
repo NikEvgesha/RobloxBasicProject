@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 4874280391898787777}
   - component: {fileID: 5140966147994901731}
   - component: {fileID: 6425213962963789709}
+  - component: {fileID: 7029716158826642968}
   m_Layer: 0
   m_Name: Rarity
   m_TagString: Untagged
@@ -232,6 +233,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &7029716158826642968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 669054480061355472}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_SellShopCard.Rarity.Common
+  uiText: {fileID: 5140966147994901731}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Common
+  russian: "\u041E\u0431\u044B\u0447\u043D\u044B\u0439"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &939253902561647562
 GameObject:
   m_ObjectHideFlags: 0
@@ -335,6 +356,7 @@ GameObject:
   - component: {fileID: 5375173519872179712}
   - component: {fileID: 7293762551230051587}
   - component: {fileID: 9192689980543614489}
+  - component: {fileID: 761178138513323812}
   m_Layer: 0
   m_Name: Income
   m_TagString: Untagged
@@ -418,6 +440,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &761178138513323812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1765919953859044704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_SellShopCard.Income.+20_s_income
+  uiText: {fileID: 7293762551230051587}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: +20/s income
+  russian: "+20/\u0441 \u0434\u043E\u0445\u043E\u0434"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &3797582739945367513
 GameObject:
   m_ObjectHideFlags: 0
@@ -430,6 +472,7 @@ GameObject:
   - component: {fileID: 4609801051187188328}
   - component: {fileID: 3946232645642156260}
   - component: {fileID: 1255718770895215238}
+  - component: {fileID: 8752307690155581424}
   m_Layer: 0
   m_Name: SellValue
   m_TagString: Untagged
@@ -513,6 +556,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &8752307690155581424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3797582739945367513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_SellShopCard.SellValue.Sell_400
+  uiText: {fileID: 3946232645642156260}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: 'Sell: $400'
+  russian: "\u041F\u0440\u043E\u0434\u0430\u0442\u044C: $400"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &3954933768272662499
 GameObject:
   m_ObjectHideFlags: 0
@@ -643,6 +706,7 @@ GameObject:
   - component: {fileID: 1085241261040420612}
   - component: {fileID: 2355163079291901610}
   - component: {fileID: 6510657274209512803}
+  - component: {fileID: 9170470102636252451}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -726,6 +790,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &9170470102636252451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7019140115036879289}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_SellShopCard.Label.Sell
+  uiText: {fileID: 2355163079291901610}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Sell
+  russian: "\u041F\u0440\u043E\u0434\u0430\u0442\u044C"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &8626136942059364389
 GameObject:
   m_ObjectHideFlags: 0

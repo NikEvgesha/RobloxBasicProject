@@ -687,6 +687,7 @@ GameObject:
   - component: {fileID: 7139777599246009626}
   - component: {fileID: 4869219945882815260}
   - component: {fileID: 6404838536413295077}
+  - component: {fileID: 539200169206101197}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -785,6 +786,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.28}
   m_EffectDistance: {x: 2.5, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!114 &539200169206101197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4472374226551324252}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_SpeedShopWindow_Runtime.Title.Speed_Upgrades
+  uiText: {fileID: 7139777599246009626}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Speed Upgrades
+  russian: "\u0423\u043B\u0443\u0447\u0448\u0435\u043D\u0438\u0435 \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u0438"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &4760165080339193493
 GameObject:
   m_ObjectHideFlags: 0
@@ -2263,6 +2284,7 @@ GameObject:
   - component: {fileID: 7396162087769436493}
   - component: {fileID: 4965116351929865342}
   - component: {fileID: 5490955329188521237}
+  - component: {fileID: 2603540452547748267}
   m_Layer: 0
   m_Name: Status
   m_TagString: Untagged
@@ -2346,3 +2368,25 @@ MonoBehaviour:
   m_EffectColor: {r: 1, g: 1, b: 1, a: 1}
   m_EffectDistance: {x: 1.2, y: -1.2}
   m_UseGraphicAlpha: 1
+--- !u!114 &2603540452547748267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8940883545362296492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_SpeedShopWindow_Runtime.Status.Buy_speed_levels_for_your_returned_mobs
+  uiText: {fileID: 4965116351929865342}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Buy speed levels for your returned mobs.
+  russian: "\u041F\u043E\u043A\u0443\u043F\u0430\u0439 \u0443\u0440\u043E\u0432\u043D\u0438
+    \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u0438 \u0434\u043B\u044F \u043C\u043E\u0431\u043E\u0432
+    \u043D\u0430 \u0437\u0430\u0431\u0435\u0433\u0435."
+  captureCurrentTextAsEnglish: 0

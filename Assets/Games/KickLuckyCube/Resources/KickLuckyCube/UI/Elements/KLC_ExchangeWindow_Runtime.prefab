@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 863768577772725500}
   - component: {fileID: 8182932828807073554}
   - component: {fileID: 8050348085130666913}
+  - component: {fileID: 9038468268457304778}
   m_Layer: 0
   m_Name: Status
   m_TagString: Untagged
@@ -95,6 +96,28 @@ MonoBehaviour:
   m_EffectColor: {r: 1, g: 1, b: 1, a: 1}
   m_EffectDistance: {x: 1.2, y: -1.2}
   m_UseGraphicAlpha: 1
+--- !u!114 &9038468268457304778
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 811070959438898607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_ExchangeWindow_Runtime.Status.Preview_is_locked_until_you_exchange_or_select_another_mob
+  uiText: {fileID: 8182932828807073554}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Preview is locked until you exchange or select another mob.
+  russian: "\u041F\u0440\u0435\u0432\u044C\u044E \u0437\u0430\u0444\u0438\u043A\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u043E
+    \u0434\u043E \u043E\u0431\u043C\u0435\u043D\u0430 \u0438\u043B\u0438 \u0432\u044B\u0431\u043E\u0440\u0430
+    \u0434\u0440\u0443\u0433\u043E\u0433\u043E \u043C\u043E\u0431\u0430."
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &1016545425817667025
 GameObject:
   m_ObjectHideFlags: 0
@@ -202,6 +225,7 @@ GameObject:
   - component: {fileID: 447623714517409609}
   - component: {fileID: 7840923394329247361}
   - component: {fileID: 734662105232289490}
+  - component: {fileID: 12848892225023881}
   m_Layer: 0
   m_Name: Header
   m_TagString: Untagged
@@ -285,6 +309,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &12848892225023881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360093180878760347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_ExchangeWindow_Runtime.Header.Result
+  uiText: {fileID: 7840923394329247361}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Result
+  russian: "\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &1869142923991614530
 GameObject:
   m_ObjectHideFlags: 0
@@ -297,6 +341,7 @@ GameObject:
   - component: {fileID: 7608907045365353281}
   - component: {fileID: 8964574832223324672}
   - component: {fileID: 7927139512134625248}
+  - component: {fileID: 5457482346942511880}
   m_Layer: 0
   m_Name: Charges
   m_TagString: Untagged
@@ -380,6 +425,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &5457482346942511880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1869142923991614530}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_ExchangeWindow_Runtime.Charges.Charges_10_10
+  uiText: {fileID: 8964574832223324672}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Charges 10/10
+  russian: "\u0417\u0430\u0440\u044F\u0434\u044B 10/10"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &1949121317140871091
 GameObject:
   m_ObjectHideFlags: 0
@@ -624,6 +689,7 @@ GameObject:
   - component: {fileID: 5186925873142612169}
   - component: {fileID: 4921626209985222400}
   - component: {fileID: 5892406600232369900}
+  - component: {fileID: 1378708279722901991}
   m_Layer: 0
   m_Name: Header
   m_TagString: Untagged
@@ -707,6 +773,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &1378708279722901991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3422860421102804912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_ExchangeWindow_Runtime.Header.Selected
+  uiText: {fileID: 4921626209985222400}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Selected
+  russian: "\u0412\u044B\u0431\u0440\u0430\u043D"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &4325643678068638538
 GameObject:
   m_ObjectHideFlags: 0
@@ -1724,6 +1810,7 @@ GameObject:
   - component: {fileID: 3174724249872265176}
   - component: {fileID: 2163301034714426958}
   - component: {fileID: 1090310717595003713}
+  - component: {fileID: 603859552591287965}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -1807,6 +1894,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &603859552591287965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8815578416063208416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_ExchangeWindow_Runtime.Label.Exchange
+  uiText: {fileID: 2163301034714426958}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Exchange
+  russian: "\u041E\u0431\u043C\u0435\u043D"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &8975831309929315074
 GameObject:
   m_ObjectHideFlags: 0
@@ -1820,6 +1927,7 @@ GameObject:
   - component: {fileID: 4407236021601446967}
   - component: {fileID: 5174428838521734129}
   - component: {fileID: 8311350882963811934}
+  - component: {fileID: 662812735364487448}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -1918,6 +2026,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.28}
   m_EffectDistance: {x: 2.5, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!114 &662812735364487448
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8975831309929315074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_ExchangeWindow_Runtime.Title.Animal_Exchange
+  uiText: {fileID: 4407236021601446967}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Animal Exchange
+  russian: "\u041E\u0431\u043C\u0435\u043D \u043C\u043E\u0431\u043E\u0432"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &9163627996774677275
 GameObject:
   m_ObjectHideFlags: 0

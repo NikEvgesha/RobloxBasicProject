@@ -428,6 +428,7 @@ GameObject:
   - component: {fileID: 5301294886013018048}
   - component: {fileID: 330654106784914509}
   - component: {fileID: 4934566972870690132}
+  - component: {fileID: 3007080096736786064}
   m_Layer: 0
   m_Name: Name
   m_TagString: Untagged
@@ -511,6 +512,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &3007080096736786064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1822200343206934959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_StyleShopWindow_Runtime.Name.Classic
+  uiText: {fileID: 330654106784914509}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Classic
+  russian: "\u041A\u043B\u0430\u0441\u0441\u0438\u043A\u0430"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &2068228582500529223
 GameObject:
   m_ObjectHideFlags: 0
@@ -618,6 +639,7 @@ GameObject:
   - component: {fileID: 5309878326335402667}
   - component: {fileID: 1867088667912252937}
   - component: {fileID: 412813864765880115}
+  - component: {fileID: 4979050846114427488}
   m_Layer: 0
   m_Name: Name
   m_TagString: Untagged
@@ -701,6 +723,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &4979050846114427488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2706524649195531748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_StyleShopWindow_Runtime.Name.Gold_Cube
+  uiText: {fileID: 1867088667912252937}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Gold Cube
+  russian: "\u0417\u043E\u043B\u043E\u0442\u043E\u0439 \u043A\u0443\u0431"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &3040791272889698541
 GameObject:
   m_ObjectHideFlags: 0
@@ -809,6 +851,7 @@ GameObject:
   - component: {fileID: 1034675022348535908}
   - component: {fileID: 7867914031855516592}
   - component: {fileID: 1278508536945678342}
+  - component: {fileID: 6828476867523952482}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -907,6 +950,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.28}
   m_EffectDistance: {x: 2.5, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!114 &6828476867523952482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3602746609117924623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_StyleShopWindow_Runtime.Title.Cube_Styles
+  uiText: {fileID: 1034675022348535908}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Cube Styles
+  russian: "\u0421\u0442\u0438\u043B\u0438 \u043A\u0443\u0431\u0430"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &3750876176278363755
 GameObject:
   m_ObjectHideFlags: 0
@@ -919,6 +982,7 @@ GameObject:
   - component: {fileID: 1416754714453043632}
   - component: {fileID: 5867073287667656781}
   - component: {fileID: 4033564333766704834}
+  - component: {fileID: 1174901073908511458}
   m_Layer: 0
   m_Name: Name
   m_TagString: Untagged
@@ -1002,6 +1066,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &1174901073908511458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3750876176278363755}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_StyleShopWindow_Runtime.Name.Neon_Cube
+  uiText: {fileID: 5867073287667656781}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Neon Cube
+  russian: "\u041D\u0435\u043E\u043D\u043E\u0432\u044B\u0439 \u043A\u0443\u0431"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &4450915188670745469
 GameObject:
   m_ObjectHideFlags: 0
@@ -2147,6 +2231,7 @@ GameObject:
   - component: {fileID: 6235323961100622043}
   - component: {fileID: 1305352000439497181}
   - component: {fileID: 7027354767507625350}
+  - component: {fileID: 4465209776835256647}
   m_Layer: 0
   m_Name: Name
   m_TagString: Untagged
@@ -2230,6 +2315,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &4465209776835256647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7413434362506183933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_StyleShopWindow_Runtime.Name.Candy_Cube
+  uiText: {fileID: 1305352000439497181}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Candy Cube
+  russian: "\u041A\u043E\u043D\u0444\u0435\u0442\u043D\u044B\u0439 \u043A\u0443\u0431"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &7705030696701844389
 GameObject:
   m_ObjectHideFlags: 0
@@ -2634,6 +2739,7 @@ GameObject:
   - component: {fileID: 3835887309638401425}
   - component: {fileID: 974566397739480856}
   - component: {fileID: 4639507965878745601}
+  - component: {fileID: 6485979155149530709}
   m_Layer: 0
   m_Name: Status
   m_TagString: Untagged
@@ -2717,3 +2823,24 @@ MonoBehaviour:
   m_EffectColor: {r: 1, g: 1, b: 1, a: 1}
   m_EffectDistance: {x: 1.2, y: -1.2}
   m_UseGraphicAlpha: 1
+--- !u!114 &6485979155149530709
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8988156856972558230}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_StyleShopWindow_Runtime.Status.Buy_and_equip_lucky_cube_skins
+  uiText: {fileID: 974566397739480856}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Buy and equip lucky cube skins.
+  russian: "\u041F\u043E\u043A\u0443\u043F\u0430\u0439 \u0438 \u0432\u044B\u0431\u0438\u0440\u0430\u0439
+    \u0441\u043A\u0438\u043D\u044B lucky cube."
+  captureCurrentTextAsEnglish: 0

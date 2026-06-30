@@ -1617,6 +1617,7 @@ GameObject:
   - component: {fileID: 3937669027764050834}
   - component: {fileID: 4715526632297011778}
   - component: {fileID: 7711693201051276642}
+  - component: {fileID: 6687822083004549581}
   m_Layer: 0
   m_Name: Status
   m_TagString: Untagged
@@ -1700,6 +1701,28 @@ MonoBehaviour:
   m_EffectColor: {r: 1, g: 1, b: 1, a: 1}
   m_EffectDistance: {x: 1.2, y: -1.2}
   m_UseGraphicAlpha: 1
+--- !u!114 &6687822083004549581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5453095785540706922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_EpicMobShopWindow_Runtime.Status.Elite_donate_mobs_are_bought_with_hard_currency
+  uiText: {fileID: 4715526632297011778}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Elite donate mobs are bought with hard currency.
+  russian: "\u042D\u043B\u0438\u0442\u043D\u044B\u0435 \u0434\u043E\u043D\u0430\u0442\u043D\u044B\u0435
+    \u043C\u043E\u0431\u044B \u043F\u043E\u043A\u0443\u043F\u0430\u044E\u0442\u0441\u044F
+    \u0437\u0430 \u0445\u0430\u0440\u0434-\u0432\u0430\u043B\u044E\u0442\u0443."
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &5511621269334392416
 GameObject:
   m_ObjectHideFlags: 0
@@ -3553,6 +3576,7 @@ GameObject:
   - component: {fileID: 328908892133679484}
   - component: {fileID: 5341412074333709824}
   - component: {fileID: 5301779635398000562}
+  - component: {fileID: 7427616602426321266}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -3651,6 +3675,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.28}
   m_EffectDistance: {x: 2.5, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!114 &7427616602426321266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8320793931344967411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_EpicMobShopWindow_Runtime.Title.Elite_Mob_Shop
+  uiText: {fileID: 328908892133679484}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Elite Mob Shop
+  russian: "\u042D\u043B\u0438\u0442\u043D\u044B\u0435 \u043C\u043E\u0431\u044B"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &8339671699398804517
 GameObject:
   m_ObjectHideFlags: 0

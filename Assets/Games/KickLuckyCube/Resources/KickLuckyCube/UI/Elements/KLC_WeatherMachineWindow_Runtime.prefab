@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 811825121968138136}
   - component: {fileID: 2490053427946912417}
   - component: {fileID: 8511740152884405550}
+  - component: {fileID: 4382560597095595872}
   m_Layer: 0
   m_Name: Requirement
   m_TagString: Untagged
@@ -232,6 +233,28 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &4382560597095595872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1657302921642741642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_WeatherMachineWindow_Runtime.Requirement.Requires_one_Epic_or_Legendary_mob
+  uiText: {fileID: 2490053427946912417}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Requires one Epic or Legendary mob.
+  russian: "\u041D\u0443\u0436\u0435\u043D \u043E\u0434\u0438\u043D \u044D\u043F\u0438\u0447\u0435\u0441\u043A\u0438\u0439
+    \u0438\u043B\u0438 \u043B\u0435\u0433\u0435\u043D\u0434\u0430\u0440\u043D\u044B\u0439
+    \u043C\u043E\u0431."
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &3445026547022150730
 GameObject:
   m_ObjectHideFlags: 0
@@ -244,6 +267,7 @@ GameObject:
   - component: {fileID: 5745812740968031855}
   - component: {fileID: 3034732884363791563}
   - component: {fileID: 7996689973557384135}
+  - component: {fileID: 3899538160079240013}
   m_Layer: 0
   m_Name: Status
   m_TagString: Untagged
@@ -327,6 +351,27 @@ MonoBehaviour:
   m_EffectColor: {r: 1, g: 1, b: 1, a: 1}
   m_EffectDistance: {x: 1.2, y: -1.2}
   m_UseGraphicAlpha: 1
+--- !u!114 &3899538160079240013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3445026547022150730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_WeatherMachineWindow_Runtime.Status.Ready_to_charge_lucky_cubes
+  uiText: {fileID: 3034732884363791563}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Ready to charge lucky cubes
+  russian: "\u0413\u043E\u0442\u043E\u0432\u0430 \u0437\u0430\u0440\u044F\u0434\u0438\u0442\u044C
+    lucky cube"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &4095732669893854048
 GameObject:
   m_ObjectHideFlags: 0
@@ -339,6 +384,7 @@ GameObject:
   - component: {fileID: 8660429949027920898}
   - component: {fileID: 7723022560019228198}
   - component: {fileID: 7113157944191821214}
+  - component: {fileID: 1659681494177901683}
   m_Layer: 0
   m_Name: Timer
   m_TagString: Untagged
@@ -422,6 +468,27 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &1659681494177901683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4095732669893854048}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_WeatherMachineWindow_Runtime.Timer.Duration_1000
+  uiText: {fileID: 7723022560019228198}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: 'Duration: 10:00'
+  russian: "\u0414\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C:
+    10:00"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &4471291151987405665
 GameObject:
   m_ObjectHideFlags: 0
@@ -435,6 +502,7 @@ GameObject:
   - component: {fileID: 2072257351467394461}
   - component: {fileID: 8663102952025969389}
   - component: {fileID: 5868754355807804480}
+  - component: {fileID: 5273147079783700003}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -533,6 +601,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.28}
   m_EffectDistance: {x: 2.5, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!114 &5273147079783700003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4471291151987405665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_WeatherMachineWindow_Runtime.Title.Weather_Machine
+  uiText: {fileID: 2072257351467394461}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Weather Machine
+  russian: "\u041C\u0430\u0448\u0438\u043D\u0430 \u043F\u043E\u0433\u043E\u0434\u044B"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &4518714796632015886
 GameObject:
   m_ObjectHideFlags: 0
@@ -891,6 +979,7 @@ GameObject:
   - component: {fileID: 3179971507496060153}
   - component: {fileID: 4425214323364475381}
   - component: {fileID: 1667537260395432732}
+  - component: {fileID: 4610747671658330292}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -974,6 +1063,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &4610747671658330292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6754222661757298052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_WeatherMachineWindow_Runtime.Label.Start_Weather
+  uiText: {fileID: 4425214323364475381}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Start Weather
+  russian: "\u0417\u0430\u043F\u0443\u0441\u0442\u0438\u0442\u044C \u043F\u043E\u0433\u043E\u0434\u0443"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &7079879058536203753
 GameObject:
   m_ObjectHideFlags: 0
@@ -986,6 +1095,7 @@ GameObject:
   - component: {fileID: 6308771514442181905}
   - component: {fileID: 8651242669286029990}
   - component: {fileID: 2728060486874128448}
+  - component: {fileID: 7335184231307401701}
   m_Layer: 0
   m_Name: Detail
   m_TagString: Untagged
@@ -1069,3 +1179,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &7335184231307401701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7079879058536203753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_WeatherMachineWindow_Runtime.Detail.For_1000,_landed_cubes_can_boost_rarity_before_mob_selection
+  uiText: {fileID: 8651242669286029990}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: For 10:00, landed cubes can boost rarity before mob selection.
+  russian: "\u0412 \u0442\u0435\u0447\u0435\u043D\u0438\u0435 10:00 \u043F\u0440\u0438\u0437\u0435\u043C\u043B\u0438\u0432\u0448\u0438\u0435\u0441\u044F
+    \u043A\u0443\u0431\u044B \u043C\u043E\u0433\u0443\u0442 \u043F\u043E\u0432\u044B\u0441\u0438\u0442\u044C
+    \u0440\u0435\u0434\u043A\u043E\u0441\u0442\u044C \u043F\u0435\u0440\u0435\u0434
+    \u0432\u044B\u0431\u043E\u0440\u043E\u043C \u043C\u043E\u0431\u0430."
+  captureCurrentTextAsEnglish: 0

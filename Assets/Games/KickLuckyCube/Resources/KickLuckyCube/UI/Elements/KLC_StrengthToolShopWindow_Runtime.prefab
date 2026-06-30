@@ -1267,6 +1267,7 @@ GameObject:
   - component: {fileID: 2580997276263056911}
   - component: {fileID: 1663205463926477600}
   - component: {fileID: 2195308009251404223}
+  - component: {fileID: 8622021672689469635}
   m_Layer: 0
   m_Name: Status
   m_TagString: Untagged
@@ -1350,6 +1351,27 @@ MonoBehaviour:
   m_EffectColor: {r: 1, g: 1, b: 1, a: 1}
   m_EffectDistance: {x: 1.2, y: -1.2}
   m_UseGraphicAlpha: 1
+--- !u!114 &8622021672689469635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1055708632451883831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_StrengthToolShopWindow_Runtime.Status.Buy_or_equip_training_tools
+  uiText: {fileID: 1663205463926477600}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Buy or equip training tools.
+  russian: "\u041A\u0443\u043F\u0438 \u0438\u043B\u0438 \u044D\u043A\u0438\u043F\u0438\u0440\u0443\u0439
+    \u0442\u0440\u0435\u043D\u0430\u0436\u0435\u0440."
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &1069962027112164232
 GameObject:
   m_ObjectHideFlags: 0
@@ -7431,6 +7453,7 @@ GameObject:
   - component: {fileID: 2673637086999670268}
   - component: {fileID: 1794736925755483980}
   - component: {fileID: 7805383158855813595}
+  - component: {fileID: 3157523041530887809}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -7529,6 +7552,26 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.28}
   m_EffectDistance: {x: 2.5, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!114 &3157523041530887809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6961570050875735348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: KLC_StrengthToolShopWindow_Runtime.Title.Training_Equipment
+  uiText: {fileID: 2673637086999670268}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Training Equipment
+  russian: "\u0422\u0440\u0435\u043D\u0430\u0436\u0435\u0440\u044B"
+  captureCurrentTextAsEnglish: 0
 --- !u!1 &6996524581216671750
 GameObject:
   m_ObjectHideFlags: 0

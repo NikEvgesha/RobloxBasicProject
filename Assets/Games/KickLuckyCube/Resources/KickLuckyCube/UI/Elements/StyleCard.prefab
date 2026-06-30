@@ -429,6 +429,7 @@ GameObject:
   - component: {fileID: 7278952921529636311}
   - component: {fileID: 3697725045784187555}
   - component: {fileID: 3639385407468205140}
+  - component: {fileID: 6243587013926274640}
   m_Layer: 0
   m_Name: Name
   m_TagString: Untagged
@@ -512,3 +513,23 @@ MonoBehaviour:
   m_EffectColor: {r: 0.015, g: 0.05, b: 0.065, a: 0.96}
   m_EffectDistance: {x: 1.8, y: -1.8}
   m_UseGraphicAlpha: 1
+--- !u!114 &6243587013926274640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6538257676573438211}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 493e4d6d675a43eaa06d61205ded0eb8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeLocalizedText
+  settings: {fileID: 0}
+  key: StyleCard.Name.Classic
+  uiText: {fileID: 3697725045784187555}
+  tmpText: {fileID: 0}
+  worldText: {fileID: 0}
+  english: Classic
+  russian: "\u041A\u043B\u0430\u0441\u0441\u0438\u043A\u0430"
+  captureCurrentTextAsEnglish: 0

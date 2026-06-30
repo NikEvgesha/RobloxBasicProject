@@ -208,6 +208,7 @@ The Shop and Settings side buttons are wired to visual windows:
 - when no routed audio source exists, the fallback only mutes `AudioListener.volume` if both Music and SFX are off, so disabling SFX does not accidentally mute future music-only playback;
 - `KickLuckyCubeSfxController` currently generates short procedural prototype sounds at runtime for money gain, purchases, stable place/take, stable upgrades, and denied clicks; these are placeholder SFX until final authored clips are chosen;
 - the localization backend applies EN/RU text to selected UI labels from the Settings language toggle, and prefab text can opt in with `KickLuckyCubeLocalizedText` on `Text`, `TMP_Text`, or world `TextMesh` objects.
+- first prefab-localization pass is applied to the main user-facing UI prefabs: side buttons, Animal Album, Epic Mob Shop, Exchange, Inventory, Sell Shop, Speed Shop, Strength Tool Shop, Style Shop, Weather Machine, and shared sell/style cards.
 
 The Rewards side button is wired to a working playtime window:
 
@@ -721,6 +722,7 @@ Settings:
 - `KickLuckyCubeAudioChannel` marks an `AudioSource` as `Music` or `Sfx` so prefab/scene audio can be routed without hard-coding arrays in the settings window;
 - Language toggle updates `KickLuckyCubeLocalizationController`;
 - `KickLuckyCubeLocalizedText` can be added to prefab UI/world text and supports legacy `Text`, TMP, and `TextMesh`;
+- static prefab labels in the main windows are now bound with `KickLuckyCubeLocalizedText`; dynamic labels that include prices, counts, timers, generated animal names, or state-specific button text are still controlled by their feature controllers and should be localized in a separate code pass;
 - final work should add authored clips/loops, assign channels to real sources, and expand localization coverage to every user-facing text.
 
 Rebirth:
