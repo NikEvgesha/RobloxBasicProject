@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +12,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             [SerializeField] private string key;
             [SerializeField] private Text uiText;
+            [SerializeField] private TMP_Text tmpText;
             [SerializeField] private TextMesh worldText;
             [SerializeField] private string english;
             [SerializeField] private string russian;
@@ -31,6 +33,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 if (uiText != null)
                 {
                     uiText.text = value;
+                }
+
+                if (tmpText != null)
+                {
+                    tmpText.text = value;
                 }
 
                 if (worldText != null)

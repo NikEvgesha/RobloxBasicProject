@@ -203,10 +203,11 @@ The Shop and Settings side buttons are wired to visual windows:
 - Shop cards buy speed upgrades, strength tools, and strength boosts with soft currency;
 - the dedicated Speed Upgrades window uses whole-card purchase buttons; `+1` is always shown and disabled as `No money` when unaffordable, while `+5` and `+10` appear only when the player can afford the summed one-level costs;
 - speed purchase cards show only the speed gain amount, not a final run-speed preview;
-- Settings contents are UI-backed, but the final audio mixer and localization routing are still pending.
-- the current audio backend applies Music/SFX toggles to configured sources, and falls back to `AudioListener.volume` while there are no final scene audio sources;
+- Settings contents are UI-backed; audio/localization now have prefab-friendly runtime hooks, but the final authored mixer, music loops, and full text coverage are still pending.
+- the audio backend applies Music/SFX toggles to explicitly configured sources and to scene `AudioSource` objects marked with `KickLuckyCubeAudioChannel`;
+- when no routed audio source exists, the fallback only mutes `AudioListener.volume` if both Music and SFX are off, so disabling SFX does not accidentally mute future music-only playback;
 - `KickLuckyCubeSfxController` currently generates short procedural prototype sounds at runtime for money gain, purchases, stable place/take, stable upgrades, and denied clicks; these are placeholder SFX until final authored clips are chosen;
-- the first localization backend applies EN/RU text to selected UI labels from the Settings language toggle.
+- the localization backend applies EN/RU text to selected UI labels from the Settings language toggle, and prefab text can opt in with `KickLuckyCubeLocalizedText` on `Text`, `TMP_Text`, or world `TextMesh` objects.
 
 The Rewards side button is wired to a working playtime window:
 
@@ -717,8 +718,10 @@ Lucky Wheel:
 Settings:
 
 - Music and SFX toggles update `KickLuckyCubeAudioSettingsApplier`;
+- `KickLuckyCubeAudioChannel` marks an `AudioSource` as `Music` or `Sfx` so prefab/scene audio can be routed without hard-coding arrays in the settings window;
 - Language toggle updates `KickLuckyCubeLocalizationController`;
-- final work should replace the fallback listener mute with real music/SFX source groups and expand localization coverage to every user-facing text.
+- `KickLuckyCubeLocalizedText` can be added to prefab UI/world text and supports legacy `Text`, TMP, and `TextMesh`;
+- final work should add authored clips/loops, assign channels to real sources, and expand localization coverage to every user-facing text.
 
 Rebirth:
 
