@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1289931375763046039}
-  - component: {fileID: 416034751194684594}
+  - component: {fileID: 5068226609650123409}
   m_Layer: 0
   m_Name: KLC_PlayerHomeIcon_Runtime
   m_TagString: Untagged
@@ -36,7 +36,7 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 74, y: 74}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &416034751194684594
+--- !u!114 &5068226609650123409
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -45,8 +45,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 2773081648060491940}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
+  m_Script: {fileID: 11500000, guid: 702e3ce1248c73a4caa5d497bb14f23c, type: 3}
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeHomeIconGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}

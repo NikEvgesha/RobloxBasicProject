@@ -225,6 +225,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var closeButton = CreateButton(windowRoot, "Close", "X", new Vector2(44f, 36f));
             closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(352f, 146f);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(CloseWindow);
 
             var grid = CreateRect("SpeedPurchaseOptions", windowRoot);
@@ -234,7 +235,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             grid.anchoredPosition = new Vector2(0f, -12f);
             grid.sizeDelta = new Vector2(700f, 190f);
 
-            var layout = grid.gameObject.AddComponent<HorizontalLayoutGroup>();
+            var layout = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<HorizontalLayoutGroup>(grid.gameObject);
             layout.spacing = 18f;
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = false;
@@ -257,11 +258,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void CreateOpenButton(Transform parent)
         {
-            var kickSpeedButtonObject = GameObject.Find("KLC_KickSpeedHudUpgradeButton");
-            if (kickSpeedButtonObject != null && kickSpeedButtonObject.TryGetComponent<Button>(out var kickSpeedButton))
+            var connectedExistingButton = false;
+            connectedExistingButton |= TryWireOpenButton(GameObject.Find("KLC_SpeedInfoButton"));
+            connectedExistingButton |= TryWireOpenButton(GameObject.Find("KLC_SpeedShopOpenButton"));
+
+            if (connectedExistingButton)
             {
-                kickSpeedButton.onClick.RemoveListener(ToggleWindow);
-                kickSpeedButton.onClick.AddListener(ToggleWindow);
                 return;
             }
 
@@ -271,6 +273,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             rect.anchorMax = new Vector2(0f, 0f);
             rect.pivot = new Vector2(0f, 0f);
             rect.anchoredPosition = new Vector2(266f, 182f);
+            WireOpenButton(button);
+        }
+
+        private bool TryWireOpenButton(GameObject buttonObject)
+        {
+            if (buttonObject == null || !buttonObject.TryGetComponent<Button>(out var button))
+            {
+                return false;
+            }
+
+            WireOpenButton(button);
+            return true;
+        }
+
+        private void WireOpenButton(Button button)
+        {
             button.onClick.RemoveListener(ToggleWindow);
             button.onClick.AddListener(ToggleWindow);
         }
@@ -281,9 +299,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             card.sizeDelta = new Vector2(208f, 178f);
             purchaseCards[index] = card;
             purchaseFrames[index] = AddImage(card.gameObject, lockedColor);
-            var cardButton = card.gameObject.AddComponent<Button>();
+            var cardButton = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<Button>(card.gameObject);
             cardButton.targetGraphic = purchaseFrames[index];
             KickLuckyCubeUiTheme.StyleButton(cardButton, "SpeedUpgradeButton");
+            cardButton.onClick.RemoveAllListeners();
             cardButton.onClick.AddListener(() => BuyLevels(levels));
             purchaseButtons[index] = cardButton;
 

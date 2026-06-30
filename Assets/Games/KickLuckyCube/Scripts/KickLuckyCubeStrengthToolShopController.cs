@@ -253,6 +253,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var closeButton = CreateButton(windowRoot, "Close", "X", new Vector2(44f, 36f));
             closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(370f, 242f);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(CloseWindow);
 
             var grid = CreateRect("ToolCards", windowRoot);
@@ -262,7 +263,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             grid.anchoredPosition = new Vector2(0f, -12f);
             grid.sizeDelta = new Vector2(710f, 400f);
 
-            var layout = grid.gameObject.AddComponent<GridLayoutGroup>();
+            var layout = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<GridLayoutGroup>(grid.gameObject);
             layout.cellSize = new Vector2(132f, 124f);
             layout.spacing = new Vector2(10f, 10f);
             layout.childAlignment = TextAnchor.MiddleCenter;
@@ -290,7 +291,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = new Vector2(152f, -538f);
-            button.onClick.RemoveListener(ToggleWindow);
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(ToggleWindow);
         }
 
@@ -298,7 +299,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             var card = CreateRect("ToolTier_" + tier, parent);
             card.sizeDelta = new Vector2(132f, 124f);
-            var layoutElement = card.gameObject.AddComponent<LayoutElement>();
+            var layoutElement = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<LayoutElement>(card.gameObject);
             layoutElement.preferredWidth = 132f;
             layoutElement.preferredHeight = 124f;
             tierFrames[tier - 1] = AddImage(card.gameObject, lockedColor);
@@ -313,6 +314,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var actionButton = CreateButton(card, "Action", string.Empty, new Vector2(110f, 28f));
             actionButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -46f);
             var capturedTier = tier;
+            actionButton.onClick.RemoveAllListeners();
             actionButton.onClick.AddListener(() => HandleTierPressed(capturedTier));
             tierButtons[tier - 1] = actionButton;
             tierButtonTexts[tier - 1] = actionButton.GetComponentInChildren<Text>();

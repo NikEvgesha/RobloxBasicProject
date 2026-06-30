@@ -304,28 +304,30 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public AnimalSlot[] GetSellableAnimals()
         {
-            var count = HotbarAnimalCount + StoredAnimalCount;
+            var hotbar = hotbarAnimals ?? Array.Empty<KickLuckyCubeInventoryAnimal>();
+            var stored = inventoryAnimals ?? Array.Empty<KickLuckyCubeInventoryAnimal>();
+            var count = CountValid(hotbar) + CountValid(stored);
             var result = new AnimalSlot[count];
             var writeIndex = 0;
 
-            for (var index = 0; index < hotbarAnimals.Length; index++)
+            for (var index = 0; index < hotbar.Length; index++)
             {
-                if (!hotbarAnimals[index].IsValid)
+                if (!hotbar[index].IsValid)
                 {
                     continue;
                 }
 
-                result[writeIndex++] = new AnimalSlot(true, index, hotbarAnimals[index]);
+                result[writeIndex++] = new AnimalSlot(true, index, hotbar[index]);
             }
 
-            for (var index = 0; index < inventoryAnimals.Length; index++)
+            for (var index = 0; index < stored.Length; index++)
             {
-                if (!inventoryAnimals[index].IsValid)
+                if (!stored[index].IsValid)
                 {
                     continue;
                 }
 
-                result[writeIndex++] = new AnimalSlot(false, index, inventoryAnimals[index]);
+                result[writeIndex++] = new AnimalSlot(false, index, stored[index]);
             }
 
             return result;
@@ -601,6 +603,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             var inventoryButton = CreateButton(root, "KLC_InventoryToggleButton", "Bag\nI", new Vector2(58f, 76f));
+            inventoryButton.onClick.RemoveAllListeners();
             inventoryButton.onClick.AddListener(ToggleWindow);
             return root;
         }
@@ -621,6 +624,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var closeButton = CreateButton(root, "KLC_InventoryCloseButton", "X", new Vector2(42f, 32f));
             closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(286f, 148f);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(() => SetWindowOpen(false));
 
             CreateCategoryButton(root, "Все\nпредметы", new Vector2(-270f, 105f));

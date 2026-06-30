@@ -5,10 +5,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 {
     public sealed class KickLuckyCubeLeaderboardController : MonoBehaviour
     {
+        private const string VisualRootName = "KLC_LeaderboardBoardVisual_Runtime";
+        private const string HeaderLineName = "KLC_Leaderboard_Header";
+        private const string LineNamePrefix = "KLC_Leaderboard_Line_";
+
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubeInventoryController inventory;
         [SerializeField] private string boardName = "KLC_Board_05_Leaderboard";
+        [SerializeField] private string visualResourcePath = "KickLuckyCube/World/KLC_LeaderboardBoardVisual";
         [SerializeField] private Vector3 headerLocalPosition = new(0f, 2.15f, -0.08f);
         [SerializeField] private Vector3 firstLineLocalPosition = new(0f, 1.55f, -0.08f);
         [SerializeField] private float lineSpacing = 0.34f;
@@ -69,27 +74,58 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            headerText = CreateOrGetLine(board.transform, "KLC_Leaderboard_Header_Runtime", headerLocalPosition, 0.18f, TextAnchor.MiddleCenter);
+            var visualRoot = ResolveVisualRoot(board.transform);
+            headerText = CreateOrGetLine(visualRoot, HeaderLineName, headerLocalPosition, 0.18f, TextAnchor.MiddleCenter);
             lineTexts = new TextMesh[lineCount];
             for (var index = 0; index < lineCount; index++)
             {
                 lineTexts[index] = CreateOrGetLine(
-                    board.transform,
-                    "KLC_Leaderboard_Line_Runtime_" + (index + 1),
+                    visualRoot,
+                    LineNamePrefix + (index + 1).ToString("00"),
                     firstLineLocalPosition + Vector3.down * (lineSpacing * index),
                     0.12f,
                     TextAnchor.MiddleLeft);
             }
         }
 
+        private Transform ResolveVisualRoot(Transform board)
+        {
+            var existing = board.Find(VisualRootName);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var prefab = !string.IsNullOrWhiteSpace(visualResourcePath)
+                ? Resources.Load<Transform>(visualResourcePath)
+                : null;
+            if (prefab != null)
+            {
+                var instance = Instantiate(prefab, board, false);
+                instance.name = VisualRootName;
+                return instance;
+            }
+
+            var fallback = new GameObject(VisualRootName).transform;
+            fallback.SetParent(board, false);
+            fallback.localPosition = Vector3.zero;
+            fallback.localRotation = Quaternion.identity;
+            fallback.localScale = Vector3.one;
+            return fallback;
+        }
+
         private TextMesh CreateOrGetLine(Transform parent, string name, Vector3 localPosition, float characterSize, TextAnchor anchor)
         {
             var existing = parent.Find(name);
-            var textTransform = existing != null ? existing : new GameObject(name).transform;
-            textTransform.SetParent(parent, false);
-            textTransform.localPosition = localPosition;
-            textTransform.localRotation = Quaternion.identity;
-            textTransform.localScale = Vector3.one;
+            var created = existing == null;
+            var textTransform = created ? new GameObject(name).transform : existing;
+            if (created)
+            {
+                textTransform.SetParent(parent, false);
+                textTransform.localPosition = localPosition;
+                textTransform.localRotation = Quaternion.identity;
+                textTransform.localScale = Vector3.one;
+            }
 
             var text = textTransform.GetComponent<TextMesh>();
             if (text == null)
@@ -99,9 +135,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             text.anchor = anchor;
             text.alignment = anchor == TextAnchor.MiddleLeft ? TextAlignment.Left : TextAlignment.Center;
-            text.characterSize = characterSize;
+            if (created)
+            {
+                text.characterSize = characterSize;
+            }
+
             text.fontSize = 48;
             text.color = textColor;
+            KickLuckyCubeUiTheme.StyleWorldText(text, textColor, Mathf.Max(0.003f, text.characterSize * 0.07f));
             return text;
         }
 

@@ -15,6 +15,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubeRebirthController rebirthController;
         [SerializeField] private TMP_Text rebirthValueText;
+        [SerializeField] private TMP_Text speedValueText;
+        [SerializeField] private TMP_Text speedInfoButtonText;
         [SerializeField] private TMP_Text strengthValueText;
         [SerializeField] private TMP_Text strengthSuffixText;
         [SerializeField] private TMP_Text softValueText;
@@ -24,6 +26,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private GameObject masteryInfoWindow;
         [SerializeField] private bool useEditModePreviewValues = true;
         [SerializeField, Min(0)] private int previewRebirthCount = 5;
+        [SerializeField, Min(0f)] private float previewSpeed = 7f;
         [SerializeField, Min(0f)] private float previewStrength = 7100f;
         [SerializeField, Min(0)] private int previewSoft = 1900000000;
         [SerializeField, Min(0)] private int previewHard = 100;
@@ -107,6 +110,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>(FindObjectsInactive.Include);
             rebirthController ??= FindFirstObjectByType<KickLuckyCubeRebirthController>(FindObjectsInactive.Include);
             rebirthValueText ??= FindText("KLC_BottomLeftRebirthValue");
+            speedValueText ??= FindText("KLC_SpeedValue");
+            speedInfoButtonText ??= FindText("KLC_SpeedInfoButton_Label");
             strengthValueText ??= FindText("KLC_BottomLeftStrengthValue");
             strengthSuffixText ??= FindText("KLC_BottomLeftStrengthMax");
             softValueText ??= FindText("KLC_BottomLeftSoftValue");
@@ -122,6 +127,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var rebirthCount = usePreview
                 ? previewRebirthCount
                 : Mathf.Max(0, rebirthController != null ? rebirthController.RebirthCount : 0);
+            var speed = usePreview ? previewSpeed : (stats != null ? stats.AnimalSpeed : 0f);
             var strength = usePreview ? previewStrength : (stats != null ? stats.Strength : 0f);
             var soft = usePreview ? previewSoft : (wallet != null ? wallet.SoftCurrency : 0);
             var hard = usePreview ? previewHard : (wallet != null ? wallet.HardCurrency : 0);
@@ -129,6 +135,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (rebirthValueText != null)
             {
                 rebirthValueText.text = rebirthCount.ToString(CultureInfo.InvariantCulture);
+            }
+
+            if (speedValueText != null)
+            {
+                speedValueText.text = speed.ToString("0.0", CultureInfo.InvariantCulture);
+            }
+
+            if (speedInfoButtonText != null)
+            {
+                speedInfoButtonText.text = "+";
             }
 
             if (strengthValueText != null)
@@ -155,6 +171,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void ApplyTextStyle()
         {
             StyleOutlinedText(rebirthValueText, new Color(1f, 0.86f, 0.05f, 1f), 56, TextAlignmentOptions.Left);
+            StyleOutlinedText(speedValueText, new Color(0.35f, 1f, 1f, 1f), 54, TextAlignmentOptions.Left);
+            StyleOutlinedText(speedInfoButtonText, Color.white, 38, TextAlignmentOptions.Center);
             StyleOutlinedText(strengthValueText, new Color(1f, 0.66f, 0.02f, 1f), 36, TextAlignmentOptions.Left);
             StyleOutlinedText(strengthSuffixText, new Color(1f, 0.91f, 0.12f, 1f), 15, TextAlignmentOptions.Left);
             StyleOutlinedText(softValueText, new Color(0.42f, 1f, 0.03f, 1f), 58, TextAlignmentOptions.Left);

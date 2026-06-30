@@ -251,13 +251,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var closeButton = CreateButton(windowRoot, "Close", "X", new Vector2(44f, 36f));
             closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(324f, 136f);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(CloseWindow);
 
             var grid = CreateRect("StyleCards", windowRoot);
             grid.sizeDelta = new Vector2(630f, 210f);
             grid.anchoredPosition = new Vector2(0f, -10f);
 
-            var layout = grid.gameObject.AddComponent<GridLayoutGroup>();
+            var layout = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<GridLayoutGroup>(grid.gameObject);
             layout.cellSize = new Vector2(146f, 192f);
             layout.spacing = new Vector2(12f, 0f);
             layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
@@ -285,6 +286,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var button = CreateButton(card, "Action", string.Empty, new Vector2(120f, 34f));
             button.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -66f);
             var capturedIndex = index;
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => SelectOrBuyStyle(capturedIndex));
             buttonTexts[index] = button.GetComponentInChildren<Text>();
         }

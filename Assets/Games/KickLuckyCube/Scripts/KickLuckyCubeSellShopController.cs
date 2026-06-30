@@ -110,7 +110,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             var card = CreateRect("KLC_SellShopCard_" + slot.Animal.DisplayName, listRoot);
             card.sizeDelta = new Vector2(CardSize, CardSize);
-            var layoutElement = card.gameObject.AddComponent<LayoutElement>();
+            var layoutElement = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<LayoutElement>(card.gameObject);
             layoutElement.preferredHeight = CardSize;
             layoutElement.preferredWidth = CardSize;
             AddImage(card.gameObject, new Color(0.08f, 0.06f, 0.04f, 0.86f));
@@ -168,6 +168,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var sellButton = CreateButton(card, "SellButton", "Sell", new Vector2(118f, 30f));
             sellButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -82f);
+            sellButton.onClick.RemoveAllListeners();
             sellButton.onClick.AddListener(() => SellSlot(slot));
         }
 
@@ -221,6 +222,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var closeButton = CreateButton(windowRoot, "CloseButton", "X", new Vector2(42f, 32f));
             closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(344f, 228f);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(CloseWindow);
 
             var viewport = CreateRect("KLC_SellShopViewport", windowRoot);
@@ -238,18 +240,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             listRoot.pivot = new Vector2(0.5f, 1f);
             listRoot.anchoredPosition = new Vector2(0f, -8f);
             listRoot.sizeDelta = new Vector2(CardsPerRow * CardSize + (CardsPerRow - 1) * CardSpacing, 0f);
-            var gridLayout = listRoot.gameObject.AddComponent<GridLayoutGroup>();
+            var gridLayout = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<GridLayoutGroup>(listRoot.gameObject);
             gridLayout.cellSize = new Vector2(CardSize, CardSize);
             gridLayout.spacing = new Vector2(CardSpacing, CardSpacing);
             gridLayout.childAlignment = TextAnchor.UpperCenter;
             gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             gridLayout.constraintCount = CardsPerRow;
             gridLayout.padding = new RectOffset(0, 0, 0, 48);
-            var contentSizeFitter = listRoot.gameObject.AddComponent<ContentSizeFitter>();
+            var contentSizeFitter = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<ContentSizeFitter>(listRoot.gameObject);
             contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            scrollRect = windowRoot.gameObject.AddComponent<ScrollRect>();
+            scrollRect = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<ScrollRect>(windowRoot.gameObject);
             scrollRect.viewport = viewport;
             scrollRect.content = listRoot;
             scrollRect.horizontal = false;

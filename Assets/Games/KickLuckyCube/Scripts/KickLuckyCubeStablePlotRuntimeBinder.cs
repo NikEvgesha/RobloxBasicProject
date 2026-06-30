@@ -138,6 +138,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             var allocator = FindFirstObjectByType<KickLuckyCubePlotAllocator>(FindObjectsInactive.Include);
+            if (allocator != null && allocator.PlayerPlot != null)
+            {
+                return allocator.PlayerPlot.gameObject;
+            }
+
             if (allocator != null && allocator.PlayerSlot != null)
             {
                 var slotId = allocator.PlayerSlot.SlotId;

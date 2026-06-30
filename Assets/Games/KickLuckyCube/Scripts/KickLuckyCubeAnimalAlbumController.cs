@@ -145,8 +145,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             backdropRoot.offsetMin = Vector2.zero;
             backdropRoot.offsetMax = Vector2.zero;
             var backdropImage = AddImage(backdropRoot.gameObject, new Color(0f, 0f, 0f, 0.42f));
-            var backdropButton = backdropRoot.gameObject.AddComponent<Button>();
+            var backdropButton = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<Button>(backdropRoot.gameObject);
             backdropButton.targetGraphic = backdropImage;
+            backdropButton.onClick.RemoveAllListeners();
             backdropButton.onClick.AddListener(CloseWindow);
 
             windowRoot = CreateRect("KLC_AnimalAlbumWindow_Runtime", canvas.transform);
@@ -162,6 +163,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var closeButton = CreateButton(windowRoot, "CloseButton", "X", new Vector2(44f, 36f), new Color(0.88f, 0.08f, 0.15f, 0.96f));
             closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(344f, 232f);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(CloseWindow);
 
             var viewport = CreateRect("KLC_AnimalAlbumViewport", windowRoot);
@@ -171,7 +173,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             viewport.anchoredPosition = new Vector2(0f, -8f);
             viewport.sizeDelta = new Vector2(672f, 420f);
             AddImage(viewport.gameObject, new Color(0.015f, 0.016f, 0.022f, 0.42f));
-            viewport.gameObject.AddComponent<RectMask2D>();
+            KickLuckyCubeUiPrefabFactory.GetOrAddComponent<RectMask2D>(viewport.gameObject);
 
             listRoot = CreateRect("KLC_AnimalAlbumGrid", viewport);
             listRoot.anchorMin = new Vector2(0.5f, 1f);
@@ -180,7 +182,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             listRoot.anchoredPosition = new Vector2(0f, -10f);
             listRoot.sizeDelta = new Vector2(CardsPerRow * CardWidth + (CardsPerRow - 1) * CardSpacing, 0f);
 
-            var grid = listRoot.gameObject.AddComponent<GridLayoutGroup>();
+            var grid = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<GridLayoutGroup>(listRoot.gameObject);
             grid.cellSize = new Vector2(CardWidth, CardHeight);
             grid.spacing = new Vector2(CardSpacing, CardSpacing);
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
@@ -188,11 +190,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             grid.childAlignment = TextAnchor.UpperCenter;
             grid.padding = new RectOffset(0, 0, 0, 44);
 
-            var fitter = listRoot.gameObject.AddComponent<ContentSizeFitter>();
+            var fitter = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<ContentSizeFitter>(listRoot.gameObject);
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            scrollRect = windowRoot.gameObject.AddComponent<ScrollRect>();
+            scrollRect = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<ScrollRect>(windowRoot.gameObject);
             scrollRect.viewport = viewport;
             scrollRect.content = listRoot;
             scrollRect.horizontal = false;
@@ -243,7 +245,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             var card = CreateRect("KLC_AlbumCard_" + entry.CatalogId, listRoot);
             card.sizeDelta = new Vector2(CardWidth, CardHeight);
-            var layout = card.gameObject.AddComponent<LayoutElement>();
+            var layout = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<LayoutElement>(card.gameObject);
             layout.preferredWidth = CardWidth;
             layout.preferredHeight = CardHeight;
 

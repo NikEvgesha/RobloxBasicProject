@@ -25,12 +25,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var existingChild = FindDirectChild(parent, name);
             if (existingChild != null)
             {
-                ResetRect(existingChild);
                 return existingChild;
             }
 
             var kind = GuessKind(name);
-            var template = LoadElementTemplate(name) ?? LoadTemplate(kind);
+            var elementTemplate = LoadElementTemplate(name);
+            var template = elementTemplate != null ? elementTemplate : LoadTemplate(kind);
             RectTransform rect;
 
             if (template != null)
@@ -45,14 +45,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 rect.SetParent(parent, false);
             }
 
-            ResetRect(rect);
+            if (elementTemplate == null)
+            {
+                ResetRect(rect);
+            }
+
             return rect;
         }
 
         public static RectTransform CreateRectInstance(string templateName, string instanceName, Transform parent)
         {
             var kind = GuessKind(templateName);
-            var template = LoadElementTemplate(templateName) ?? LoadTemplate(kind);
+            var elementTemplate = LoadElementTemplate(templateName);
+            var template = elementTemplate != null ? elementTemplate : LoadTemplate(kind);
             RectTransform rect;
 
             if (template != null)
@@ -67,8 +72,59 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 rect.SetParent(parent, false);
             }
 
-            ResetRect(rect);
+            if (elementTemplate == null)
+            {
+                ResetRect(rect);
+            }
+
             return rect;
+        }
+
+        public static bool HasAuthoredChildren(RectTransform rect)
+        {
+            return rect != null && rect.childCount > 0;
+        }
+
+        public static RectTransform FindChildRecursive(Transform parent, string childName)
+        {
+            if (parent == null || string.IsNullOrWhiteSpace(childName))
+            {
+                return null;
+            }
+
+            if (parent.name == childName && parent is RectTransform parentRect)
+            {
+                return parentRect;
+            }
+
+            for (var index = 0; index < parent.childCount; index++)
+            {
+                var found = FindChildRecursive(parent.GetChild(index), childName);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        public static Text FindText(Transform parent, string childName)
+        {
+            var rect = FindChildRecursive(parent, childName);
+            return rect != null ? rect.GetComponent<Text>() : null;
+        }
+
+        public static Button FindButton(Transform parent, string childName)
+        {
+            var rect = FindChildRecursive(parent, childName);
+            return rect != null ? rect.GetComponent<Button>() : null;
+        }
+
+        public static Image FindImage(Transform parent, string childName)
+        {
+            var rect = FindChildRecursive(parent, childName);
+            return rect != null ? rect.GetComponent<Image>() : null;
         }
 
         public static T GetOrAddComponent<T>(GameObject target)
@@ -109,12 +165,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public static Text GetOrCreateLabel(RectTransform parent, string name, Font font, string value, int fontSize, TextAnchor anchor, Vector2 size, Vector2 position)
         {
-            var rect = FindDirectChild(parent, name) ?? CreateRect(name, parent);
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = position;
+            var existing = FindDirectChild(parent, name);
+            var rect = existing ?? CreateRect(name, parent);
+            if (existing == null)
+            {
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = size;
+                rect.anchoredPosition = position;
+            }
 
             var text = GetOrAddText(rect.gameObject);
             text.text = value;
@@ -130,12 +190,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public static TMP_Text GetOrCreateTmpLabel(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, Vector2 size, Vector2 position)
         {
-            var rect = FindDirectChild(parent, name) ?? CreateRect(name, parent);
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = position;
+            var existing = FindDirectChild(parent, name);
+            var rect = existing ?? CreateRect(name, parent);
+            if (existing == null)
+            {
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = size;
+                rect.anchoredPosition = position;
+            }
 
             var text = GetOrAddTmpText(rect.gameObject);
             text.text = value;
@@ -151,11 +215,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public static Button GetOrCreateButton(RectTransform parent, string name, string value, Font font, Vector2 size, Color fallbackColor, int labelFontSize)
         {
-            var rect = FindDirectChild(parent, name) ?? CreateRect(name, parent);
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
+            var existing = FindDirectChild(parent, name);
+            var rect = existing ?? CreateRect(name, parent);
+            if (existing == null)
+            {
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = size;
+            }
 
             var image = KickLuckyCubeUiTheme.AddImage(rect.gameObject, fallbackColor);
             var button = GetOrAddComponent<Button>(rect.gameObject);
@@ -165,7 +233,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return button;
         }
 
-        private static RectTransform FindDirectChild(Transform parent, string childName)
+        public static RectTransform FindDirectChild(Transform parent, string childName)
         {
             if (parent == null || string.IsNullOrWhiteSpace(childName))
             {
