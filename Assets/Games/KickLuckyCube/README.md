@@ -27,6 +27,7 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - The old tool belt UI is hidden in Play Mode; click slot 1 or press `1` to start/stop training with the selected tool in-hand.
 - Stable animals generate soft currency over time; collect from an individual stable `CollectSpot` or from the green collect-all board.
 - Stable slot animals, pending income, offline income, and per-slot booster levels save in PlayerPrefs during Play Mode.
+- If the player was away for 30+ minutes, the prefab-backed Offline Earnings popup can claim all player stable income; rewarded ads can double the claim, and the 30-day VIP pass skips ads while adding a temporary `x5` soft-income bonus.
 - Spend soft in the runtime Speed Upgrades and Training Equipment shops.
 - Train strength by toggling the selected bottom-bar tool: named tool tiers (dumbbell, kettlebell, barbell, and stronger variants) appear in hand, make the player squat, grant tier-based strength every second, and periodically create one `x2` claim circle.
 - During tool training, claim the temporary `x2` prompt with `X` or by clicking it; a new circle will not spawn while one is already visible.
@@ -34,12 +35,13 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - Future feature spots are wired for weather rarity boosts, selected-mob exchange, exclusive epic mobs, and the one-time rating gift.
 - The leaderboard board is filled in Play Mode with local score and fake neighbor rankings.
 - Open Shop from the left-side button to buy speed, tool, and strength boost prototype cards.
+- The Shop also has a prefab-backed 30-day VIP pass card; platforms without IAP use the hard-currency fallback price.
 - Open Rewards from the left-side button to claim playtime soft/hard rewards.
 - Open Wheel from the left-side button to spin for soft, hard, or strength rewards.
 - Open the Rebirth window from the left-side Rebirth button after reaching the strength requirement.
 - First ProBuilder visual pass is grouped under `KLC_ProBuilderVisuals` in the overview scene.
 - The ProBuilder layer is visual-only and should not hold gameplay references or colliders.
-- First UI visual pass is grouped under `KLC_UIBackplates`, `KLC_UIVisualPass`, and `KLC_UIWindows`.
+- First UI visual pass is grouped under `KLC_UIVisualPass` and `KLC_UIWindows`; old standalone backplates were removed in favor of prefab-owned HUD visuals.
 - Shop and Settings side buttons open their visual windows; close them through the red close button, backdrop click, or `Escape`.
 - Settings rows toggle Music, SFX, and Language UI state; the first audio/localization backend is wired, with final full-text coverage still pending.
 - Shop cards now drive first-pass purchase gameplay logic.

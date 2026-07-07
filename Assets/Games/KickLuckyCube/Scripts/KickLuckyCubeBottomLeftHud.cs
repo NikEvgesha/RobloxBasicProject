@@ -21,6 +21,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private TMP_Text strengthSuffixText;
         [SerializeField] private TMP_Text softValueText;
         [SerializeField] private TMP_Text hardValueText;
+        [SerializeField] private Button speedTileButton;
+        [SerializeField] private Button rebirthTileButton;
+        [SerializeField] private Button strengthTileButton;
+        [SerializeField] private Button softTileButton;
+        [SerializeField] private Button hardTileButton;
+        [SerializeField] private Button kickPowerSettingsButton;
+        [SerializeField] private Button speedInfoButton;
         [SerializeField] private Button masteryInfoButton;
         [SerializeField] private Button masteryInfoCloseButton;
         [SerializeField] private GameObject masteryInfoWindow;
@@ -60,6 +67,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void OnDisable()
         {
+            UnwireButton(speedTileButton, OpenSpeedShop);
+            UnwireButton(rebirthTileButton, OpenKickShop);
+            UnwireButton(strengthTileButton, ShowMasteryInfo);
+            UnwireButton(softTileButton, OpenSoftShop);
+            UnwireButton(hardTileButton, OpenHardShop);
+            UnwireButton(kickPowerSettingsButton, ShowMasteryInfo);
+            UnwireButton(speedInfoButton, OpenSpeedShop);
+
             if (masteryInfoButton != null)
             {
                 masteryInfoButton.onClick.RemoveListener(ShowMasteryInfo);
@@ -116,6 +131,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             strengthSuffixText ??= FindText("KLC_BottomLeftStrengthMax");
             softValueText ??= FindText("KLC_BottomLeftSoftValue");
             hardValueText ??= FindText("KLC_BottomLeftHardValue");
+            speedTileButton ??= FindButton("Speed");
+            rebirthTileButton ??= FindButton("Rebirth");
+            strengthTileButton ??= FindButton("Strength");
+            softTileButton ??= FindButton("Soft");
+            hardTileButton ??= FindButton("Hard");
+            kickPowerSettingsButton ??= FindButton("KLC_BottomLeftKickPowerSettingsButton");
+            speedInfoButton ??= FindButton("KLC_SpeedInfoButton");
             masteryInfoButton ??= FindButton("KLC_BottomLeftMasteryInfoButton");
             masteryInfoCloseButton ??= FindButton("KLC_KickMasteryInfoCloseButton");
             masteryInfoWindow ??= GameObject.Find("KLC_KickMasteryInfoWindow");
@@ -181,6 +203,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void WireButtons()
         {
+            WireButton(speedTileButton, OpenSpeedShop);
+            WireButton(rebirthTileButton, OpenKickShop);
+            WireButton(strengthTileButton, ShowMasteryInfo);
+            WireButton(softTileButton, OpenSoftShop);
+            WireButton(hardTileButton, OpenHardShop);
+            WireButton(kickPowerSettingsButton, ShowMasteryInfo);
+            WireButton(speedInfoButton, OpenSpeedShop);
+
             if (masteryInfoButton != null)
             {
                 masteryInfoButton.onClick.RemoveListener(ShowMasteryInfo);
@@ -192,6 +222,37 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 masteryInfoCloseButton.onClick.RemoveListener(HideMasteryInfo);
                 masteryInfoCloseButton.onClick.AddListener(HideMasteryInfo);
             }
+        }
+
+        private void OpenSpeedShop()
+        {
+            var speedShop = FindFirstObjectByType<KickLuckyCubeSpeedShopController>(FindObjectsInactive.Include);
+            if (speedShop != null)
+            {
+                speedShop.OpenWindow();
+            }
+        }
+
+        private void OpenSoftShop()
+        {
+            OpenWindowController("KLC_ShopWindowController");
+        }
+
+        private void OpenHardShop()
+        {
+            var futureFeatures = FindFirstObjectByType<KickLuckyCubeFutureFeatureController>(FindObjectsInactive.Include);
+            if (futureFeatures != null)
+            {
+                futureFeatures.Interact(KickLuckyCubeFutureFeature.EpicMobShop, null);
+                return;
+            }
+
+            OpenWindowController("KLC_ShopWindowController");
+        }
+
+        private void OpenKickShop()
+        {
+            OpenWindowController("KLC_ShopWindowController");
         }
 
         private void ShowMasteryInfo()
@@ -210,6 +271,34 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
+        private static void WireButton(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.onClick.RemoveListener(action);
+            button.onClick.AddListener(action);
+        }
+
+        private static void UnwireButton(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.onClick.RemoveListener(action);
+        }
+
+        private static void OpenWindowController(string controllerName)
+        {
+            var controllerObject = GameObject.Find(controllerName);
+            var windowController = controllerObject != null ? controllerObject.GetComponent<KickLuckyCubeUiWindowController>() : null;
+            windowController?.OpenWindow();
+        }
+
         private static void StyleOutlinedText(TMP_Text text, Color color, int fontSize, TextAlignmentOptions alignment)
         {
             if (text == null)
@@ -225,8 +314,25 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             text.overflowMode = TextOverflowModes.Overflow;
             text.color = color;
             text.raycastTarget = false;
-            text.outlineColor = Color.black;
-            text.outlineWidth = 0.16f;
+            ApplyUiOutline(text);
+        }
+
+        private static void ApplyUiOutline(TMP_Text text)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            var outline = text.GetComponent<Outline>();
+            if (outline == null)
+            {
+                outline = text.gameObject.AddComponent<Outline>();
+            }
+
+            outline.effectColor = Color.black;
+            outline.effectDistance = new Vector2(2.5f, -2.5f);
+            outline.useGraphicAlpha = true;
         }
 
         private static TMP_Text FindText(string objectName)

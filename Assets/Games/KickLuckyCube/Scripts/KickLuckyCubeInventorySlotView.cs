@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TMPro;
 
 namespace RobloxBasicProject.Games.KickLuckyCube
 {
@@ -22,9 +23,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private int index;
         [SerializeField] private Image frameImage;
         [SerializeField] private Image iconImage;
-        [SerializeField] private Text titleText;
-        [SerializeField] private Text detailText;
-        [SerializeField] private Text badgeText;
+        [SerializeField] private TMP_Text titleText;
+        [SerializeField] private TMP_Text detailText;
+        [SerializeField] private TMP_Text badgeText;
+        [SerializeField, HideInInspector] private Text legacyTitleText;
+        [SerializeField, HideInInspector] private Text legacyDetailText;
+        [SerializeField, HideInInspector] private Text legacyBadgeText;
 
         public SlotKind Kind => kind;
         public int Index => index;
@@ -36,9 +40,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             int slotIndex,
             Image frame,
             Image icon,
-            Text title,
-            Text detail,
-            Text badge)
+            TMP_Text title,
+            TMP_Text detail,
+            TMP_Text badge)
         {
             inventory = controller;
             kind = slotKind;
@@ -48,6 +52,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             titleText = title;
             detailText = detail;
             badgeText = badge;
+            ResolveTextReferences();
             ApplyTheme();
         }
 
@@ -61,9 +66,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             SetVisible(true);
             SetFrameColor(frameColor);
             SetIconColor(iconColor);
-            SetText(titleText, title);
-            SetText(detailText, detail);
-            SetText(badgeText, badge);
+            SetText(titleText, legacyTitleText, title);
+            SetText(detailText, legacyDetailText, detail);
+            SetText(badgeText, legacyBadgeText, badge);
         }
 
         public void SetAnimal(KickLuckyCubeInventoryAnimal animal, bool selected, Color frameColor, Color emptyFrameColor)
@@ -74,9 +79,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 SetVisible(false);
                 SetIconSprite(null);
-                SetText(titleText, string.Empty);
-                SetText(detailText, string.Empty);
-                SetText(badgeText, string.Empty);
+                SetText(titleText, legacyTitleText, string.Empty);
+                SetText(detailText, legacyDetailText, string.Empty);
+                SetText(badgeText, legacyBadgeText, string.Empty);
                 return;
             }
 
@@ -93,9 +98,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 SetIconColor(animal.BodyColor);
             }
 
-            SetText(titleText, animal.DisplayName);
-            SetText(detailText, $"+{animal.IncomePerSecond}/s\n{KickLuckyCubeAnimalGradeUtility.GetDisplayName(animal.Grade)}");
-            SetText(badgeText, selected ? "Selected" : GetBadgeText(animal));
+            SetText(titleText, legacyTitleText, animal.DisplayName);
+            SetText(detailText, legacyDetailText, $"+{animal.IncomePerSecond}/s\n{KickLuckyCubeAnimalGradeUtility.GetDisplayName(animal.Grade)}");
+            SetText(badgeText, legacyBadgeText, selected ? "Selected" : GetBadgeText(animal));
         }
 
         public void OnPointerClick(PointerEventData eventData)
@@ -153,16 +158,23 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             iconImage.preserveAspect = sprite != null;
         }
 
-        private static void SetText(Text text, string value)
+        private static void SetText(TMP_Text text, Text legacyText, string value)
         {
             if (text != null)
             {
                 text.text = value;
             }
+
+            if (legacyText != null)
+            {
+                legacyText.text = value;
+            }
         }
 
         private void ApplyTheme()
         {
+            ResolveTextReferences();
+
             if (frameImage != null)
             {
                 KickLuckyCubeUiTheme.AddImage(frameImage.gameObject, frameImage.color);
@@ -176,6 +188,33 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             KickLuckyCubeUiTheme.StyleText(titleText, titleText != null ? titleText.gameObject.name : string.Empty);
             KickLuckyCubeUiTheme.StyleText(detailText, detailText != null ? detailText.gameObject.name : string.Empty);
             KickLuckyCubeUiTheme.StyleText(badgeText, badgeText != null ? badgeText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(legacyTitleText, legacyTitleText != null ? legacyTitleText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(legacyDetailText, legacyDetailText != null ? legacyDetailText.gameObject.name : string.Empty);
+            KickLuckyCubeUiTheme.StyleText(legacyBadgeText, legacyBadgeText != null ? legacyBadgeText.gameObject.name : string.Empty);
+        }
+
+        private void ResolveTextReferences()
+        {
+            ResolveLabelReference("Title", ref titleText, ref legacyTitleText);
+            ResolveLabelReference("Detail", ref detailText, ref legacyDetailText);
+            ResolveLabelReference("Badge", ref badgeText, ref legacyBadgeText);
+        }
+
+        private void ResolveLabelReference(string childName, ref TMP_Text tmpText, ref Text legacyText)
+        {
+            if (tmpText != null && legacyText != null)
+            {
+                return;
+            }
+
+            var child = transform.Find(childName);
+            if (child == null)
+            {
+                return;
+            }
+
+            tmpText ??= child.GetComponent<TMP_Text>();
+            legacyText ??= child.GetComponent<Text>();
         }
 
         private static Color ResolveAnimalFrameColor(KickLuckyCubeInventoryAnimal animal, Color fallback)

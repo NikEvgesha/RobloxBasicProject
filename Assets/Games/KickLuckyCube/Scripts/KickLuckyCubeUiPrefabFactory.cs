@@ -192,6 +192,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             var existing = FindDirectChild(parent, name);
             var rect = existing ?? CreateRect(name, parent);
+            if (existing != null && rect.GetComponent<TMP_Text>() == null && rect.GetComponent<Text>() != null)
+            {
+                rect = ReplaceWithPlainRect(rect, parent, name);
+                existing = null;
+            }
+
             if (existing == null)
             {
                 rect.anchorMin = new Vector2(0.5f, 0.5f);
@@ -202,6 +208,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             var text = GetOrAddTmpText(rect.gameObject);
+            if (text == null)
+            {
+                rect = ReplaceWithPlainRect(rect, parent, name);
+                text = rect.gameObject.AddComponent<TextMeshProUGUI>();
+            }
+
+            if (text == null)
+            {
+                return null;
+            }
+
             text.text = value;
             text.font = KickLuckyCubeUiTheme.TmpFont;
             text.fontSize = fontSize;
@@ -229,7 +246,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var button = GetOrAddComponent<Button>(rect.gameObject);
             button.targetGraphic = image;
             KickLuckyCubeUiTheme.StyleButton(button, name);
-            GetOrCreateLabel(rect, "Label", font, value, labelFontSize, TextAnchor.MiddleCenter, size, Vector2.zero);
+            GetOrCreateTmpLabel(rect, "Label", value, labelFontSize, TextAnchor.MiddleCenter, size, Vector2.zero);
             return button;
         }
 
@@ -267,29 +284,29 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private static Text GetOrAddText(GameObject target)
         {
             var text = target.GetComponent<Text>();
-            if (text != null)
+            if (text == null)
             {
-                return text;
+                text = target.AddComponent<Text>();
             }
 
             var graphics = target.GetComponents<Graphic>();
             foreach (var graphic in graphics)
             {
-                if (graphic != null && graphic is not Text)
+                if (graphic != null && graphic is not Text && graphic is not TMP_Text)
                 {
                     DestroyComponent(graphic);
                 }
             }
 
-            return target.AddComponent<Text>();
+            return text;
         }
 
         private static TMP_Text GetOrAddTmpText(GameObject target)
         {
             var text = target.GetComponent<TMP_Text>();
-            if (text != null)
+            if (text == null)
             {
-                return text;
+                text = target.AddComponent<TextMeshProUGUI>();
             }
 
             var legacyText = target.GetComponent<Text>();
@@ -301,13 +318,46 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var graphics = target.GetComponents<Graphic>();
             foreach (var graphic in graphics)
             {
-                if (graphic != null && graphic is not TMP_Text)
+                if (graphic != null && graphic is not TMP_Text && graphic is not Text)
                 {
                     DestroyComponent(graphic);
                 }
             }
 
-            return target.AddComponent<TextMeshProUGUI>();
+            return text;
+        }
+
+        private static RectTransform ReplaceWithPlainRect(RectTransform source, Transform parent, string name)
+        {
+            var siblingIndex = source.GetSiblingIndex();
+            var anchorMin = source.anchorMin;
+            var anchorMax = source.anchorMax;
+            var pivot = source.pivot;
+            var sizeDelta = source.sizeDelta;
+            var anchoredPosition = source.anchoredPosition;
+            var localScale = source.localScale;
+            var localRotation = source.localRotation;
+
+            DestroyObject(source.gameObject);
+
+            var replacement = CreatePlainRect(name, parent);
+            replacement.SetSiblingIndex(Mathf.Min(siblingIndex, parent.childCount - 1));
+            replacement.anchorMin = anchorMin;
+            replacement.anchorMax = anchorMax;
+            replacement.pivot = pivot;
+            replacement.sizeDelta = sizeDelta;
+            replacement.anchoredPosition = anchoredPosition;
+            replacement.localScale = localScale;
+            replacement.localRotation = localRotation;
+            return replacement;
+        }
+
+        private static RectTransform CreatePlainRect(string name, Transform parent)
+        {
+            var gameObject = new GameObject(name, typeof(RectTransform));
+            var rect = gameObject.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            return rect;
         }
 
         private static TextAlignmentOptions ToTmpAlignment(TextAnchor anchor)
@@ -334,14 +384,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            if (Application.isPlaying)
+            DestroyObject(component);
+        }
+
+        private static void DestroyObject(Object target)
+        {
+            if (target == null)
             {
-                Object.Destroy(component);
+                return;
             }
-            else
-            {
-                Object.DestroyImmediate(component);
-            }
+
+#if UNITY_EDITOR
+            Object.DestroyImmediate(target);
+#else
+            Object.Destroy(target);
+#endif
         }
 
         private static RectTransform LoadTemplate(KickLuckyCubeUiTemplateKind kind)

@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TMPro;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -66,11 +67,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private Renderer selectedAnimalHandRenderer;
         private string selectedAnimalHandPreviewKey;
         private bool selectedAnimalHandPreviewUsesImportedVisual;
-        private Text statusText;
+        private TMP_Text statusText;
         private Font uiFont;
         private GameObject dragGhost;
         private RectTransform dragGhostRect;
-        private Text dragGhostText;
+        private TMP_Text dragGhostText;
         private Image dragGhostImage;
         private int selectedHotbarIndex = -1;
         private int selectedInventoryIndex = -1;
@@ -703,10 +704,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Button CreateButton(RectTransform parent, string name, string label, Vector2 size)
         {
-            return KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, label, uiFont, size, new Color(0.08f, 0.08f, 0.08f, 0.86f), 14);
+            const int labelFontSize = 14;
+            var button = KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, label, uiFont, size, new Color(0.08f, 0.08f, 0.08f, 0.86f), labelFontSize);
+            var rect = button.GetComponent<RectTransform>();
+            KickLuckyCubeUiPrefabFactory.GetOrCreateTmpLabel(rect, "Label", label, labelFontSize, TextAnchor.MiddleCenter, size, Vector2.zero);
+            return button;
         }
 
-        private Text CreateLabel(
+        private TMP_Text CreateLabel(
             RectTransform parent,
             string name,
             string text,
@@ -715,7 +720,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Vector2 size,
             Vector2 anchoredPosition)
         {
-            return KickLuckyCubeUiPrefabFactory.GetOrCreateLabel(parent, name, uiFont, text, fontSize, anchor, size, anchoredPosition);
+            return KickLuckyCubeUiPrefabFactory.GetOrCreateTmpLabel(parent, name, text, fontSize, anchor, size, anchoredPosition);
         }
 
         private void Refresh()

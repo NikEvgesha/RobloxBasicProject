@@ -38,6 +38,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void Start()
         {
+            EnsureToolTrainingController();
+            EnsureInventoryController();
+            EnsureSellShopController();
+            EnsureAudioListener();
             NormalizeTimeScale();
         }
 
@@ -49,6 +53,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             remainingStartupFrames--;
+            EnsureToolTrainingController();
+            EnsureInventoryController();
+            EnsureSellShopController();
+            EnsureAudioListener();
             NormalizeTimeScale();
         }
 
@@ -95,15 +103,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var existingInventory = FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
-            if (existingInventory != null)
+            var canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas();
+            if (canvas == null)
             {
                 return;
             }
 
-            var canvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
-            if (canvas == null)
+            var existingInventory = FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
+            if (existingInventory != null)
             {
+                existingInventory.transform.SetParent(canvas.transform, false);
+                existingInventory.gameObject.SetActive(true);
+                existingInventory.enabled = true;
                 return;
             }
 
@@ -119,15 +130,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var existingSellShop = FindFirstObjectByType<KickLuckyCubeSellShopController>(FindObjectsInactive.Include);
-            if (existingSellShop != null)
+            var canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas();
+            if (canvas == null)
             {
                 return;
             }
 
-            var canvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
-            if (canvas == null)
+            var existingSellShop = FindFirstObjectByType<KickLuckyCubeSellShopController>(FindObjectsInactive.Include);
+            if (existingSellShop != null)
             {
+                existingSellShop.transform.SetParent(canvas.transform, false);
+                existingSellShop.gameObject.SetActive(true);
+                existingSellShop.enabled = true;
                 return;
             }
 

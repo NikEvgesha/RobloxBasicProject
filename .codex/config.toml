@@ -1,4 +1,4 @@
-[mcp_servers."ai-game-developer-roblox-basic-project"]
+[mcp_servers.ai-game-developer]
 enabled = true
 startup_timeout_sec = 30
 tool_timeout_sec = 300

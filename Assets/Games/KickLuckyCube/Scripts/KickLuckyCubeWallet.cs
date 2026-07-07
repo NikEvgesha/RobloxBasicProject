@@ -16,7 +16,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private int softCurrency;
         private int hardCurrency;
-        private float softGainMultiplier;
+        private float baseSoftGainMultiplier;
+        private float bonusSoftGainMultiplier = 1f;
         private bool initialized;
 
         public event Action<int, int> Changed;
@@ -25,7 +26,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public int SoftCurrency => initialized ? softCurrency : initialSoftCurrency;
         public int HardCurrency => initialized ? hardCurrency : initialHardCurrency;
-        public float SoftGainMultiplier => initialized ? softGainMultiplier : Mathf.Max(1f, initialSoftGainMultiplier);
+        public float SoftGainMultiplier => Mathf.Max(1f, BaseSoftGainMultiplier * BonusSoftGainMultiplier);
+        public float BaseSoftGainMultiplier => initialized ? baseSoftGainMultiplier : Mathf.Max(1f, initialSoftGainMultiplier);
+        public float BonusSoftGainMultiplier => initialized ? bonusSoftGainMultiplier : 1f;
 
         private void Awake()
         {
@@ -91,7 +94,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             softCurrency = initialSoftCurrency;
             hardCurrency = initialHardCurrency;
-            softGainMultiplier = Mathf.Max(1f, initialSoftGainMultiplier);
+            baseSoftGainMultiplier = Mathf.Max(1f, initialSoftGainMultiplier);
+            bonusSoftGainMultiplier = 1f;
             initialized = true;
             Save();
         }
@@ -108,14 +112,34 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public void SetSoftGainMultiplier(float value)
         {
-            softGainMultiplier = Mathf.Max(1f, value);
-            initialized = true;
+            EnsureInitialized();
+            var nextMultiplier = Mathf.Max(1f, value);
+            if (Mathf.Approximately(baseSoftGainMultiplier, nextMultiplier))
+            {
+                return;
+            }
+
+            baseSoftGainMultiplier = nextMultiplier;
+            Changed?.Invoke(softCurrency, hardCurrency);
+        }
+
+        public void SetSoftGainBonusMultiplier(float value)
+        {
+            EnsureInitialized();
+            var nextMultiplier = Mathf.Max(1f, value);
+            if (Mathf.Approximately(bonusSoftGainMultiplier, nextMultiplier))
+            {
+                return;
+            }
+
+            bonusSoftGainMultiplier = nextMultiplier;
             Changed?.Invoke(softCurrency, hardCurrency);
         }
 
         private void Load()
         {
-            softGainMultiplier = Mathf.Max(1f, initialSoftGainMultiplier);
+            baseSoftGainMultiplier = Mathf.Max(1f, initialSoftGainMultiplier);
+            bonusSoftGainMultiplier = 1f;
 
             if (Application.isPlaying && saveInPlayerPrefs)
             {
@@ -153,7 +177,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             softCurrency = initialSoftCurrency;
             hardCurrency = initialHardCurrency;
-            softGainMultiplier = Mathf.Max(1f, initialSoftGainMultiplier);
+            baseSoftGainMultiplier = Mathf.Max(1f, initialSoftGainMultiplier);
+            bonusSoftGainMultiplier = 1f;
             initialized = true;
         }
     }

@@ -82,6 +82,8 @@ Implemented in the overview scene:
 - runtime Leaderboard board displays a live prototype score list based on strength, soft currency, and owned mobs; its world-text visual is loaded from `Assets/Games/KickLuckyCube/Resources/KickLuckyCube/World/KLC_LeaderboardBoardVisual.prefab`;
 - working Shop card purchases for speed upgrades, strength tools, and one-shot strength boosts;
 - working playtime Rewards window with soft/hard claims;
+- offline earnings popup opens on startup/resume after at least 30 minutes away, shows the stable income accumulated by all player-owned animals, and lets the player claim normally or claim `x2` through rewarded ads/VIP ad skip;
+- 30-day VIP pass prototype grants `x5` soft income while active, immediately gives `300` hard currency, disables ad friction for reward multipliers, and falls back to a hard-currency purchase price on platforms without IAP support;
 - working Lucky Wheel window with cooldown and soft/hard/strength rewards;
 - Settings-driven audio mute backend and first UI localization binding for EN/RU labels;
 - mobile control layer with virtual joystick and hold-interact button, hidden on desktop by default;
@@ -140,12 +142,11 @@ Next visual priorities:
 The first UI visual pass lives in the overview scene under:
 
 ```text
-KLC_UIBackplates
 KLC_UIVisualPass
 KLC_UIWindows
 ```
 
-This pass uses the imported casual Roblox UI toolkit from `Assets/SharedArt/UI` and keeps the existing gameplay HUD objects alive.
+This pass uses the imported casual Roblox UI toolkit from `Assets/SharedArt/UI` and keeps the existing gameplay HUD objects alive. Persistent HUD backplates should live in the relevant editable UI prefab instead of a separate scene hierarchy layer.
 Reusable runtime UI frame prefabs live under `Assets/Games/KickLuckyCube/Resources/KickLuckyCube/UI/Templates` so generated dynamic windows still start from editable prefab assets instead of bare code-created rectangles:
 
 ```text
@@ -159,13 +160,13 @@ KLC_UiIconFrame.prefab
 
 `KickLuckyCubeUiPrefabFactory` is the current bridge for runtime UI. It selects the closest frame prefab by object name, then controllers fill dynamic text, icons, sizes, layout, and events. New UI should either be authored as a concrete prefab/window in the scene or use these frame prefabs through the factory; do not add new local `new GameObject(name, typeof(RectTransform))` helpers inside feature controllers.
 
-Concrete editable runtime UI element prefabs live under `Assets/Games/KickLuckyCube/Resources/KickLuckyCube/UI/Elements`. `KickLuckyCubeUiPrefabFactory` first looks for a prefab matching the requested UI object name, then falls back to a family prefab for dynamic lists such as `SpeedUpgradePlus_*`, `ToolTier_*`, `Style_*`, `EpicMob_*`, `KLC_AlbumCard_*`, `KLC_SellShopCard_*`, `KLC_InventorySlot_*`, `KLC_PowerBand_*`, and `KLC_WaveDangerVignette_*`, then finally falls back to the generic frame templates. Controllers should reuse existing `Text`, `Button`, `Image`, `CanvasGroup`, and custom effect components from those prefabs instead of adding duplicates, so designers can edit the prefab assets directly without entering Play Mode. Floating gain numbers and HUD/effect roots are also prefabs now: `KLC_CurrencyGainFlyText`, `KLC_StrengthGainFlyText`, `KLC_CurrencyFlyTextLayer`, `KLC_StrengthFlyTextLayer`, `KLC_PlayerHomeIcon_Runtime`, `KLC_WaveDangerVignette`, and `KLC_TrainingBonusPrompt`.
+Concrete editable runtime UI element prefabs live under `Assets/Games/KickLuckyCube/Resources/KickLuckyCube/UI/Elements`. `KickLuckyCubeUiPrefabFactory` first looks for a prefab matching the requested UI object name, then falls back to a family prefab for dynamic lists such as `SpeedUpgradePlus_*`, `ToolTier_*`, `Style_*`, `EpicMob_*`, `KLC_AlbumCard_*`, `KLC_SellShopCard_*`, `KLC_InventorySlot_*`, `KLC_PowerBand_*`, and `KLC_WaveDangerVignette_*`, then finally falls back to the generic frame templates. Controllers should reuse existing `Text`, `Button`, `Image`, `CanvasGroup`, and custom effect components from those prefabs instead of adding duplicates, so designers can edit the prefab assets directly without entering Play Mode. Floating gain numbers, HUD/effect roots, and monetization popup shells are also prefabs now: `KLC_CurrencyGainFlyText`, `KLC_StrengthGainFlyText`, `KLC_CurrencyFlyTextLayer`, `KLC_StrengthFlyTextLayer`, `KLC_PlayerHomeIcon_Runtime`, `KLC_WaveDangerVignette`, `KLC_TrainingBonusPrompt`, `KLC_OfflineRewardBackdrop_Runtime`, `KLC_OfflineRewardWindow_Runtime`, `KLC_PrivilegePassCard`, and `KLC_PrivilegePassShopCard_Runtime`.
 
 The first prefab-first window migration is active for `KLC_SpeedShopWindow_Runtime`, `KLC_StrengthToolShopWindow_Runtime`, `KLC_AnimalAlbumWindow_Runtime`, `KLC_InventoryWindow_Runtime`, `KLC_SellShopWindow_Runtime`, `KLC_StyleShopWindow_Runtime`, `KLC_ExchangeWindow_Runtime`, and `KLC_EpicMobShopWindow_Runtime`. Repeated item families are also editable as separate prefabs: `SpeedUpgradePlus`, `ToolTier`, `StyleCard`, `KLC_AlbumCard`, `KLC_SellShopCard`, `KLC_InventorySlot`, and `EpicMob`. These prefabs are now the right place for layout, spacing, image sizes, button shape, and static child hierarchy changes. Controllers may still write dynamic text, prices, icons, interactable state, and state colors. Do not keep sample rows inside dynamic-list window prefabs; keep the window shell and the reusable card prefab separate.
 
 The lower HUD is no longer the legacy `KLC_ToolBelt`. The edit-mode scene and the runtime controllers should use the editable element prefabs `KLC_InventoryHotbar_Runtime`, `KLC_InventorySlot`, `KLC_InventoryToggleButton`, `KLC_AnimalAlbumOpenButton`, `KLC_StrengthToolShopOpenButton`, `KLC_SpeedShopOpenButton`, and `KLC_BottomLeftStatsVisual`. These objects belong under `KLC_PrototypeCanvas`; the runtime currency/fly-text canvas must not receive permanent UI buttons. The current layout pass follows the Roblox reference placement: large action buttons in a left-side grid, status/strength/economy in a bottom-left stack, the interaction prompt above the bottom-center hotbar, and only compact strips near the top edge.
 
-`KLC_BottomLeftStatsVisual` is the first pass of the Roblox-reference bottom-left block. It intentionally has no window/backplate background: only sprite icons and outlined value text should be visible over the world. Do not build HUD icons from manual UI rectangles in this block. Prefer sprite assets from `Assets/SharedArt/UI` and game-local generated icons from `Assets/Games/KickLuckyCube/UI/Icons`. The current block uses generated `KLC_Icon_KickingFoot` for the top rebirth counter, generated `KLC_Icon_SpeedBoot` for current run speed, generated `KLC_Icon_StrengthFlexArm` for kick strength, generated horizontal slider icon `KLC_Icon_KickPowerBarSettings` for the kick-power settings button, `ItemIcon_Coin` for soft, and `ItemIcon_Gem_Pentagon_Purple` for hard. The kick-strength row is intentionally compact so the value, label, `(MAXIMUM)` marker, and settings button fit on one line. The visible rows are rebirth count, current run speed, kick strength, soft currency, and hard currency. The speed row uses `KLC_SpeedInfoButton` to open the same Speed Upgrades window as the speed kiosk, standalone `KLC_SpeedShopOpenButton`, and `Y`. The old question/reward row and friend bonus row are not part of this game UI. Runtime soft/hard gain effects target `KLC_BottomLeftSoftValue` and `KLC_BottomLeftHardValue`; runtime strength gain effects target `KLC_BottomLeftStrengthValue`. The `KLC_BottomLeftMasteryInfoButton` opens `KLC_KickMasteryInfoWindow`; it should remain a filled cyan circle with the `i` text centered inside. The `(MAXIMUM)` label currently remains visual-only and will become the selected kick-power setting in a later functional pass.
+`KLC_BottomLeftStatsVisual` is the first pass of the Roblox-reference bottom-left block. Each visible row is now a clickable semi-transparent tile with a black outline, because the row itself is the button. Rows keep their own readable main sprites: `KLC_Icon_KickingFoot`, `KLC_Icon_SpeedBoot`, `KLC_Icon_StrengthFlexArm`, `ItemIcon_Coin`, and `ItemIcon_Gem_Pentagon_Purple`. A small shared generated action indicator, `KLC_Icon_ActionTap`, sits on the right side of each tile to communicate that the whole tile is clickable. Prefer sprite assets from `Assets/SharedArt/UI` and game-local generated icons from `Assets/Games/KickLuckyCube/UI/Icons`; do not rebuild these icons from manual UI rectangles. The visible rows are rebirth count, current run speed, kick strength, soft currency, and hard currency. Runtime soft/hard gain effects target `KLC_BottomLeftSoftValue` and `KLC_BottomLeftHardValue`; runtime strength gain effects target `KLC_BottomLeftStrengthValue`. Row click routing is: speed opens Speed Upgrades, strength opens the kick mastery/settings window, hard opens the elite/epic mob shop, and soft/rebirth currently open the generic shop until the unified shop tab routing for clicked currency and kick purchases is implemented. The `(MAXIMUM)` label currently remains visual-only and will become the selected kick-power setting in a later functional pass.
 
 TextMeshPro migration has started with the persistent lower HUD. `KickLuckyCubeUiTheme` now supports both legacy `UnityEngine.UI.Text` and `TMPro.TMP_Text`, and `KickLuckyCubeUiPrefabFactory.GetOrCreateTmpLabel` is the preferred path for newly-authored runtime labels. `KLC_BottomLeftStatsVisual` is the first migrated editable prefab and should use `TextMeshProUGUI` for its labels. Other windows may still use legacy `Text` until they are migrated in focused passes. Before a WebGL release, verify the TMP font asset/fallback contains every EN/RU localization character used by the game.
 
@@ -180,7 +181,7 @@ Current UI coverage:
 
 - compact kick/status backplate on the left side above the action grid;
 - top-center objective strip;
-- bottom-left outlined stat/currency cluster without a backplate;
+- bottom-left clickable stat/currency tiles with semi-transparent backplates and black outlines;
 - left-side square icon grid for Album, Shop, Rebirth, Tools, Rewards, Wheel, and a compact Settings button;
 - bottom inventory hotbar with a training-tool slot, compact visible mob slots, and the `Bag` button;
 - restyled hold-`E` interaction prompt;
@@ -189,7 +190,9 @@ Current UI coverage:
 - runtime future-feature status pills show current Weather and Exchange charge state;
 - runtime Mob Album uses PlayerPrefs-backed discovered flags, refreshes when a newly obtained mob is marked discovered, and uses the same bottom square-button style as the other runtime feature buttons;
 - runtime windows for Album, Inventory, Sell, Speed, Training Equipment, Cube Styles, and Future Feature panels now share the same bright Roblox-casual window/card/button/text treatment;
+- runtime Offline Earnings popup and VIP pass cards are prefab-backed; code updates dynamic text, button state, claim amounts, and purchase state only;
 - scene-backed Shop, Settings, Rewards, Rebirth, and Lucky Wheel controls also apply the shared theme on startup;
+- square menu buttons use the `menu_*` sprite family in `Assets/SharedArt/UI/Sprites`: `menu_album`, `menu_shop`, `menu_inventory`, `menu_rewards`, `menu_rebirth`, `menu_wheel`, `menu_settings`, `menu_tools`, and `menu_speed`;
 - lower tool belt, mobile buttons, kick power meter, economy HUD, x2 training prompt, home icon, currency/strength fly texts, and stable/wave world labels use the same shared button/text/outline treatment;
 - visual Shop and Settings windows under `KLC_UIWindows`;
 - reusable local window open/close controller for game-specific UI panels.
@@ -628,6 +631,7 @@ Stable income:
 - placed stable animals, pending income, upgrade level, and last save time are stored in PlayerPrefs in Play Mode with player-owned slot ids like `Player.Template_StableSlot_01`, independent of which physical plot location is assigned this run;
 - fake/bot/template stable slots do not write player stable save keys and are ignored by player collect/weather checks;
 - offline stable income is calculated from the saved UTC timestamp by real elapsed seconds; the default prototype setting has no offline cap, so next-day returns still accumulate income.
+- when the player was away for 30 minutes or more, `KickLuckyCubeOfflineRewardController` shows the offline earnings popup and claims the combined pending income from all player persistent stable slots; the normal claim uses the wallet multiplier, while the ad/VIP path doubles the base offline claim before wallet multipliers are applied;
 - stable saves explicitly flush `PlayerPrefs.Save()` after place/take/collect/upgrade/clear so WebGL/mobile builds do not lose the last action;
 - stable slot teardown preserves the saved inventory payload even if Unity destroys the runtime mob GameObject before `KickLuckyCubeStableSlot.OnDestroy`, so stopping Play Mode no longer clears placed mobs;
 - prototype saves, including inventory, can be cleared in the Unity Editor through `Tools/Kick Lucky Cube/Clear Prototype Save`.
@@ -654,6 +658,8 @@ Save contract:
 - `KickLuckyCube.Stable.Player.Template_StableSlot_*`: placed stable mob payload, pending soft, upgrade level, and last UTC save time;
 - `KickLuckyCube.Rewards.*`: playtime reward elapsed time, claimed mask, and reset start time;
 - `KickLuckyCube.Rebirth.*`: rebirth count, which restores the soft gain multiplier at startup;
+- `KickLuckyCube.OfflineReward.LastSeenAt`: last UTC timestamp used to decide whether the offline earnings popup should appear after a 30 minute absence;
+- `KickLuckyCube.Commerce.PrivilegeExpiresAt`: UTC expiry timestamp for the 30-day VIP privilege pass;
 - `KickLuckyCube.Settings.*`: music, SFX, and language;
 - `KickLuckyCube.Wheel.NextSpinAt`: wheel cooldown;
 - `KickLuckyCube.Future.*`: weather timer, exchange charges/timer, epic mob purchases, and rating gift claim;
@@ -699,6 +705,7 @@ Shop:
 - Strength boost cards buy a one-shot strength increase with soft currency;
 - runtime Style shop buys and equips lucky cube color skins from the style kiosk hold-interaction anchor;
 - Elite Mob Shop sells one-time exclusive mobs for hard currency and immediately selects the purchased mob when inventory has space;
+- the Shop window receives a prefab-backed `VIP 30 Days` card that sells the privilege pass; if IAP is supported it uses the IAP route, otherwise it spends the configured hard-currency fallback price;
 - duplicated shop cards currently point to the same first-pass purchase actions and should become distinct final catalog items later.
 
 Future feature spots:
