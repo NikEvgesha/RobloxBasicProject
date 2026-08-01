@@ -248,10 +248,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             waveChase.PrepareChase(currentRunner, result.Distance);
 
-            if (thirdPersonCamera != null && waveChase.WaveVisual != null && waveIntroSeconds > 0f)
+            var introFocusTarget = currentRunner != null
+                ? currentRunner.transform
+                : waveChase.WaveVisual;
+            if (thirdPersonCamera != null && introFocusTarget != null && waveIntroSeconds > 0f)
             {
                 thirdPersonCamera.BeginCinematicFocus(
-                    waveChase.WaveVisual,
+                    introFocusTarget,
                     waveIntroCameraDistance,
                     waveIntroCameraPitch,
                     waveIntroCameraYawOffset);

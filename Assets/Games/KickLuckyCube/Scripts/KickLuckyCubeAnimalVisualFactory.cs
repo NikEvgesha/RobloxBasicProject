@@ -31,6 +31,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 visual.transform.localScale = Vector3.one;
                 RemoveColliders(visual);
                 NormalizeToHeight(visual.transform, visualTargetHeight);
+                ConfigureImportedAnimators(visual);
+                AddProceduralMotion(visual, visualTargetHeight);
                 usedImportedVisual = true;
                 bodyRenderer = visual.GetComponentInChildren<Renderer>(true);
                 ApplyGradeVisuals(parent, option, visualTargetHeight, includeGradeEffects);
@@ -326,6 +328,37 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 DestroyUnityObject(collider);
             }
+        }
+
+        private static void ConfigureImportedAnimators(GameObject root)
+        {
+            foreach (var animator in root.GetComponentsInChildren<Animator>(true))
+            {
+                if (animator == null || animator.runtimeAnimatorController == null)
+                {
+                    continue;
+                }
+
+                animator.enabled = true;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                animator.applyRootMotion = false;
+                animator.keepAnimatorStateOnDisable = true;
+                animator.Rebind();
+                animator.Play(0, 0, Random.value);
+                animator.Update(0f);
+            }
+        }
+
+        private static void AddProceduralMotion(GameObject root, float targetHeight)
+        {
+            if (root == null || root.GetComponent<KickLuckyCubeAnimalProceduralMotion>() != null)
+            {
+                return;
+            }
+
+            var phase = Random.Range(0f, Mathf.PI * 2f);
+            root.AddComponent<KickLuckyCubeAnimalProceduralMotion>()
+                .Configure(targetHeight, phase);
         }
 
         private static bool TryGetRendererBounds(Transform root, out Bounds bounds)

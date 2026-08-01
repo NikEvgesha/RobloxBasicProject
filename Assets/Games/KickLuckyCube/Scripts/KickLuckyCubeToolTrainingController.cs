@@ -184,7 +184,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             trainingBonusPrompt ??= FindFirstObjectByType<KickLuckyCubeTrainingBonusPrompt>(FindObjectsInactive.Include);
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
             balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
-            floatingTextCanvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            ResolveFloatingTextCanvas();
             trainingBonusPrompt ??= CreateTrainingBonusPrompt();
             SubscribeTrainingBonusPrompt();
 
@@ -492,6 +492,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             ResolveReferences();
+            ResolveFloatingTextCanvas(true);
             if (floatingTextCanvas == null)
             {
                 return;
@@ -658,18 +659,47 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 UnityEngine.Random.Range(-strengthFlyScreenScatter * 0.65f, strengthFlyScreenScatter));
         }
 
+        private void ResolveFloatingTextCanvas(bool preferStrengthTarget = false)
+        {
+            var target = ResolveStrengthFlyTarget();
+            if (target != null)
+            {
+                var targetCanvas = target.GetComponentInParent<Canvas>();
+                if (targetCanvas != null
+                    && (preferStrengthTarget
+                        || floatingTextCanvas == null
+                        || !floatingTextCanvas.gameObject.activeInHierarchy))
+                {
+                    floatingTextCanvas = targetCanvas;
+                    strengthFlyLayer = null;
+                    return;
+                }
+            }
+
+            if (floatingTextCanvas == null || !floatingTextCanvas.gameObject.activeInHierarchy)
+            {
+                floatingTextCanvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+                strengthFlyLayer = null;
+            }
+        }
+
+        private RectTransform ResolveStrengthFlyTarget()
+        {
+            if (strengthFlyTarget != null)
+            {
+                return strengthFlyTarget;
+            }
+
+            var targetObject = GameObject.Find("KLC_BottomLeftStrengthValue")
+                ?? GameObject.Find("KLC_BottomLeftStatsVisual")
+                ?? GameObject.Find("KLC_KickHud");
+            strengthFlyTarget = targetObject != null ? targetObject.GetComponent<RectTransform>() : null;
+            return strengthFlyTarget;
+        }
+
         private Vector2 ResolveStrengthFlyEnd(RectTransform canvasRect)
         {
-            if (strengthFlyTarget == null)
-            {
-                var targetObject = GameObject.Find("KLC_BottomLeftStrengthValue");
-                if (targetObject == null)
-                {
-                    targetObject = GameObject.Find("KLC_KickHud");
-                }
-
-                strengthFlyTarget = targetObject != null ? targetObject.GetComponent<RectTransform>() : null;
-            }
+            ResolveStrengthFlyTarget();
 
             if (strengthFlyTarget != null)
             {

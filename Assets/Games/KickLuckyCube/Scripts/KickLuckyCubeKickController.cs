@@ -3,7 +3,12 @@ using System.Collections;
 using System.Globalization;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
+
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace RobloxBasicProject.Games.KickLuckyCube
 {
@@ -11,10 +16,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     {
         [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private KickLuckyCubePlayerStats stats;
+        [SerializeField] private KickLuckyCubeInventoryController inventory;
         [SerializeField] private Transform cube;
         [SerializeField] private Transform landingMarker;
         [SerializeField] private Text hudText;
         [SerializeField] private TextMesh worldStatusText;
+        [SerializeField] private bool showHudText;
         [SerializeField] private CanvasGroup powerMeterGroup;
         [SerializeField] private Image powerMeterFill;
         [SerializeField] private RectTransform powerMeterMarker;
@@ -30,7 +37,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0f)] private float baseKickDistance = 18f;
         [SerializeField, Min(0f)] private float distancePerStrength = 0.23f;
         [SerializeField, Min(1f)] private float minimumDistance = 10f;
-        [SerializeField, Min(1f)] private float maximumDistance = 735f;
+        [SerializeField, Min(1f)] private float maximumDistance = KickLuckyCubeCorridorLayout.MaximumKickDistance;
         [SerializeField, Min(0.05f)] private float flightSeconds = 1.85f;
         [SerializeField, Min(0f)] private float arcHeight = 11f;
         [SerializeField, Range(0f, 1f)] private float initialPower = 0.5f;
@@ -53,6 +60,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private GameObject cubePreviewActor;
         private GameObject powerSelectionActor;
         private Vector3 powerSelectionActorStartPosition;
+        private int powerSelectionStartedFrame = -1;
         private bool powerMeterVisualsConfigured;
 
         public event Action<KickLuckyCubeKickResult> Landed;
@@ -69,6 +77,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void Awake()
         {
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
+            inventory ??= FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
 
             if (cube == null)
             {
@@ -92,10 +101,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     .FirstOrDefault(found => found.name == "Floor_FlatGreenGrass");
             }
 
-            if (zones == null || zones.Length == 0)
-            {
-                zones = FindObjectsByType<KickLuckyCubeRarityZone>(FindObjectsSortMode.None);
-            }
+            RefreshZonesFromScene();
 
             CacheCubeOriginalTransform();
             ConfigureCubeTrail();
@@ -137,6 +143,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            if ((WasPrimaryPointerPressedOutsideUi() || WasKeyboardKickConfirmPressed()) && Time.frameCount > powerSelectionStartedFrame)
+            {
+                ConfirmKickPower();
+                return;
+            }
+
             currentPower += powerDirection * powerMeterSpeed * Time.unscaledDeltaTime;
             if (currentPower >= 1f)
             {
@@ -150,7 +162,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             RefreshPowerMeter();
-            RefreshStatus("Press E again to kick.\nTop of the meter = stronger hit.");
+            RefreshStatus("Click anywhere or press E to kick.\nTop of the meter = stronger hit.");
         }
 
         private void OnEnable()
@@ -265,11 +277,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void BeginKickPowerSelection(GameObject actor)
         {
+            inventory?.HideSelectedHandPreviewForAction();
             ShowCubeInHands(actor);
             ResolveKickOrigin(actor, out pendingKickOriginPosition, out pendingKickOriginRotation);
             currentPower = initialPower;
             powerDirection = 1f;
             isSelectingKickPower = true;
+            powerSelectionStartedFrame = Time.frameCount;
             powerSelectionActor = actor;
             powerSelectionActorStartPosition = actor != null ? actor.transform.position : pendingKickOriginPosition;
 
@@ -287,7 +301,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             RefreshPowerMeter();
-            RefreshStatus("Choose kick power.\nPress E again to kick.");
+            RefreshStatus("Choose kick power.\nClick anywhere or press E to kick.");
         }
 
         private void ConfirmKickPower()
@@ -396,6 +410,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public KickLuckyCubeRarityZone ResolveLandingZone(float distance)
         {
+            if (zones == null || zones.Length < KickLuckyCubeCorridorLayout.LocationCount)
+            {
+                RefreshZonesFromScene();
+            }
+
             SortZones();
 
             var landingZ = lastKickOriginPosition.z + Mathf.Max(0f, distance);
@@ -547,7 +566,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 ? kickLocked
                     ? "Animal run in progress."
                     : isSelectingKickPower
-                    ? "Press E again to kick."
+                    ? "Click anywhere or press E to kick."
                     : LastLandedRarity == KickLuckyCubeRarity.None
                     ? "Press E to aim kick."
                     : $"Landed: {LastLandedRarity} | {LastAnimalPool}"
@@ -557,7 +576,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (hudText != null)
             {
-                hudText.text = text;
+                hudText.gameObject.SetActive(showHudText);
+                if (showHudText)
+                {
+                    hudText.text = text;
+                }
             }
 
             if (worldStatusText != null)
@@ -582,7 +605,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 powerMeterFill.type = Image.Type.Filled;
                 powerMeterFill.fillMethod = Image.FillMethod.Vertical;
                 powerMeterFill.fillOrigin = (int)Image.OriginVertical.Bottom;
-                powerMeterFill.color = KickLuckyCubeUiTheme.Primary;
                 powerMeterFill.fillAmount = Mathf.Clamp01(currentPower);
             }
 
@@ -640,14 +662,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            CreatePowerBand(barParent, "KLC_PowerBand_Red", 0f, 0.34f, new Color(1f, 0.12f, 0.08f, 0.72f));
-            CreatePowerBand(barParent, "KLC_PowerBand_Yellow", 0.34f, 0.68f, new Color(1f, 0.78f, 0.08f, 0.72f));
-            CreatePowerBand(barParent, "KLC_PowerBand_Green", 0.68f, 1f, new Color(0.15f, 1f, 0.12f, 0.72f));
+            EnsurePowerBand(barParent, "KLC_PowerBand_Red", 0f, 0.34f, new Color(1f, 0.12f, 0.08f, 0.72f));
+            EnsurePowerBand(barParent, "KLC_PowerBand_Yellow", 0.34f, 0.68f, new Color(1f, 0.78f, 0.08f, 0.72f));
+            EnsurePowerBand(barParent, "KLC_PowerBand_Green", 0.68f, 1f, new Color(0.15f, 1f, 0.12f, 0.72f));
 
             powerMeterFill.type = Image.Type.Filled;
             powerMeterFill.fillMethod = Image.FillMethod.Vertical;
             powerMeterFill.fillOrigin = (int)Image.OriginVertical.Bottom;
-            powerMeterFill.color = KickLuckyCubeUiTheme.Primary;
             powerMeterFill.raycastTarget = false;
             powerMeterFill.transform.SetAsLastSibling();
 
@@ -668,14 +689,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void ApplyUiTheme()
         {
             KickLuckyCubeUiTheme.StyleHudText(hudText);
-            KickLuckyCubeUiTheme.StyleHudText(powerMeterText);
-
-            if (powerMeterGroup != null)
-            {
-                KickLuckyCubeUiTheme.StyleTree(powerMeterGroup.gameObject);
-            }
 
             KickLuckyCubeUiTheme.StyleWorldText(worldStatusText, Color.white, 0.009f);
+        }
+
+        private static void EnsurePowerBand(RectTransform parent, string bandName, float minY, float maxY, Color color)
+        {
+            if (parent != null && parent.Find(bandName) != null)
+            {
+                return;
+            }
+
+            CreatePowerBand(parent, bandName, minY, maxY, color);
         }
 
         private static void CreatePowerBand(RectTransform parent, string bandName, float minY, float maxY, Color color)
@@ -693,6 +718,37 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             bandImage.raycastTarget = false;
         }
 
+        private static bool WasPrimaryPointerPressedOutsideUi()
+        {
+            if (IsPointerOverUi())
+            {
+                return false;
+            }
+
+#if ENABLE_INPUT_SYSTEM
+            var mouse = Mouse.current;
+            return mouse != null && mouse.leftButton.wasPressedThisFrame;
+#else
+            return Input.GetMouseButtonDown(0);
+#endif
+        }
+
+        private static bool WasKeyboardKickConfirmPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = Keyboard.current;
+            return keyboard != null && keyboard.eKey.wasPressedThisFrame;
+#else
+            return Input.GetKeyDown(KeyCode.E);
+#endif
+        }
+
+        private static bool IsPointerOverUi()
+        {
+            var eventSystem = EventSystem.current;
+            return eventSystem != null && eventSystem.IsPointerOverGameObject();
+        }
+
         private void SortZones()
         {
             if (zones == null)
@@ -703,6 +759,28 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             zones = zones
                 .Where(zone => zone != null)
+                .OrderBy(zone => zone.StartZ)
+                .ToArray();
+        }
+
+        private void RefreshZonesFromScene()
+        {
+            var sceneZones = FindObjectsByType<KickLuckyCubeRarityZone>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            if (sceneZones == null || sceneZones.Length == 0)
+            {
+                SortZones();
+                return;
+            }
+
+            zones = (zones ?? Array.Empty<KickLuckyCubeRarityZone>())
+                .Concat(sceneZones)
+                .Where(zone => zone != null)
+                .GroupBy(zone => zone.ZoneIndex)
+                .Select(group => group
+                    .OrderByDescending(zone => zone.gameObject.activeInHierarchy)
+                    .First())
                 .OrderBy(zone => zone.StartZ)
                 .ToArray();
         }

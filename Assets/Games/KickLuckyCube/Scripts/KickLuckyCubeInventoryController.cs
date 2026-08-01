@@ -1035,6 +1035,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Refresh();
         }
 
+        public void HideSelectedHandPreviewForAction()
+        {
+            if (selectedAnimalHandPreview != null)
+            {
+                selectedAnimalHandPreview.SetActive(false);
+            }
+        }
+
         private void StopTrainingForAnimalSelection()
         {
             ResolveToolTraining();

@@ -49,6 +49,18 @@ From a fresh clone:
 git switch develop
 ```
 
+Open the repository root as a Unity project with Unity `6000.3.9f1`. The active game is `Kick Lucky Cube`; its working scene is:
+
+```text
+Assets/Games/KickLuckyCube/Scenes/KickLuckyCubeOverview.unity
+```
+
+For a new contributor, read the Kick Lucky Cube handoff before editing the scene or generated UI/world content:
+
+- `Docs/Games/KickLuckyCubeHandoff.md`
+- `Docs/Games/KickLuckyCube.md`
+- `Assets/Games/KickLuckyCube/README.md`
+
 Create a new game by copying the structure from `Assets/Games/_Template` into `Assets/Games/{GameName}` and adding game-specific documentation under `Docs/Games/{GameName}.md`.
 
 Do not move imported SDK, MCP, or vendor folders unless there is a focused migration task. New reusable gameplay systems should go into `Assets/GameKit`.

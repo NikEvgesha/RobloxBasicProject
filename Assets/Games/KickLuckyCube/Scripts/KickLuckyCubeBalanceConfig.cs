@@ -13,7 +13,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         [Header("Kick Distance")]
         [SerializeField, Min(0f)] private float minimumKickDistance = 10f;
-        [SerializeField, Min(1f)] private float maximumKickDistance = 735f;
+        [SerializeField, Min(1f)] private float maximumKickDistance = KickLuckyCubeCorridorLayout.MaximumKickDistance;
         [SerializeField, Min(0.01f)] private float minimumPowerMultiplier = 0.55f;
         [SerializeField, Min(0.01f)] private float maximumPowerMultiplier = 1.12f;
         [SerializeField] private AnimationCurve strengthToDistance = CreateDefaultStrengthToDistanceCurve();
@@ -72,7 +72,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public void ResetToFrontLoadedDefaults()
         {
             minimumKickDistance = 10f;
-            maximumKickDistance = 735f;
+            maximumKickDistance = KickLuckyCubeCorridorLayout.MaximumKickDistance;
             minimumPowerMultiplier = 0.55f;
             maximumPowerMultiplier = 1.12f;
             strengthToDistance = CreateDefaultStrengthToDistanceCurve();
@@ -240,12 +240,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var progress = Mathf.Pow(
                 Mathf.Log(1f + Mathf.Max(0f, strength) / 20f) / Mathf.Log(1f + finalStrength / 20f),
                 0.8f);
-            return Mathf.Lerp(10f, 735f, Mathf.Clamp01(progress));
+            return Mathf.Lerp(
+                KickLuckyCubeCorridorLayout.StretchLegacyDistance(10f),
+                KickLuckyCubeCorridorLayout.MaximumKickDistance,
+                Mathf.Clamp01(progress));
         }
 
         private static AnimationCurve CreateDefaultStrengthToDistanceCurve()
         {
-            return new AnimationCurve(
+            var curve = new AnimationCurve(
                 new Keyframe(0f, 10f),
                 new Keyframe(20f, 18f),
                 new Keyframe(40f, 31f),
@@ -278,6 +281,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 new Keyframe(957848190f, 684.6f),
                 new Keyframe(2600000000f, 708.8f),
                 new Keyframe(5000000000f, 735f));
+
+            var keys = curve.keys;
+            for (var index = 0; index < keys.Length; index++)
+            {
+                keys[index].value = KickLuckyCubeCorridorLayout.StretchLegacyDistance(keys[index].value);
+            }
+
+            curve.keys = keys;
+            return curve;
         }
 
         private static string[] CreateDefaultToolNames()

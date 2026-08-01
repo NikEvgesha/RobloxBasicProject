@@ -20,6 +20,8 @@ tool_timeout_sec = 300
 url = "http://localhost:26124"
 ```
 
+The Unity window may generate a project-scoped URL with a `/p/<project-session-id>` suffix after reconfiguration. That suffix is local to the current MCP session and should not be copied blindly between workstations. Keep the unique server name; use the portable base URL in the committed project config and only apply the generated project-scoped URL in a local user config when simultaneous Unity sessions require it.
+
 Do not rename this entry to the generic `ai-game-developer`; that name is already used by other Unity projects on this workstation.
 
 ## Project-Specific Token
@@ -51,7 +53,7 @@ Use a separate server name for this project:
 enabled = true
 startup_timeout_sec = 30
 tool_timeout_sec = 300
-url = "http://localhost:26124"
+url = "http://localhost:26124/p/<project-session-id>"
 ```
 
 Do not overwrite existing `ai-game-developer` entries. Other projects may already use them.
@@ -78,27 +80,38 @@ Expected local MCP URL:
 http://localhost:26124
 ```
 
+Keep `Custom`, `http`, and `Authorization Token: none` for the normal local workflow. If several Unity projects are running, use the exact project-scoped URL shown by the corresponding Unity window in the user-level Codex config.
+
 ## Package Versions
 
 Current project target:
 
 ```text
-com.ivanmurzak.unity.mcp = 0.81.1
-com.ivanmurzak.unity.mcp.animation = 1.2.20
-com.ivanmurzak.unity.mcp.particlesystem = 1.2.20
-com.ivanmurzak.unity.mcp.probuilder = 1.2.20
-com.ivanmurzak.unity.mcp.inputsystem = 1.0.6
+com.ivanmurzak.unity.mcp = 0.86.3
+com.ivanmurzak.unity.mcp.animation = 1.2.30
+com.ivanmurzak.unity.mcp.particlesystem = 1.2.30
+com.ivanmurzak.unity.mcp.probuilder = 1.2.30
+com.ivanmurzak.unity.mcp.inputsystem = 1.0.16
 ```
 
 These versions are pinned in `Packages/manifest.json` and `Packages/packages-lock.json`. When pulling work from another PC, keep the game changes from `develop` and resolve MCP package conflicts by taking the latest OpenUPM versions above rather than downgrading the MCP packages.
 
-The bundled NuGet MCP files under `Assets/Plugins/NuGet` should match the installed Unity MCP package. For `com.ivanmurzak.unity.mcp` 0.81.1, the project currently expects:
+The bundled NuGet MCP files under `Assets/Plugins/NuGet` should match the installed Unity MCP package. For `com.ivanmurzak.unity.mcp` 0.86.3, the project currently expects:
 
 ```text
-com.IvanMurzak.McpPlugin = 6.10.0
-com.IvanMurzak.McpPlugin.Common = 6.10.0
-com.IvanMurzak.ReflectorNet = 5.3.1
+com.IvanMurzak.McpPlugin = 7.5.2
+com.IvanMurzak.McpPlugin.Common = 7.5.2
+com.IvanMurzak.ReflectorNet = 5.4.0
 ```
+
+To update extensions, use the `Update` buttons in the AI Game Developer window or update the four `com.ivanmurzak.unity.mcp.*` packages through Unity Package Manager. Update one package at a time, wait for the domain reload, and verify `Packages/manifest.json` and `Packages/packages-lock.json` agree before committing.
+
+After an MCP update:
+
+1. Wait until Unity finishes compiling and the MCP server reports `Running (http)`.
+2. Confirm Codex can list Unity tools or read the open scene.
+3. Check the Unity Console for package/assembly errors.
+4. Reopen the AI Game Developer window and confirm the installed extensions no longer show `Update`.
 
 If the AI Game Developer window regenerates `.codex/config.toml`, verify it did not replace the project-specific entry with:
 

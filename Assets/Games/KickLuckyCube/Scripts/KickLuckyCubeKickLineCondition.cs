@@ -14,7 +14,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public bool CanInteract(GameObject actor)
         {
-            return kickController != null && kickController.CanKick;
+            return kickController != null && kickController.CanKick && !kickController.IsSelectingKickPower;
         }
     }
 }

@@ -39,7 +39,7 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - Open Rewards from the left-side button to claim playtime soft/hard rewards.
 - Open Wheel from the left-side button to spin for soft, hard, or strength rewards.
 - Open the Rebirth window from the left-side Rebirth button after reaching the strength requirement.
-- First ProBuilder visual pass is grouped under `KLC_ProBuilderVisuals` in the overview scene.
+- First ProBuilder visual pass is grouped under `KLC_ProBuilderVisuals` in the overview scene; `Tools/Kick Lucky Cube/Apply World Polish` rebuilds editable ProBuilder polish for shops, the main launch location, the kick corridor, biome decor, and the one-time lucky cube question-mark orientation fix.
 - The ProBuilder layer is visual-only and should not hold gameplay references or colliders.
 - First UI visual pass is grouped under `KLC_UIVisualPass` and `KLC_UIWindows`; old standalone backplates were removed in favor of prefab-owned HUD visuals.
 - Shop and Settings side buttons open their visual windows; close them through the red close button, backdrop click, or `Escape`.

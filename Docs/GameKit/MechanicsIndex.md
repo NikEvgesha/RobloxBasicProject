@@ -33,9 +33,9 @@ Purpose: Provide a reusable Roblox-style interaction contract where independent 
 Public API: `GameKitInteractionTarget`, `GameKitInteractionActivationMode`, `GameKitInteractionCondition`, `GameKitInteractionDriver`, `GameKitInteractionPromptView`, `GameKitInteractionTriggerSource`, `GameKitInteractionRaycastSource`. `GameKitInteractionTarget.SetPrompt` and `SetPromptText` can update a target's visible prompt at runtime while preserving the same target object.
 Required prefabs: none yet.
 Required ScriptableObjects: none.
-Input requirements: keyboard `E` through the active Input System path, with old-input fallback only when legacy input is enabled.
+Input requirements: keyboard `E` through the active Input System path, with old-input fallback only when legacy input is enabled. Press-mode prompts can also be activated by clicking/tapping the visible `GameKitInteractionPromptView`; hold-mode prompts still require keyboard hold or `GameKitInteractionDriver.SetExternalHold`.
 WebGL notes: uses frame-based raycast/trigger checks and unscaled hold progress; no platform-specific APIs.
-Mobile notes: `GameKitInteractionDriver.SetExternalHold` can be wired to a virtual button; press-mode targets fire on the rising edge, hold-mode targets keep using progress.
+Mobile notes: `GameKitInteractionDriver.SetExternalHold` can be wired to a virtual button; press-mode targets fire on the rising edge or prompt click, hold-mode targets keep using progress.
 Known limits: first draft only supports one selected target at a time; prompt view is UGUI-specific; no generated prefab yet.
 
 `Assets/Games/MechanicsTestbed` still contains game-local prototypes for desktop/mobile movement, camera, wallet, settings, UI, wheel, timed rewards, and the concrete pickup/drop/shop test actions. They are intentionally not registered here until they are decoupled and promoted to `Assets/GameKit`.

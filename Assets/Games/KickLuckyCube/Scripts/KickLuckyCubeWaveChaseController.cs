@@ -15,8 +15,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0f)] private float minimumWaveSpeed = 4.5f;
         [SerializeField, Min(0f)] private float distanceSpeedMultiplier = 0.01f;
         [SerializeField, Min(0f)] private float maximumWaveSpeed = 34f;
-        [SerializeField, Min(0f)] private float firstWaveLocationStartDistance = 7f;
-        [SerializeField, Min(0.1f)] private float waveLocationLength = 24.2f;
+        [SerializeField, Min(0f)] private float firstWaveLocationStartDistance = KickLuckyCubeCorridorLayout.FirstLocationStart;
+        [SerializeField, Min(0.1f)] private float waveLocationLength = KickLuckyCubeCorridorLayout.LocationSpacing;
         [SerializeField, Min(1)] private int locationsPerSpeedTier = 3;
         [SerializeField, Min(0f)] private float speedTierBonus = 1.15f;
         [SerializeField, Min(0f)] private float introRiseHeight = 4f;
@@ -24,6 +24,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0f)] private float groundProbeDistance = 18f;
         [SerializeField, Min(0f)] private float groundSinkOffset = 0.18f;
         [SerializeField] private bool hideWhenIdle = true;
+        [SerializeField] private bool addCameraBlocker = true;
+        [SerializeField] private Vector3 cameraBlockerSize = new(32f, 12f, 1.8f);
+        [SerializeField] private Vector3 cameraBlockerOffset = new(0f, 5.6f, 0f);
         [SerializeField] private Vector3 speedLabelOffset = new(0f, 12.7f, -1.75f);
         [SerializeField, Min(1)] private int speedLabelFontSize = 96;
         [SerializeField, Min(0.001f)] private float speedLabelCharacterSize = 0.13f;
@@ -39,6 +42,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private bool hasPreparedChase;
         private Vector3 preparedStartPosition;
         private TextMesh speedLabel;
+        private BoxCollider cameraBlocker;
         private int waveLocationIndex = 1;
         private int waveSpeedTierIndex;
 
@@ -57,6 +61,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 waveVisual = transform;
             }
+
+            EnsureCameraBlocker();
 
             if (hideWhenIdle && waveVisual != null)
             {
@@ -117,6 +123,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             preparedStartPosition = ResolveStartPosition(runner);
             waveVisual.gameObject.SetActive(true);
             waveVisual.position = preparedStartPosition + Vector3.down * introRiseHeight;
+            EnsureCameraBlocker();
             chasing = false;
             hasPreparedChase = true;
             EnsureSpeedLabel();
@@ -166,6 +173,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             waveVisual.gameObject.SetActive(true);
             waveVisual.position = preparedStartPosition;
+            EnsureCameraBlocker();
             chasing = true;
             hasPreparedChase = false;
             EnsureVignette();
@@ -250,6 +258,40 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             CreateVignetteEdge(root, "Bottom", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 0f), new Vector2(0f, 160f));
             CreateVignetteEdge(root, "Left", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(0f, 0f), new Vector2(160f, 0f));
             CreateVignetteEdge(root, "Right", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(0f, 0f), new Vector2(160f, 0f));
+        }
+
+        private void EnsureCameraBlocker()
+        {
+            if (!addCameraBlocker || waveVisual == null)
+            {
+                return;
+            }
+
+            if (cameraBlocker == null)
+            {
+                var blockerTransform = waveVisual.Find("KLC_WaveCameraBlocker");
+                var blockerObject = blockerTransform != null
+                    ? blockerTransform.gameObject
+                    : new GameObject("KLC_WaveCameraBlocker");
+                blockerObject.transform.SetParent(waveVisual, false);
+                blockerObject.transform.localRotation = Quaternion.identity;
+                blockerObject.transform.localScale = Vector3.one;
+                cameraBlocker = blockerObject.GetComponent<BoxCollider>();
+                if (cameraBlocker == null)
+                {
+                    cameraBlocker = blockerObject.AddComponent<BoxCollider>();
+                }
+            }
+
+            cameraBlocker.transform.localPosition = cameraBlockerOffset;
+            cameraBlocker.transform.localRotation = Quaternion.identity;
+            cameraBlocker.transform.localScale = Vector3.one;
+            cameraBlocker.isTrigger = true;
+            cameraBlocker.center = Vector3.zero;
+            cameraBlocker.size = new Vector3(
+                Mathf.Max(0.1f, cameraBlockerSize.x),
+                Mathf.Max(0.1f, cameraBlockerSize.y),
+                Mathf.Max(0.1f, cameraBlockerSize.z));
         }
 
         private static void CreateVignetteEdge(

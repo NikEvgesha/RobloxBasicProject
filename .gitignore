@@ -73,3 +73,6 @@ Desktop.ini
 credentials.json
 Assets/Resources/credentials.json
 Assets/Resources/credentials.json.meta
+
+# Local agent/export workspaces
+outputs/

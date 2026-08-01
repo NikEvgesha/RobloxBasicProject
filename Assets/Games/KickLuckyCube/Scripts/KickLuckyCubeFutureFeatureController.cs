@@ -43,6 +43,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Range(0f, 1f)] private float weatherBonusChance = 0.35f;
         [SerializeField, Min(0f)] private float statusSeconds = 3.2f;
         [SerializeField] private Vector3 interactionTriggerSize = new(3.0f, 2.6f, 2.4f);
+        [SerializeField] private bool showStatusStrip;
 
         private RectTransform epicShopWindow;
         private RectTransform weatherWindow;
@@ -607,7 +608,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 statusPanel.gameObject.SetActive(false);
             }
 
-            if (weatherLabel == null || exchangeLabel == null)
+            if (!showStatusStrip)
+            {
+                var existingStatusStrip = canvasTransform.Find("KLC_FutureFeatureStatusStrip");
+                if (existingStatusStrip != null)
+                {
+                    existingStatusStrip.gameObject.SetActive(false);
+                }
+
+                weatherLabel = null;
+                exchangeLabel = null;
+            }
+            else if (weatherLabel == null || exchangeLabel == null)
             {
                 var statusStrip = CreateRect("KLC_FutureFeatureStatusStrip", canvasTransform);
                 statusStrip.anchorMin = new Vector2(1f, 1f);

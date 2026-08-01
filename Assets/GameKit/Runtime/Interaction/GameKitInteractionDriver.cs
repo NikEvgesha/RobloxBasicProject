@@ -34,6 +34,22 @@ namespace RobloxBasicProject.GameKit.Interaction
             }
         }
 
+        private void OnEnable()
+        {
+            if (promptView != null)
+            {
+                promptView.Clicked += InteractWithCurrentPressTarget;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (promptView != null)
+            {
+                promptView.Clicked -= InteractWithCurrentPressTarget;
+            }
+        }
+
         private void Update()
         {
             var inputHeld = externalHold || ReadKeyboardHold();
@@ -62,9 +78,7 @@ namespace RobloxBasicProject.GameKit.Interaction
                     return;
                 }
 
-                var pressedTarget = currentTarget;
-                pressedTarget.Interact(Actor);
-                currentTarget = SelectCurrentTarget();
+                InteractWithCurrentPressTarget();
                 return;
             }
 
@@ -83,6 +97,18 @@ namespace RobloxBasicProject.GameKit.Interaction
             var target = currentTarget;
             holdProgress = 0f;
             target.Interact(Actor);
+            currentTarget = SelectCurrentTarget();
+        }
+
+        private void InteractWithCurrentPressTarget()
+        {
+            if (currentTarget == null || currentTarget.ActivationMode != GameKitInteractionActivationMode.Press)
+            {
+                return;
+            }
+
+            var pressedTarget = currentTarget;
+            pressedTarget.Interact(Actor);
             currentTarget = SelectCurrentTarget();
         }
 

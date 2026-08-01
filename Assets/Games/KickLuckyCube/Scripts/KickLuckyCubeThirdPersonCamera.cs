@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 #if ENABLE_INPUT_SYSTEM
@@ -27,6 +28,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private bool snapOnStart = true;
         [SerializeField] private float yaw;
         [SerializeField] private float pitch = 18f;
+        [SerializeField] private LayerMask cameraCollisionMask = Physics.DefaultRaycastLayers;
+        [SerializeField, Min(0.01f)] private float cameraCollisionRadius = 0.24f;
+        [SerializeField, Min(0f)] private float cameraCollisionPadding = 0.18f;
+        [SerializeField, Min(0.5f)] private float cameraCollisionMinimumDistance = 1.15f;
 
         private Transform cinematicTarget;
         private float targetYaw;
@@ -190,10 +195,71 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             var desiredPosition = smoothedFocusPoint + rotation * new Vector3(0f, 0f, -distance);
+            var resolvedPosition = ResolveCameraCollision(smoothedFocusPoint, desiredPosition);
 
             transform.SetPositionAndRotation(
-                force ? desiredPosition : Vector3.Lerp(transform.position, desiredPosition, followBlend),
+                force ? resolvedPosition : Vector3.Lerp(transform.position, resolvedPosition, followBlend),
                 rotation);
+        }
+
+        private Vector3 ResolveCameraCollision(Vector3 focusPoint, Vector3 desiredPosition)
+        {
+            var offset = desiredPosition - focusPoint;
+            var desiredDistance = offset.magnitude;
+            if (desiredDistance <= 0.001f || cameraCollisionRadius <= 0f)
+            {
+                return desiredPosition;
+            }
+
+            var direction = offset / desiredDistance;
+            var hits = Physics.SphereCastAll(
+                focusPoint,
+                cameraCollisionRadius,
+                direction,
+                desiredDistance,
+                cameraCollisionMask,
+                QueryTriggerInteraction.Collide);
+            if (hits == null || hits.Length == 0)
+            {
+                return desiredPosition;
+            }
+
+            Array.Sort(hits, static (left, right) => left.distance.CompareTo(right.distance));
+            foreach (var hit in hits)
+            {
+                if (ShouldIgnoreCameraHit(hit))
+                {
+                    continue;
+                }
+
+                var safeDistance = Mathf.Clamp(
+                    hit.distance - cameraCollisionPadding,
+                    cameraCollisionMinimumDistance,
+                    desiredDistance);
+                return focusPoint + direction * safeDistance;
+            }
+
+            return desiredPosition;
+        }
+
+        private bool ShouldIgnoreCameraHit(RaycastHit hit)
+        {
+            if (hit.collider == null)
+            {
+                return true;
+            }
+
+            var hitTransform = hit.collider.transform;
+            if (activeTarget != null
+                && (hitTransform == activeTarget
+                    || hitTransform.IsChildOf(activeTarget)
+                    || activeTarget.IsChildOf(hitTransform)))
+            {
+                return true;
+            }
+
+            return hit.collider.isTrigger
+                && hit.collider.GetComponentInParent<KickLuckyCubeWaveChaseController>() == null;
         }
 
         private Transform ResolveTarget()

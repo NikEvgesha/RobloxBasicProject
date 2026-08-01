@@ -1,14 +1,18 @@
+using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RobloxBasicProject.GameKit.Interaction
 {
-    public sealed class GameKitInteractionPromptView : MonoBehaviour
+    public sealed class GameKitInteractionPromptView : MonoBehaviour, IPointerClickHandler
     {
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private Text keyText;
         [SerializeField] private Text labelText;
         [SerializeField] private Image progressFill;
+
+        public event Action Clicked;
 
         private void Awake()
         {
@@ -31,8 +35,8 @@ namespace RobloxBasicProject.GameKit.Interaction
             if (canvasGroup != null)
             {
                 canvasGroup.alpha = 1f;
-                canvasGroup.interactable = false;
-                canvasGroup.blocksRaycasts = false;
+                canvasGroup.interactable = target.ActivationMode == GameKitInteractionActivationMode.Press;
+                canvasGroup.blocksRaycasts = target.ActivationMode == GameKitInteractionActivationMode.Press;
             }
 
             if (keyText != null)
@@ -67,6 +71,11 @@ namespace RobloxBasicProject.GameKit.Interaction
                 progressFill.gameObject.SetActive(false);
                 progressFill.fillAmount = 0f;
             }
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            Clicked?.Invoke();
         }
     }
 }
