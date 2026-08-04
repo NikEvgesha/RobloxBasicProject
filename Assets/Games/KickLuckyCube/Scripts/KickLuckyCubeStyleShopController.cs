@@ -9,33 +9,25 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     public sealed class KickLuckyCubeStyleShopController : MonoBehaviour
     {
         private const BindingFlags SerializedFieldFlags = BindingFlags.Instance | BindingFlags.NonPublic;
-        private const string SelectedStyleKey = "KickLuckyCube.Style.Selected";
-        private const string OwnedStyleKeyPrefix = "KickLuckyCube.Style.Owned.";
-
-        private static readonly string[] StyleNames = { "Classic", "Candy Cube", "Neon Cube", "Gold Cube" };
-        private static readonly int[] StyleCosts = { 0, 450, 1250, 3200 };
-        private static readonly Color[] StyleColors =
-        {
-            new(1f, 0.86f, 0.24f),
-            new(1f, 0.34f, 0.78f),
-            new(0.12f, 0.9f, 1f),
-            new(1f, 0.72f, 0.08f),
-        };
 
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
         [SerializeField] private Canvas canvas;
         [SerializeField] private string styleAnchorName = "KLC_Kiosk_02_StyleShop_HoldInteractionAnchor";
-        [SerializeField] private string luckyCubeName = "KLC_LuckyCube";
 
         private RectTransform windowRoot;
         private Text statusText;
         private Text[] buttonTexts = Array.Empty<Text>();
-        private Image[] swatches = Array.Empty<Image>();
+        private Button[] actionButtons = Array.Empty<Button>();
+        private Image[] accentImages = Array.Empty<Image>();
         private Font uiFont;
         private int selectedStyle;
 
         public bool IsOpen => windowRoot != null && windowRoot.gameObject.activeSelf;
+        public int SelectedStyle => selectedStyle;
+        public string SelectedStyleId => KickLuckyCubeKickStyleCatalog.Get(selectedStyle).Id;
+        public string SelectedStyleName => KickLuckyCubeKickStyleCatalog.Get(selectedStyle).DisplayName;
+        public float SelectedKickStrengthMultiplier => KickLuckyCubeKickStyleCatalog.Get(selectedStyle).StrengthMultiplier;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -50,18 +42,35 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            new GameObject("KLC_StyleShop_Runtime").AddComponent<KickLuckyCubeStyleShopController>();
+            new GameObject("KLC_KickStyleShop_Runtime").AddComponent<KickLuckyCubeStyleShopController>();
         }
 
         private void Awake()
         {
             ResolveReferences();
-            LoadStyle();
+            ReloadSavedSelection();
             BuildRuntimeUi();
             ConfigureStyleAnchor();
-            ApplyStyle();
             CloseWindow();
             Refresh();
+        }
+
+        private void OnEnable()
+        {
+            ResolveReferences();
+            if (wallet != null)
+            {
+                wallet.Changed -= OnWalletChanged;
+                wallet.Changed += OnWalletChanged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (wallet != null)
+            {
+                wallet.Changed -= OnWalletChanged;
+            }
         }
 
         public void OpenWindow()
@@ -79,6 +88,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             windowRoot.gameObject.SetActive(true);
             windowRoot.SetAsLastSibling();
+            SetStatus($"Equipped: {SelectedStyleName}. Premium styles add +10% actual kick strength.");
             Refresh();
         }
 
@@ -96,108 +106,68 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return runPhase == null || (!runPhase.HasActiveRun && !runPhase.HasCarriedAnimal && !runPhase.IsSelectingAnimal);
         }
 
-        private void SelectOrBuyStyle(int index)
+        public bool TrySelectOrBuyStyle(int index)
         {
             ResolveReferences();
-            if (index < 0 || index >= StyleNames.Length)
+            if (index < 0 || index >= KickLuckyCubeKickStyleCatalog.Count)
             {
-                return;
+                return false;
             }
 
-            if (!IsOwned(index))
+            var style = KickLuckyCubeKickStyleCatalog.Get(index);
+            if (!KickLuckyCubeKickStyleCatalog.IsOwned(index))
             {
-                var cost = StyleCosts[index];
-                if (wallet == null || !wallet.TrySpendSoft(cost))
+                if (wallet == null || !wallet.TrySpendHard(style.HardCost))
                 {
-                    SetStatus($"Need {cost} soft for {StyleNames[index]}.");
+                    SetStatus($"Need {style.HardCost} hard currency for {style.DisplayName}.");
                     Refresh();
-                    return;
+                    return false;
                 }
 
-                PlayerPrefs.SetInt(OwnedStyleKeyPrefix + index, 1);
+                KickLuckyCubeKickStyleCatalog.Unlock(index);
             }
 
             selectedStyle = index;
-            PlayerPrefs.SetInt(SelectedStyleKey, selectedStyle);
-            PlayerPrefs.Save();
-            ApplyStyle();
-            SetStatus($"{StyleNames[index]} equipped.");
+            KickLuckyCubeKickStyleCatalog.SaveSelectedIndex(selectedStyle);
+            SetStatus($"{style.DisplayName} equipped. Kick strength x{style.StrengthMultiplier:0.00}.");
             Refresh();
+            return true;
         }
 
-        private void LoadStyle()
+        public bool IsStyleOwned(int index)
         {
-            PlayerPrefs.SetInt(OwnedStyleKeyPrefix + 0, 1);
-            selectedStyle = Mathf.Clamp(PlayerPrefs.GetInt(SelectedStyleKey, 0), 0, StyleNames.Length - 1);
-            if (!IsOwned(selectedStyle))
-            {
-                selectedStyle = 0;
-            }
+            return index >= 0
+                && index < KickLuckyCubeKickStyleCatalog.Count
+                && KickLuckyCubeKickStyleCatalog.IsOwned(index);
         }
 
-        private void ApplyStyle()
+        public void ReloadSavedSelection()
         {
-            var cube = GameObject.Find(luckyCubeName);
-            if (cube == null)
-            {
-                return;
-            }
-
-            var styleColor = StyleColors[Mathf.Clamp(selectedStyle, 0, StyleColors.Length - 1)];
-            foreach (var renderer in cube.GetComponentsInChildren<Renderer>(true))
-            {
-                if (!ShouldTintCubeRenderer(cube, renderer))
-                {
-                    continue;
-                }
-
-                var material = renderer.material;
-                if (material != null && material.HasProperty("_Color"))
-                {
-                    material.color = styleColor;
-                }
-            }
-        }
-
-        private static bool ShouldTintCubeRenderer(GameObject cube, Renderer renderer)
-        {
-            if (cube == null || renderer == null || renderer is TrailRenderer)
-            {
-                return false;
-            }
-
-            var objectName = renderer.gameObject.name;
-            if (objectName.IndexOf("Edge", StringComparison.OrdinalIgnoreCase) >= 0
-                || objectName.IndexOf("Question", StringComparison.OrdinalIgnoreCase) >= 0
-                || objectName.IndexOf("Corner", StringComparison.OrdinalIgnoreCase) >= 0
-                || objectName.IndexOf("Outline", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return false;
-            }
-
-            if (renderer.transform == cube.transform
-                || objectName.IndexOf("Face", StringComparison.OrdinalIgnoreCase) >= 0
-                || objectName.IndexOf("Body", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return true;
-            }
-
-            return renderer.sharedMaterials != null
-                && Array.Exists(
-                    renderer.sharedMaterials,
-                    material => material != null
-                        && material.name.IndexOf("KLC_LuckyCube", StringComparison.OrdinalIgnoreCase) >= 0
-                        && material.name.IndexOf("Black", StringComparison.OrdinalIgnoreCase) < 0
-                        && material.name.IndexOf("Question", StringComparison.OrdinalIgnoreCase) < 0
-                        && material.name.IndexOf("Edge", StringComparison.OrdinalIgnoreCase) < 0);
+            selectedStyle = KickLuckyCubeKickStyleCatalog.LoadSelectedIndex();
+            Refresh();
         }
 
         private void ResolveReferences()
         {
+            var previousWallet = wallet;
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>(FindObjectsInactive.Include);
             runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
-            canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas(canvas);
             uiFont ??= KickLuckyCubeUiTheme.Font;
+
+            if (isActiveAndEnabled && wallet != previousWallet)
+            {
+                if (previousWallet != null)
+                {
+                    previousWallet.Changed -= OnWalletChanged;
+                }
+
+                if (wallet != null)
+                {
+                    wallet.Changed -= OnWalletChanged;
+                    wallet.Changed += OnWalletChanged;
+                }
+            }
         }
 
         private void ConfigureStyleAnchor()
@@ -210,15 +180,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var collider = GetOrAddComponent<BoxCollider>(anchor);
             collider.isTrigger = true;
-            collider.center = new Vector3(0f, 1.2f, 0f);
-            collider.size = new Vector3(2.6f, 2.4f, 2.0f);
+            collider.center = Vector3.zero;
+            collider.size = new Vector3(3.0f, 3.0f, 2.4f);
 
             var target = GetOrAddComponent<GameKitInteractionTarget>(anchor);
             SetPrivateField(target, "promptKey", "E");
-            SetPrivateField(target, "promptText", "Hold style shop");
-            SetPrivateField(target, "activationMode", GameKitInteractionActivationMode.Hold);
-            SetPrivateField(target, "holdSeconds", 0.65f);
-            SetPrivateField(target, "priority", 24);
+            SetPrivateField(target, "promptText", "Open kick style shop");
+            SetPrivateField(target, "activationMode", GameKitInteractionActivationMode.Press);
+            SetPrivateField(target, "holdSeconds", 0.05f);
+            SetPrivateField(target, "priority", 32);
             SetPrivateField(target, "interactable", true);
 
             if (anchor.GetComponent<GameKitInteractionTriggerSource>() == null)
@@ -226,8 +196,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 anchor.AddComponent<GameKitInteractionTriggerSource>();
             }
 
-            var pad = GetOrAddComponent<KickLuckyCubeStyleShopPad>(anchor);
-            pad.Configure(this);
+            GetOrAddComponent<KickLuckyCubeStyleShopPad>(anchor).Configure(this);
         }
 
         private void BuildRuntimeUi()
@@ -243,30 +212,31 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             windowRoot.anchorMax = new Vector2(0.5f, 0.5f);
             windowRoot.pivot = new Vector2(0.5f, 0.5f);
             windowRoot.anchoredPosition = new Vector2(0f, 12f);
-            windowRoot.sizeDelta = new Vector2(720f, 360f);
-            AddImage(windowRoot.gameObject, new Color(0.035f, 0.035f, 0.05f, 0.94f));
+            windowRoot.sizeDelta = new Vector2(760f, 500f);
+            AddImage(windowRoot.gameObject, new Color(0.035f, 0.035f, 0.05f, 0.96f));
 
-            CreateLabel(windowRoot, "Title", "Cube Styles", 34, TextAnchor.MiddleLeft, new Vector2(360f, 48f), new Vector2(-145f, 136f));
-            statusText = CreateLabel(windowRoot, "Status", "Buy and equip lucky cube skins.", 18, TextAnchor.MiddleLeft, new Vector2(500f, 30f), new Vector2(-40f, -144f));
+            CreateLabel(windowRoot, "Title", "Kick Styles", 34, TextAnchor.MiddleLeft, new Vector2(420f, 48f), new Vector2(-130f, 206f));
+            statusText = CreateLabel(windowRoot, "Status", "Premium kick styles cost hard currency and add +10% strength.", 17, TextAnchor.MiddleLeft, new Vector2(650f, 42f), new Vector2(-5f, -218f));
 
             var closeButton = CreateButton(windowRoot, "Close", "X", new Vector2(44f, 36f));
-            closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(324f, 136f);
+            closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(344f, 206f);
             closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(CloseWindow);
 
             var grid = CreateRect("StyleCards", windowRoot);
-            grid.sizeDelta = new Vector2(630f, 210f);
-            grid.anchoredPosition = new Vector2(0f, -10f);
+            grid.sizeDelta = new Vector2(680f, 344f);
+            grid.anchoredPosition = new Vector2(0f, -4f);
 
             var layout = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<GridLayoutGroup>(grid.gameObject);
-            layout.cellSize = new Vector2(146f, 192f);
-            layout.spacing = new Vector2(12f, 0f);
+            layout.cellSize = new Vector2(216f, 162f);
+            layout.spacing = new Vector2(14f, 14f);
             layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            layout.constraintCount = 4;
+            layout.constraintCount = 3;
 
-            buttonTexts = new Text[StyleNames.Length];
-            swatches = new Image[StyleNames.Length];
-            for (var index = 0; index < StyleNames.Length; index++)
+            buttonTexts = new Text[KickLuckyCubeKickStyleCatalog.Count];
+            actionButtons = new Button[KickLuckyCubeKickStyleCatalog.Count];
+            accentImages = new Image[KickLuckyCubeKickStyleCatalog.Count];
+            for (var index = 0; index < KickLuckyCubeKickStyleCatalog.Count; index++)
             {
                 CreateStyleCard(grid, index);
             }
@@ -274,20 +244,24 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void CreateStyleCard(RectTransform parent, int index)
         {
+            var style = KickLuckyCubeKickStyleCatalog.Get(index);
             var card = CreateRect("Style_" + index, parent);
-            AddImage(card.gameObject, new Color(0.10f, 0.12f, 0.16f, 0.94f));
+            AddImage(card.gameObject, new Color(0.10f, 0.12f, 0.16f, 0.96f));
 
-            var swatch = CreateRect("Swatch", card);
-            swatch.sizeDelta = new Vector2(92f, 74f);
-            swatch.anchoredPosition = new Vector2(0f, 46f);
-            swatches[index] = AddImage(swatch.gameObject, StyleColors[index]);
+            var accent = CreateRect("Swatch", card);
+            accent.sizeDelta = new Vector2(176f, 30f);
+            accent.anchoredPosition = new Vector2(0f, 58f);
+            accentImages[index] = AddImage(accent.gameObject, style.AccentColor);
 
-            CreateLabel(card, "Name", StyleNames[index], 17, TextAnchor.MiddleCenter, new Vector2(132f, 40f), new Vector2(0f, -10f));
-            var button = CreateButton(card, "Action", string.Empty, new Vector2(120f, 34f));
-            button.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -66f);
+            var bonusLine = style.IsDefault ? "No strength bonus" : "+10% kick strength";
+            CreateLabel(card, "Name", style.DisplayName + "\n" + bonusLine, 14, TextAnchor.MiddleCenter, new Vector2(196f, 68f), new Vector2(0f, 8f));
+
+            var button = CreateButton(card, "Action", string.Empty, new Vector2(176f, 32f));
+            button.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -60f);
             var capturedIndex = index;
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => SelectOrBuyStyle(capturedIndex));
+            button.onClick.AddListener(() => TrySelectOrBuyStyle(capturedIndex));
+            actionButtons[index] = button;
             buttonTexts[index] = button.GetComponentInChildren<Text>();
         }
 
@@ -300,17 +274,30 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     continue;
                 }
 
-                buttonTexts[index].text = index == selectedStyle
+                var style = KickLuckyCubeKickStyleCatalog.Get(index);
+                var owned = KickLuckyCubeKickStyleCatalog.IsOwned(index);
+                var equipped = index == selectedStyle;
+                buttonTexts[index].text = equipped
                     ? "Equipped"
-                    : IsOwned(index)
+                    : owned
                         ? "Equip"
-                        : $"Buy ${StyleCosts[index]}";
+                        : $"Buy {style.HardCost} hard";
+
+                if (actionButtons[index] != null)
+                {
+                    actionButtons[index].interactable = !equipped;
+                }
+
+                if (accentImages[index] != null)
+                {
+                    accentImages[index].color = style.AccentColor;
+                }
             }
         }
 
-        private bool IsOwned(int index)
+        private void OnWalletChanged(long soft, long hard)
         {
-            return index == 0 || PlayerPrefs.GetInt(OwnedStyleKeyPrefix + index, 0) != 0;
+            Refresh();
         }
 
         private void SetStatus(string message)
@@ -346,12 +333,34 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Text CreateLabel(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, Vector2 size, Vector2 position)
         {
-            return KickLuckyCubeUiPrefabFactory.GetOrCreateLabel(parent, name, uiFont, value, fontSize, anchor, size, position);
+            var label = KickLuckyCubeUiPrefabFactory.GetOrCreateLabel(parent, name, uiFont, value, fontSize, anchor, size, position);
+            DisableLegacyLocalization(label != null ? label.gameObject : null);
+            if (label != null)
+            {
+                label.text = value;
+            }
+
+            return label;
         }
 
         private Button CreateButton(RectTransform parent, string name, string value, Vector2 size)
         {
-            return KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, value, uiFont, size, new Color(0.15f, 0.18f, 0.22f, 0.94f), 15);
+            var button = KickLuckyCubeUiPrefabFactory.GetOrCreateButton(parent, name, value, uiFont, size, new Color(0.15f, 0.18f, 0.22f, 0.94f), 15);
+            DisableLegacyLocalization(button != null ? button.gameObject : null);
+            return button;
+        }
+
+        private static void DisableLegacyLocalization(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            foreach (var localizedText in root.GetComponentsInChildren<KickLuckyCubeLocalizedText>(true))
+            {
+                localizedText.enabled = false;
+            }
         }
     }
 

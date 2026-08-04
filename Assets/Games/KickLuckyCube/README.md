@@ -31,7 +31,8 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - Spend soft in the runtime Speed Upgrades and Training Equipment shops.
 - Train strength by toggling the selected bottom-bar tool: named tool tiers (dumbbell, kettlebell, barbell, and stronger variants) appear in hand, make the player squat, grant tier-based strength every second, and periodically create one `x2` claim circle.
 - During tool training, claim the temporary `x2` prompt with `X` or by clicking it; a new circle will not spawn while one is already visible.
-- Style shop is opened by holding `E` near the style kiosk and buys/equips lucky cube color skins.
+- Kick Style shop is opened by pressing `E` near the style kiosk. Classic Kick is free; five premium motions cost hard currency, persist ownership/equipment, and add `+10%` effective kick strength.
+- The runtime player now loads the exported `KLC_PlayerMannequin.fbx` instead of the legacy `SadovnicOBJ`. Its embedded Blockbench textures, Idle/Walk/Classic Kick clips, material remaps, and Animator Controller can be rebuilt from `KLC_PlayerMannequin.bbmodel` through `Kick Lucky Cube/Assets/Rebuild Blockbench Player`.
 - Future feature spots are wired for weather rarity boosts, selected-mob exchange, exclusive epic mobs, and the one-time rating gift.
 - The leaderboard board is filled in Play Mode with local score and fake neighbor rankings.
 - Open Shop from the left-side button to buy speed, tool, and strength boost prototype cards.
@@ -71,7 +72,7 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - `KLC_PlotTemplate_EditSource` is kept inactive as the reusable edit source; enable it only when editing the template shape.
 - Runtime plot auto-allocation is currently disabled to avoid duplicate plots while static scene placement is being tuned.
 - `KLC_HubKiosks_Blockout/KLC_ImmediateKiosks_LeftToRight` holds the current left-to-right hub kiosks: animal sell, style shop, speed upgrade, weights training, and leaderboard.
-- Sell, speed, and weights kiosks have visible stand pads; style shop uses a hold-interaction anchor and opens the runtime cube-style shop.
+- Sell, speed, and weights kiosks have visible stand pads; style shop uses a hold-interaction anchor and opens the runtime kick-style shop.
 - `KLC_HubKiosks_Blockout/KLC_FutureFeatureSpots` is runtime-bound in Play Mode for weather machine, animal exchange, epic mob shop, and rating gift stand prototypes.
 - Plot template, placed plot copies, and hub kiosk blockout meshes are converted to `ProBuilderMesh`; `TextMesh` labels remain regular text objects.
 - Older noisy prototype visual groups are disabled while the layout blockout is being placed.

@@ -14,6 +14,14 @@ Contributor handoff and day-one workflow:
 Docs/Games/KickLuckyCubeHandoff.md
 ```
 
+Production readiness, open defects, priorities, and acceptance criteria:
+
+```text
+Docs/Games/KickLuckyCubeProductionBacklog.md
+```
+
+The production backlog is the source of truth when an older smoke result in this history conflicts with the latest manual product review.
+
 ## Concept
 
 Roblox-style WebGL game where the player trains strength, kicks a lucky cube from the current player position down a long rarity corridor, then controls the spawned animal while escaping a wave back to the kick start point.
@@ -80,8 +88,8 @@ Implemented in the overview scene:
 - `x2` training bonus prompt is shown as a circle-only `x2` button that stays pending until clicked, pressed with `X`, or until tool training stops;
 - runtime Training Equipment shop can unlock the next strength tool tier and equip already-owned tools through the `Tools` button, `T`, or the weights-training kiosk stand pad;
 - runtime Speed Upgrades shop opens from the speed kiosk stand pad or `Y` and buys affordable `+1`, `+5`, or `+10` animal speed level bundles;
-- runtime Style shop opens from the style kiosk hold-interaction anchor and buys/equips lucky cube color skins;
-- cube style recoloring only tints the lucky cube body/face renderers; black edges, corner caps, question marks, and trail renderers stay untouched;
+- runtime Style shop opens with `E` from the style kiosk interaction anchor and buys/equips kick styles for hard currency;
+- Classic Kick is free and selected by default; Roundhouse, Tornado Kick, Bicycle Kick, Scorpion Kick, and Lightning Spiral persist as owned/equipped styles and each applies a `1.10x` multiplier to effective kick strength before distance and power are calculated;
 - runtime Future Feature spots support weather rarity boosts, selected-mob exchange charges with confirmation UI, hard-currency elite mob purchases, and a one-time rating gift mob;
 - runtime Animal Catalog defines the shared mob list used by kick spawns, elite shop animals, rating gift animals, and album discovery; 15 regular kick mobs now generate 60 grade variants across Normal, Golden, Diamond, and Fire, while the former top 3 mobs are elite hard-shop exclusives;
 - runtime Mob Album opens from a square UI button, closes through `X`, `Escape`, or backdrop click, and shows every catalog mob as a dark silhouette until it has been obtained at least once;
@@ -115,6 +123,12 @@ This group is a game-specific ProBuilder layer placed on top of the functional b
 - interaction triggers and gameplay components stay on the original functional objects;
 - the group should stay hidden during normal prototype play unless it is being edited directly.
 
+Connected biome prefabs use a fixed `48.4m` footprint. The final `12.6m` is owned by the prefab's `Transition_RiverTraversal` instead of extending the corridor. `KickLuckyCubeRiverTraversalZone` exposes water tuning and randomly enables two of three authored `KickLuckyCubeRiverBridge` objects when Play Mode starts. Animals in uncovered water move at `0.9x` speed and visually sink by `0.22m`; active bridge bounds suppress both effects. The moved `KLC_CorridorGameplayData_DoNotDelete` root is authoritative for world-space placement: its location anchor, preview root, and biome instances stay at local `Y=0`.
+
+Each connected biome also owns a `Walls` root with left/right ProBuilder walls. The walls are `22m` high, span the complete location footprint, align their inside faces to `X +/-39`, use biome-specific wall materials, and provide physical side colliders. World height still comes only from `KLC_CorridorGameplayData_DoNotDelete`.
+
+All 30 corridor slots now reference individual first-pass biome prefabs under `Assets/Games/KickLuckyCube/Prefabs/World/Biomes`. Their visible static geometry is editable ProBuilder geometry. `Assets/Games/KickLuckyCube/Editor/KickLuckyCubeBiomeBatchBuilder.cs` is the batch bootstrap used for locations `06-30`; it is intended for initial generation and automated recovery, not routine rebuilding after manual prefab art edits.
+
 Current ProBuilder coverage:
 
 - launch platform trims, gate, kick arrows, and lucky cube dress-up;
@@ -140,6 +154,10 @@ KLC_ProceduralDecor_v2 biome roots -> 30 roots, 760 ProBuilderMesh objects
 KLC_LuckyCube_QuestionFlipMarker -> present in scene and KLC_LuckyCube.prefab
 Visual bridge MeshColliders -> 32
 Main corridor floor guide MeshCollider -> 1
+Biome prefab slots/contracts/walls/rivers/materials -> 30/30
+Biome Edit Mode previews at local Y=0 -> 30/30
+Runtime rivers with exactly two active bridges -> 30/30
+Runtime water modifier / active-bridge suppression -> 30/30
 ```
 
 Next visual priorities:
@@ -241,7 +259,7 @@ The Wheel side button is wired to a working Lucky Wheel window:
 - the window opens from the left-side `Wheel` button;
 - the window closes through the red close button, backdrop click, or `Escape`;
 - a spin grants one weighted reward: soft currency, hard currency, or strength;
-- the next spin time is saved in PlayerPrefs;
+- the next spin time is saved as a UTC Unix timestamp, so stopping Play Mode, restarting the game, or reloading WebGL cannot extend an expired cooldown;
 - the current prototype cooldown is short for testing and should be retuned for production pacing.
 
 Settings prototype behavior:
@@ -387,7 +405,7 @@ Shift: sprint while controlling the prototype player
 Rotate the camera, then use WASD / arrows to steer the animal in the same relative direction as the player
 E: press once to start kick power selection, press again to kick while the power meter is active; press near sell/speed kiosks to open their shops; press near stable collect spots to place/take mobs; hold for collect-all and progression stations
 Mouse left click: upgrade an occupied stable slot from its `UpgradeBoard`
-Hold E near style kiosk: open cube-style shop
+Hold E near style kiosk: open kick-style shop
 E near future spots: start weather, exchange selected mob, open epic mob shop, or claim rating gift
 I: open / close the temporary inventory window
 1: start / stop training with the selected fixed tool slot
@@ -442,9 +460,9 @@ Location layout blockout:
 - `KLC_RuntimePlotInstances` receives the runtime-allocated `KLC_PlayerPlot_Instance` and `KLC_BotPlot_*` copies from `KLC_PlotTemplate_EditSource`;
 - `KickLuckyCubePlotAllocator` runs in Play Mode through `allocateOnRuntimeLoad`, so the scene does not depend on the old manual `allocateOnStart` checkbox;
 - the player plot keeps persistent stable ids in the `Player.Template_StableSlot_*` format regardless of which physical `MOVE_PlotSlot_*` was assigned this run;
-- bot plots are non-persistent visual ambience and spawn catalog-based stable mob visuals without player economy or save keys;
+- bot plots are non-persistent visual ambience, spawn catalog-based stable mob visuals, and instantiate one `KLC_FakeOnlineBotActor.prefab` using activity anchors copied from the allocated plot; none of these objects use player economy or save keys;
 - `KLC_HubKiosks_Blockout/KLC_ImmediateKiosks_LeftToRight` holds the current left-to-right hub kiosks: animal sell, style shop, speed upgrade, weights training, and leaderboard;
-- sell, speed, and weights kiosks have visible stand pads; style shop uses a hold-interaction anchor and opens the runtime style shop;
+- sell, speed, and weights kiosks have visible stand pads; style shop uses a hold-interaction anchor and opens the runtime kick-style shop;
 - `KLC_HubKiosks_Blockout/KLC_FutureFeatureSpots` holds runtime-bound prototype spots for weather machine, animal exchange, epic mob shop, and rating gift stand;
 - `KLC_LeaderboardBoardVisual.prefab` is the editable world-text visual for the hub leaderboard; `KickLuckyCubeLeaderboardController` only updates the `KLC_Leaderboard_Header` and `KLC_Leaderboard_Line_01..05` text values at runtime, so spacing, text positions, and outline styling should be changed in the prefab first;
 - plot template, placed plot copies, and hub kiosk blockout meshes are converted to `ProBuilderMesh`; `TextMesh` labels remain regular text objects;
@@ -467,7 +485,7 @@ Mobile controls:
 
 ```text
 Virtual joystick: move animal runner
-Jump button: queue a prototype player jump
+Jump button: queue a jump for either the prototype player or the controlled animal runner
 Green E button: starts press-mode targets on tap and holds hold-mode targets through GameKitInteractionDriver.SetExternalHold
 Visibility: hidden on desktop/editor by default, shown on mobile/handheld platforms or when simulation is enabled
 ```
@@ -506,6 +524,8 @@ The scene contains deterministic low-poly decoration on both sides of the runner
 Each zone is separated by a river gap. The deeper the cube lands, the better the animal pool.
 
 Rough biome order:
+
+The canonical object, prop, VFX, and animal brief for every biome is maintained in `Docs/Games/KickLuckyCubeLocations.md`. Use that document when building the 30 connected biome prefabs; the table below is only the compact order reference.
 
 | Location | Biome |
 | ---: | --- |
@@ -667,9 +687,28 @@ Inventory / tool bar:
 - selected inventory mobs can be placed into an empty stable `CollectSpot`; if placement fails, the mob is returned to the hotbar/inventory;
 - inventory persistence is active, and stable slot persistence stores the full inventory animal payload.
 
+Character customization / skin shop:
+
+- `KickLuckyCubeCharacterSkinShopController` bootstraps a runtime `SKINS` button and a wardrobe window that also toggles with `K`;
+- the wardrobe has nine independent tabs: body, skin tone, torso, legs, boots, gloves, hair, headwear, and mask;
+- male and female bodies, three natural skin tones, and both gender-default clothing/hair sets are free;
+- green/blue skin, the unisex clothing variants, all three hats, all three masks, and the extra curly hair use hard currency;
+- owned parts can be mixed across slots; changing body type updates only free gender-default clothing/hair and preserves paid equipped pieces;
+- purchases and current selections persist independently per item/slot, and equipping an owned item never charges the wallet again;
+- `KickLuckyCubeCharacterAppearance` binds the exact Blockbench group names and exported mesh-name families from `KLC_PlayerMannequin.bbmodel`, toggles one real renderer set per slot, and applies skin colors only to materials/renderers identified as skin;
+- `KickLuckyCubeBlockbenchPlayerImporter` rebuilds the Unity FBX material remaps, 27 extracted textures, and the Idle/Walk/Classic Kick Animator Controller from the committed Blockbench source; the player controller migrates the old `SadovnicOBJ` scene settings at runtime;
+- the appearance binder is safe when the Blockbench export has not been attached yet: selection/economy/UI still work, and bindings refresh when visual children appear;
+- every runtime `KickLuckyCubeFakeOnlineBot` receives a deterministic random loadout, including premium pieces, without touching player ownership or currency;
+- the nine generated transparent tab sprites live under `Resources/KickLuckyCube/UI/SkinTabs`; `KLC_SkinGrid.prefab` is the authored layout container used by both tab and item grids.
+
 Save contract:
 
-- `KickLuckyCube.Wallet.*`: soft and hard currency;
+- `KickLuckyCube.Wallet.Soft64` / `Hard64`: invariant string-backed long soft and hard currency; old integer `Soft` / `Hard` keys migrate once and are removed;
+- `KickLuckyCube.CharacterCustomization.Selected.*`: one equipped item id per appearance slot;
+- `KickLuckyCube.CharacterCustomization.Owned.*`: paid appearance ownership flags; free items do not require ownership keys;
+- `KickLuckyCube.Kick.SelectedStrength` / `UseMaximum`: persisted selectable kick strength and explicit maximum mode;
+- `KickLuckyCube.KickStyle.SelectedId`: stable id of the equipped kick style;
+- `KickLuckyCube.KickStyle.Owned.*`: ownership flags for premium kick styles purchased with hard currency;
 - `KickLuckyCube.PlayerStats.*`: strength, animal speed, speed level, owned tool tier, and selected tool tier;
 - `KickLuckyCube.Inventory.State`: bottom hotbar and storage inventory mobs;
 - `KickLuckyCube.Stable.Player.Template_StableSlot_*`: placed stable mob payload, pending soft, upgrade level, and last UTC save time;
@@ -678,7 +717,8 @@ Save contract:
 - `KickLuckyCube.OfflineReward.LastSeenAt`: last UTC timestamp used to decide whether the offline earnings popup should appear after a 30 minute absence;
 - `KickLuckyCube.Commerce.PrivilegeExpiresAt`: UTC expiry timestamp for the 30-day VIP privilege pass;
 - `KickLuckyCube.Settings.*`: music, SFX, and language;
-- `KickLuckyCube.Wheel.NextSpinAt`: wheel cooldown;
+- `KickLuckyCube.Wheel.NextSpinAtUnix`: wheel cooldown stored as a UTC Unix timestamp;
+- `KickLuckyCube.Wheel.NextSpinAt`: obsolete session-time cooldown key; it is deleted during migration and by the prototype save-clear tool;
 - `KickLuckyCube.Future.*`: weather timer, exchange charges/timer, epic mob purchases, and rating gift claim;
 - `KickLuckyCube.AnimalCollection.Discovered.*`: album discovery flags.
 
@@ -708,7 +748,7 @@ Animal catalog / album:
 - keep source `.vox` files outside `Resources`: an identically named `cat.vox` and `cat.prefab` share the same Resources key and Unity may return the raw VOX object without its Animator. Zoo VOX sources now live under `Assets/Games/KickLuckyCube/ArtSource/StealBrainrot/ZooVox`, preserving their GUIDs and prefab mesh references;
 - Brainrot specials and Zoo models without a matching source pet icon use generated prefab-preview sprites in `Resources/KickLuckyCube/StealBrainrot/Sprites/Pets` so inventory, album, and shop cards do not show another animal's icon; `Champ` and `Chill` currently use generated `champ` / `chill` previews instead of the generic horse/sheep icons;
 - `.vox` animal models require the copied `Assets/VoxelImporter` dependency; do not delete it while these imported animals are in use;
-- `KickLuckyCubeAnimalVisualFactory` creates spawned, held, and stable mob visuals from the catalog prefab paths, strips imported colliders, normalizes world height, forces imported `Animator` components to play with `AlwaysAnimate`, adds a subtle runtime procedural bob/tilt so very quiet idle clips still read as alive, applies grade tint/glow/VFX for colored variants, and falls back to the old capsule visual if a prefab is missing;
+- `KickLuckyCubeAnimalVisualFactory` creates spawned, held, and stable mob visuals from catalog prefab paths, strips imported colliders, normalizes world height, starts imported `Animator` components from a deterministic grounded pose with `AlwaysAnimate`, and adds subtle procedural motion; colored grade effects instantiate editable prefabs under `Resources/KickLuckyCube/Animals`, and a missing catalog model uses the authored `KLC_AnimalFallbackVisual.prefab` with a clear diagnostic;
 - `KickLuckyCubeInventoryAnimal` and `KickLuckyCubeSpawnedAnimal` carry `catalogId` and `grade` while preserving old saves by falling back to name+rarity matching and defaulting missing grade data to Normal;
 - `KickLuckyCubeAnimalCollection` stores discovered flags in PlayerPrefs under `KickLuckyCube.AnimalCollection.Discovered.*`;
 - mobs are marked discovered when obtained through return-to-line, inventory add, stable placement, epic shop, rating gift, or exchange result;
@@ -722,8 +762,12 @@ Shop:
 - runtime Speed Upgrades shop exposes uncapped `+1`, `+5`, and `+10` speed bundles through `Y` / the speed kiosk pad;
 - Tool cards buy the next strength tool tier with soft currency;
 - runtime Training Equipment shop also exposes strength tool unlock/equip flow through `T` / `Tools` / the weights-training kiosk pad;
+- strength tools now use a fixed 15-tier visual catalog that alternates odd tiers as a pair of dumbbells and even tiers as a barbell; strength-per-second and soft-currency costs remain unchanged;
+- the tier material progression is Stone Dumbbells, Iron Barbell, Steel Dumbbells, Gold Barbell, Titanium Dumbbells, Obsidian Barbell, Neon Alloy Dumbbells, Meteorite Barbell, Crystal Dumbbells, Sapphire Barbell, Amethyst Dumbbells, Voidsteel Barbell, Ruby Dumbbells, Emerald Barbell, and Arcane Godstone Dumbbells;
+- the authored Blockbench source is `E:/GitFork/BlockBench/KickLuckyCube/Props/Training/KLC_StrengthTools.bbmodel`; each tier is a separate root and every dumbbell tier contains distinct left/right attachment groups;
+- `KickLuckyCubeToolPreviewVisual` remains the lightweight Unity placeholder until the Blockbench meshes are imported, but it now mirrors the alternating compact/long silhouettes, material colors, and increasing size of the 15-tier catalog;
 - Strength boost cards buy a one-shot strength increase with soft currency;
-- runtime Style shop buys and equips lucky cube color skins from the style kiosk hold-interaction anchor;
+- runtime Style shop buys and equips kick styles from the style kiosk press-interaction anchor; every non-default style costs hard currency and adds `+10%` effective kick strength;
 - Elite Mob Shop sells one-time exclusive mobs for hard currency and immediately selects the purchased mob when inventory has space;
 - the Shop window receives a prefab-backed `VIP 30 Days` card that sells the privilege pass; if IAP is supported it uses the IAP route, otherwise it spends the configured hard-currency fallback price;
 - duplicated shop cards currently point to the same first-pass purchase actions and should become distinct final catalog items later.
@@ -881,7 +925,7 @@ Stable slot runtime binder -> 10 player stable modules
 Stable booster board -> level saved and income multiplier applied per slot
 Speed shop -> opens from speed kiosk pad and buys sequential levels
 Training equipment shop -> opens from weights kiosk pad, unlocks next tool tier, and re-equips owned tools
-Style shop -> opens from style kiosk hold anchor and applies selected cube color
+Style shop -> opens from style kiosk hold anchor, spends hard currency, persists ownership/equipment, and performs the selected kick motion
 Weather machine -> opens requirement/timer window, requires Epic/Legendary mob, and can boost landed rarity before roulette
 Exchange booth -> consumes/restores exchange charges, previews selected/result mob cards, then swaps selected mob
 Epic mob shop/rating gift -> add exclusive mobs through inventory save path
@@ -902,7 +946,7 @@ Rebirth -> true, count 1, strength reset to 120, tool tier kept at 2, soft x2, +
 
 ## Latest Agent Test Pass
 
-Date: 2026-05-31
+Date: 2026-08-02
 
 Unity Test Framework:
 
@@ -910,6 +954,19 @@ Unity Test Framework:
 EditMode: passed, 1 total, 1 passed, 0 failed
 PlayMode: no PlayMode tests found
 ```
+
+Current targeted runtime probes:
+
+```text
+Complete feature/prefab contract -> pass
+Inventory slot views -> 23
+Allocated plots / active fake-online actors -> 4 / 3
+Runtime visual source audit -> 25 classified, 0 migration, 0 unclassified
+Catalog validator -> 22 entries, 0 errors
+Unity Console errors/exceptions -> 0 / 0
+```
+
+The strict `118`-object grounding/collider diagnostic is not a release pass: `23` visual-only animated limbs and biome decoration objects do not own colliders. Their gameplay roots stayed grounded, but biome collider coverage must be reviewed during `KLC-PROD-009`.
 
 Editor scene probes:
 
@@ -1007,3 +1064,5 @@ Before the current shared checkpoint was committed:
 - the active scene and all Kick Lucky Cube prefabs were scanned for missing components; only the unused legacy `Models/Player/Root.prefab` skeleton contains old missing references.
 
 The concise contributor workflow and ownership map are maintained in `Docs/Games/KickLuckyCubeHandoff.md`.
+
+The manual world/UI/animation workflow is maintained in `Docs/Games/KickLuckyCubeAuthoringTools.md`. Open it from Unity through `Tools > Kick Lucky Cube > Authoring Workspace`; the workspace is the supported replacement for broad procedural world rebuilding during the human art pass.

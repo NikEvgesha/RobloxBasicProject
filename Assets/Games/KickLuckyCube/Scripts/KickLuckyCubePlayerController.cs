@@ -18,9 +18,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0f)] private float jumpHeight = 1.35f;
         [SerializeField] private float gravity = -30f;
         [SerializeField] private bool lockVerticalPosition;
+        [SerializeField, Min(0.1f)] private float groundProbeHeight = 4f;
+        [SerializeField, Min(0.1f)] private float groundProbeDistance = 16f;
+        [SerializeField, Min(0f)] private float maximumGroundStepUp = 1.4f;
+        [SerializeField, Min(0f)] private float upwardGroundSnapSpeed = 7f;
+        [SerializeField, Min(0f)] private float downwardGroundSnapSpeed = 20f;
+        [SerializeField, Min(0f)] private float groundedTolerance = 0.06f;
+        private const string LegacyPlayerVisualResourcePath = "KickLuckyCube/StealBrainrot/Models/Player/SadovnicOBJ";
+        private const string LegacyPlayerVisualName = "KLC_StealBrainrotPlayerVisual";
+        private const string BlockbenchPlayerVisualResourcePath = "KickLuckyCube/KLC_PlayerMannequin";
+        private const string BlockbenchPlayerVisualName = "KLC_PlayerMannequin";
+
         [SerializeField] private bool useStealBrainrotPlayerVisual = true;
-        [SerializeField] private string importedPlayerVisualResourcePath = "KickLuckyCube/StealBrainrot/Models/Player/SadovnicOBJ";
-        [SerializeField] private string importedPlayerVisualName = "KLC_StealBrainrotPlayerVisual";
+        [SerializeField] private string importedPlayerVisualResourcePath = BlockbenchPlayerVisualResourcePath;
+        [SerializeField] private string importedPlayerVisualName = BlockbenchPlayerVisualName;
+        [SerializeField] private string importedAnimatorControllerResourcePath = "KickLuckyCube/KLC_PlayerMannequinAnimator";
         [SerializeField] private string generatedPlayerVisualName = "KLC_PlayerVisual";
         [SerializeField, Min(0.1f)] private float importedPlayerVisualTargetHeight = 2.05f;
         [SerializeField] private Vector3 importedPlayerVisualLocalPosition = Vector3.zero;
@@ -43,6 +55,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public void TeleportTo(Vector3 position, Quaternion rotation)
         {
+            if (TryResolveGroundY(position, out var groundY))
+            {
+                position.y = groundY;
+            }
+
             transform.SetPositionAndRotation(position, rotation);
             lockedY = position.y;
             verticalVelocity = -1f;
@@ -70,7 +87,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             mobileInput ??= FindFirstObjectByType<KickLuckyCubeMobileInput>(FindObjectsInactive.Include);
             animator ??= GetComponentInChildren<Animator>(true);
             SetupImportedPlayerVisual();
-            lockedY = transform.position.y;
+            SnapToGroundImmediate();
         }
 
         private void Update()
@@ -113,11 +130,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            if (transform.position.y <= lockedY + 0.02f && verticalVelocity <= 0f)
+            var hasGround = TryResolveGroundY(nextPosition, out var groundY);
+            if (hasGround
+                && transform.position.y <= groundY + groundedTolerance
+                && verticalVelocity <= 0f)
             {
                 isGrounded = true;
                 verticalVelocity = -1f;
-                nextPosition.y = lockedY;
             }
             else
             {
@@ -133,12 +152,57 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             verticalVelocity += gravity * deltaTime;
             nextPosition.y += verticalVelocity * deltaTime;
 
-            if (nextPosition.y <= lockedY)
+            if (!hasGround)
             {
-                nextPosition.y = lockedY;
+                return;
+            }
+
+            if (verticalVelocity <= 0f && nextPosition.y <= groundY + groundedTolerance)
+            {
+                nextPosition.y = groundY;
                 verticalVelocity = -1f;
                 isGrounded = true;
+                lockedY = groundY;
+                return;
             }
+
+            if (isGrounded)
+            {
+                var snapSpeed = groundY > nextPosition.y
+                    ? upwardGroundSnapSpeed
+                    : downwardGroundSnapSpeed;
+                nextPosition.y = Mathf.MoveTowards(nextPosition.y, groundY, snapSpeed * deltaTime);
+                lockedY = groundY;
+            }
+        }
+
+        private void SnapToGroundImmediate()
+        {
+            var position = transform.position;
+            if (TryResolveGroundY(position, out var groundY))
+            {
+                position.y = groundY;
+                transform.position = position;
+                if (body != null)
+                {
+                    body.position = position;
+                }
+            }
+
+            lockedY = transform.position.y;
+            verticalVelocity = -1f;
+            isGrounded = true;
+        }
+
+        private bool TryResolveGroundY(Vector3 position, out float groundY)
+        {
+            return KickLuckyCubeGroundResolver.TryResolveGroundY(
+                position,
+                transform,
+                groundProbeHeight,
+                groundProbeDistance,
+                maximumGroundStepUp,
+                out groundY);
         }
 
         private void UpdateAnimator(float moveSpeed)
@@ -163,15 +227,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            MigrateLegacyPlayerVisualSettings();
+
             var existing = transform.Find(importedPlayerVisualName);
             if (existing != null)
             {
-                var existingAnimator = existing.GetComponentInChildren<Animator>(true);
-                if (existingAnimator != null)
-                {
-                    animator = existingAnimator;
-                }
-
+                HideGeneratedPlayerVisual();
+                ConfigureImportedAnimator(existing.gameObject);
                 return;
             }
 
@@ -190,12 +252,44 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             visual.transform.localScale = Vector3.one;
             RemoveColliders(visual);
             NormalizeVisualToHeight(visual.transform, importedPlayerVisualTargetHeight);
+            ConfigureImportedAnimator(visual);
+        }
 
-            var importedAnimator = visual.GetComponentInChildren<Animator>(true);
-            if (importedAnimator != null)
+        private void MigrateLegacyPlayerVisualSettings()
+        {
+            if (string.Equals(importedPlayerVisualResourcePath, LegacyPlayerVisualResourcePath, System.StringComparison.Ordinal))
             {
-                animator = importedAnimator;
+                importedPlayerVisualResourcePath = BlockbenchPlayerVisualResourcePath;
             }
+
+            if (string.Equals(importedPlayerVisualName, LegacyPlayerVisualName, System.StringComparison.Ordinal))
+            {
+                importedPlayerVisualName = BlockbenchPlayerVisualName;
+            }
+        }
+
+        private void ConfigureImportedAnimator(GameObject visual)
+        {
+            if (visual == null)
+            {
+                return;
+            }
+
+            var importedAnimator = visual.GetComponentInChildren<Animator>(true)
+                ?? visual.AddComponent<Animator>();
+
+            if (!string.IsNullOrWhiteSpace(importedAnimatorControllerResourcePath))
+            {
+                var controller = Resources.Load<RuntimeAnimatorController>(importedAnimatorControllerResourcePath);
+                if (controller != null)
+                {
+                    importedAnimator.runtimeAnimatorController = controller;
+                }
+            }
+
+            importedAnimator.applyRootMotion = false;
+            importedAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            animator = importedAnimator;
         }
 
         private void HideGeneratedPlayerVisual()

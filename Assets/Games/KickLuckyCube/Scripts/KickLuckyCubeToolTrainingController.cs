@@ -8,11 +8,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     {
         private static readonly string[] DefaultToolNames =
         {
-            "Training Dumbbell",
-            "Iron Kettlebell",
-            "Heavy Barbell",
+            "Stone Dumbbells",
+            "Iron Barbell",
+            "Steel Dumbbells",
             "Gold Barbell",
-            "Power Trainer"
+            "Titanium Dumbbells"
         };
 
         [SerializeField] private KickLuckyCubePlayerStats stats;
@@ -20,6 +20,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
         [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private Transform carryAnchor;
+        [SerializeField] private string toolPreviewResourcePath = "KickLuckyCube/World/KLC_StrengthToolHandPreview";
         [SerializeField] private Transform playerRoot;
         [SerializeField] private Transform playerVisual;
         [SerializeField] private string carryAnchorName = "KLC_CarryAnchor";
@@ -194,7 +195,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 carryAnchor = anchorObject != null ? anchorObject.transform : null;
             }
 
-            var importedVisualObject = GameObject.Find("KLC_StealBrainrotPlayerVisual");
+            var importedVisualObject = GameObject.Find("KLC_PlayerMannequin")
+                ?? GameObject.Find("KLC_StealBrainrotPlayerVisual");
             if (importedVisualObject != null && playerVisual != importedVisualObject.transform)
             {
                 playerVisual = importedVisualObject.transform;
@@ -346,8 +348,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             DestroyToolPreview();
             displayedToolTier = selectedTier;
-            toolPreview = new GameObject("KLC_SelectedToolHandPreview_" + CurrentToolName.Replace(" ", string.Empty));
-            toolPreview.transform.SetParent(carryAnchor, false);
+            var previewPrefab = Resources.Load<KickLuckyCubeToolPreviewVisual>(toolPreviewResourcePath);
+            if (previewPrefab == null)
+            {
+                Debug.LogError($"[KLC-TRAINING] Missing authored tool preview prefab at Resources/{toolPreviewResourcePath}.", this);
+                return;
+            }
+
+            var previewVisual = Instantiate(previewPrefab, carryAnchor, false);
+            toolPreview = previewVisual.gameObject;
+            toolPreview.name = "KLC_SelectedToolHandPreview_" + CurrentToolName.Replace(" ", string.Empty);
             toolPreview.transform.localPosition = new Vector3(0.08f, -0.02f, 0.02f);
             toolPreview.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
             toolPreview.transform.localScale = Vector3.one;
@@ -356,53 +366,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             hasToolPreviewDefaults = true;
 
             var maxTier = ResolveBalanceConfig() != null ? ResolveBalanceConfig().MaxToolTier : 5;
-            var tier01 = Mathf.InverseLerp(1f, Mathf.Max(1f, maxTier), selectedTier);
-            var color = Color.Lerp(new Color(0.62f, 0.66f, 0.74f), new Color(1f, 0.78f, 0.20f), tier01);
-            var barLength = 0.42f + selectedTier * 0.045f;
-            var barWidth = 0.045f + selectedTier * 0.006f;
-            var weightSize = 0.20f + selectedTier * 0.035f;
-            var weightWidth = 0.09f + selectedTier * 0.014f;
-            CreateToolPart("Bar", PrimitiveType.Cylinder, new Vector3(0f, 0f, 0f), Quaternion.identity, new Vector3(barWidth, barLength, barWidth), color);
-            CreateToolPart("LeftWeight", PrimitiveType.Cube, new Vector3(0f, -barLength - 0.05f, 0f), Quaternion.identity, new Vector3(weightSize, weightWidth, weightSize), color * 0.85f);
-            CreateToolPart("RightWeight", PrimitiveType.Cube, new Vector3(0f, barLength + 0.05f, 0f), Quaternion.identity, new Vector3(weightSize, weightWidth, weightSize), color * 0.85f);
-
-            if (selectedTier >= 3)
-            {
-                CreateToolPart("LeftPlate", PrimitiveType.Cube, new Vector3(0f, -barLength - 0.18f, 0f), Quaternion.identity, new Vector3(weightSize * 0.85f, weightWidth, weightSize * 0.85f), color * 0.72f);
-                CreateToolPart("RightPlate", PrimitiveType.Cube, new Vector3(0f, barLength + 0.18f, 0f), Quaternion.identity, new Vector3(weightSize * 0.85f, weightWidth, weightSize * 0.85f), color * 0.72f);
-            }
-        }
-
-        private void CreateToolPart(
-            string partName,
-            PrimitiveType primitiveType,
-            Vector3 localPosition,
-            Quaternion localRotation,
-            Vector3 localScale,
-            Color color)
-        {
-            var part = GameObject.CreatePrimitive(primitiveType);
-            part.name = partName;
-            part.transform.SetParent(toolPreview.transform, false);
-            part.transform.localPosition = localPosition;
-            part.transform.localRotation = localRotation;
-            part.transform.localScale = localScale;
-
-            var collider = part.GetComponent<Collider>();
-            if (collider != null)
-            {
-                Destroy(collider);
-            }
-
-            var renderer = part.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                var material = new Material(renderer.sharedMaterial)
-                {
-                    color = color
-                };
-                renderer.sharedMaterial = material;
-            }
+            previewVisual.Configure(selectedTier, maxTier);
         }
 
         private void DestroyToolPreview()
@@ -578,7 +542,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
             rectTransform.sizeDelta = burstIndex == 0 ? new Vector2(170f, 52f) : new Vector2(86f, 34f);
 
-            var text = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<Text>(textObject);
+            var text = KickLuckyCubeUiPrefabFactory.GetRequiredComponent<Text>(textObject);
             text.text = burstIndex == 0 ? $"+{amount:0}" : "+";
             text.alignment = TextAnchor.MiddleCenter;
             text.fontSize = burstIndex == 0 ? 46 : 30;
@@ -601,8 +565,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var delay = burstIndex * 0.055f;
             var duration = burstIndex == 0 ? strengthFlySeconds : strengthFlySeconds * 0.82f;
             var startScale = burstIndex == 0 ? 1.38f : 1.05f;
-            KickLuckyCubeUiPrefabFactory.GetOrAddComponent<StrengthFlyTextMotion>(textObject)
-                .Initialize(rectTransform, group, start, pop, end, duration, delay, startScale);
+            var motion = textObject.GetComponent<StrengthFlyTextMotion>()
+                ?? textObject.AddComponent<StrengthFlyTextMotion>();
+            motion.Initialize(rectTransform, group, start, pop, end, duration, delay, startScale);
         }
 
         private Vector2 ResolveStrengthFlyStart(RectTransform canvasRect, int burstIndex)

@@ -17,6 +17,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeBalanceConfig balanceConfig;
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeInventoryController inventory;
+        [SerializeField] private KickLuckyCubeKickStrengthSettingsController kickStrengthSettings;
+        [SerializeField] private KickLuckyCubeStyleShopController kickStyleShop;
         [SerializeField] private Transform cube;
         [SerializeField] private Transform landingMarker;
         [SerializeField] private Text hudText;
@@ -67,17 +69,27 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public bool IsKicking { get; private set; }
         public bool IsSelectingKickPower => isSelectingKickPower;
+        public int SelectedKickStyleIndex => ResolveKickStyleShop() != null
+            ? ResolveKickStyleShop().SelectedStyle
+            : KickLuckyCubeKickStyleCatalog.LoadSelectedIndex();
+        public string SelectedKickStyleName => KickLuckyCubeKickStyleCatalog.Get(SelectedKickStyleIndex).DisplayName;
+        public float SelectedKickStyleMultiplier => KickLuckyCubeKickStyleCatalog.Get(SelectedKickStyleIndex).StrengthMultiplier;
         public bool IsCubeInFlight => IsKicking;
         public Transform CubeTransform => cube;
         public float LastDistance { get; private set; }
         public KickLuckyCubeRarity LastLandedRarity { get; private set; }
         public string LastAnimalPool { get; private set; } = string.Empty;
+        public int LastPerformedKickStyleIndex { get; private set; } = -1;
+        public float LastKickStylePeakRotationDegrees { get; private set; }
+        public bool LastKickStyleMotionCompleted { get; private set; }
         public bool CanKick => !kickLocked && !IsKicking && stats != null && cube != null && zones.Length > 0;
 
         private void Awake()
         {
             stats ??= FindFirstObjectByType<KickLuckyCubePlayerStats>();
             inventory ??= FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
+            kickStrengthSettings ??= FindFirstObjectByType<KickLuckyCubeKickStrengthSettingsController>(FindObjectsInactive.Include);
+            kickStyleShop ??= FindFirstObjectByType<KickLuckyCubeStyleShopController>(FindObjectsInactive.Include);
 
             if (cube == null)
             {
@@ -312,19 +324,131 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
+            var kickActor = powerSelectionActor;
+            var kickStyleIndex = SelectedKickStyleIndex;
             isSelectingKickPower = false;
             powerSelectionActor = null;
             HidePowerMeter();
 
             lastKickOriginPosition = pendingKickOriginPosition;
             lastKickOriginRotation = pendingKickOriginRotation;
+            SetCubeTrailEmitting(false);
+            SetCubeVisible(true);
+
+            var styledStrength = ApplySelectedKickStyleStrength(ResolveEffectiveStrength());
+            var distance = CalculatePoweredDistance(styledStrength, currentPower);
+            flightRoutine = StartCoroutine(PlayStyledKickAndFlight(kickStyleIndex, distance, kickActor));
+        }
+
+        public float ApplySelectedKickStyleStrength(float baseStrength)
+        {
+            return KickLuckyCubeKickStyleCatalog.ApplyStrengthMultiplier(SelectedKickStyleIndex, baseStrength);
+        }
+
+        private IEnumerator PlayStyledKickAndFlight(int styleIndex, float distance, GameObject actor)
+        {
+            IsKicking = true;
+            LastPerformedKickStyleIndex = styleIndex;
+            LastKickStylePeakRotationDegrees = 0f;
+            LastKickStyleMotionCompleted = false;
+            var style = KickLuckyCubeKickStyleCatalog.Get(styleIndex);
+            RefreshStatus(style.DisplayName + "...");
+            PlayKickAnimation(actor);
+
+            var visual = ResolveKickVisual(actor);
+            if (visual != null)
+            {
+                var originalLocalPosition = visual.localPosition;
+                var originalLocalRotation = visual.localRotation;
+                var elapsed = 0f;
+                try
+                {
+                    while (elapsed < style.MotionDuration)
+                    {
+                        elapsed += Time.unscaledDeltaTime;
+                        var normalized = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, style.MotionDuration))
+                            * KickLuckyCubeKickStyleCatalog.ImpactNormalizedTime;
+                        var pose = KickLuckyCubeKickStyleCatalog.EvaluatePose(styleIndex, normalized);
+                        visual.localPosition = originalLocalPosition + pose.LocalPosition;
+                        visual.localRotation = originalLocalRotation * Quaternion.Euler(pose.LocalEuler);
+                        LastKickStylePeakRotationDegrees = Mathf.Max(
+                            LastKickStylePeakRotationDegrees,
+                            Quaternion.Angle(originalLocalRotation, visual.localRotation));
+                        yield return null;
+                    }
+                }
+                finally
+                {
+                    if (visual != null)
+                    {
+                        visual.localPosition = originalLocalPosition;
+                        visual.localRotation = originalLocalRotation;
+                    }
+                }
+            }
+            else
+            {
+                yield return new WaitForSecondsRealtime(Mathf.Min(0.12f, style.MotionDuration));
+            }
+
+            LastKickStyleMotionCompleted = true;
+            ResolveKickOrigin(actor, out lastKickOriginPosition, out lastKickOriginRotation);
             DetachCubeFromHandsForFlight();
             SetCubeVisible(true);
             cube.SetPositionAndRotation(lastKickOriginPosition, lastKickOriginRotation);
             SetCubeTrailEmitting(true);
+            yield return PlayFlight(distance, lastKickOriginPosition);
+        }
 
-            var distance = CalculatePoweredDistance(stats.Strength, currentPower);
-            flightRoutine = StartCoroutine(PlayFlight(distance, lastKickOriginPosition));
+        private static Transform ResolveKickVisual(GameObject actor)
+        {
+            if (actor == null)
+            {
+                return null;
+            }
+
+            var actorTransform = actor.transform;
+            var visual = actorTransform.Find("KLC_PlayerMannequin")
+                ?? actorTransform.Find("KLC_StealBrainrotPlayerVisual")
+                ?? actorTransform.Find("KLC_PlayerVisual")
+                ?? actorTransform.Find("AvatarRoot");
+            if (visual != null)
+            {
+                return visual;
+            }
+
+            var animator = actor.GetComponentInChildren<Animator>(true);
+            if (animator == null || animator.transform == actorTransform)
+            {
+                return null;
+            }
+
+            visual = animator.transform;
+            while (visual.parent != null && visual.parent != actorTransform)
+            {
+                visual = visual.parent;
+            }
+
+            return visual.parent == actorTransform ? visual : null;
+        }
+
+        private static void PlayKickAnimation(GameObject actor)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            var mannequin = actor.transform.Find("KLC_PlayerMannequin");
+            var targetAnimator = mannequin != null
+                ? mannequin.GetComponentInChildren<Animator>(true)
+                : actor.GetComponentInChildren<Animator>(true);
+            if (targetAnimator == null || targetAnimator.runtimeAnimatorController == null)
+            {
+                return;
+            }
+
+            targetAnimator.CrossFadeInFixedTime("Kick", 0.05f, 0, 0f);
         }
 
         public void SetKickLocked(bool value)
@@ -406,6 +530,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             balanceConfig ??= KickLuckyCubeBalanceConfig.GetOrLoadDefault();
             return balanceConfig;
+        }
+
+        private KickLuckyCubeStyleShopController ResolveKickStyleShop()
+        {
+            kickStyleShop ??= FindFirstObjectByType<KickLuckyCubeStyleShopController>(FindObjectsInactive.Include);
+            return kickStyleShop;
         }
 
         public KickLuckyCubeRarityZone ResolveLandingZone(float distance)
@@ -559,7 +689,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 ? $"{stats.SelectedStrengthToolTier.ToString(CultureInfo.InvariantCulture)}/{stats.StrengthToolTier.ToString(CultureInfo.InvariantCulture)}"
                 : "n/a";
             var predictedDistance = stats != null
-                ? CalculatePoweredDistance(stats.Strength, 1f).ToString("0.0", CultureInfo.InvariantCulture)
+                ? CalculatePoweredDistance(ApplySelectedKickStyleStrength(ResolveEffectiveStrength()), 1f).ToString("0.0", CultureInfo.InvariantCulture)
                 : "n/a";
 
             var resultLine = string.IsNullOrEmpty(overrideLine)
@@ -572,7 +702,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     : $"Landed: {LastLandedRarity} | {LastAnimalPool}"
                 : overrideLine;
 
-            var text = $"Strength: {strengthText} | Tool {toolText}\nSpeed: {speedText} | Kick: {predictedDistance} m\n{resultLine}";
+            var text = $"Strength: {strengthText} | Tool {toolText}\nSpeed: {speedText} | Kick: {predictedDistance} m\nStyle: {SelectedKickStyleName} x{SelectedKickStyleMultiplier:0.00}\n{resultLine}";
 
             if (hudText != null)
             {
@@ -840,7 +970,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private float ResolveLandingSurfaceY(Vector3 landingPosition)
         {
-            if (TryResolvePhysicsSurfaceY(landingPosition, out var physicsY))
+            if (KickLuckyCubeGroundResolver.TryResolveGroundY(
+                    landingPosition,
+                    cube,
+                    120f,
+                    240f,
+                    2f,
+                    out var physicsY))
             {
                 return physicsY;
             }
@@ -857,72 +993,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             return lastKickOriginPosition.y;
-        }
-
-        private static bool TryResolvePhysicsSurfaceY(Vector3 landingPosition, out float surfaceY)
-        {
-            var rayOrigin = new Vector3(landingPosition.x, landingPosition.y + 120f, landingPosition.z);
-            var hits = Physics
-                .RaycastAll(rayOrigin, Vector3.down, 240f, ~0, QueryTriggerInteraction.Ignore)
-                .OrderBy(hit => hit.distance);
-
-            foreach (var hit in hits)
-            {
-                if (hit.collider == null || ShouldIgnoreLandingCollider(hit.collider))
-                {
-                    continue;
-                }
-
-                surfaceY = hit.point.y;
-                return true;
-            }
-
-            surfaceY = 0f;
-            return false;
-        }
-
-        private static bool ShouldIgnoreLandingCollider(Collider collider)
-        {
-            return collider.isTrigger
-                || collider.GetComponentInParent<KickLuckyCubeRarityZone>() != null
-                || collider.GetComponentInParent<KickLuckyCubePlayerController>() != null
-                || collider.GetComponentInParent<KickLuckyCubeAnimalRunner>() != null
-                || collider.GetComponentInParent<KickLuckyCubeWaveChaseController>() != null
-                || IsBoundaryWallCollider(collider)
-                || collider.name.StartsWith("KLC_Zone_", StringComparison.Ordinal)
-                || IsGuideCollider(collider);
-        }
-
-        private static bool IsBoundaryWallCollider(Collider collider)
-        {
-            var current = collider.transform;
-            while (current != null)
-            {
-                if (current.name == "Wall_Left_Tan" || current.name == "Wall_Right_Tan")
-                {
-                    return true;
-                }
-
-                current = current.parent;
-            }
-
-            return false;
-        }
-
-        private static bool IsGuideCollider(Collider collider)
-        {
-            var current = collider.transform;
-            while (current != null)
-            {
-                if (current.name.StartsWith("GUIDE_", StringComparison.Ordinal))
-                {
-                    return true;
-                }
-
-                current = current.parent;
-            }
-
-            return false;
         }
 
         private bool HasPowerSelectionActorMoved()
@@ -947,6 +1017,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return cube != null
                 ? Mathf.Max(0.01f, cube.lossyScale.y * 0.5f)
                 : 0.5f;
+        }
+
+        private float ResolveEffectiveStrength()
+        {
+            kickStrengthSettings ??= FindFirstObjectByType<KickLuckyCubeKickStrengthSettingsController>(FindObjectsInactive.Include);
+            kickStyleShop ??= FindFirstObjectByType<KickLuckyCubeStyleShopController>(FindObjectsInactive.Include);
+            return kickStrengthSettings != null
+                ? kickStrengthSettings.EffectiveStrength
+                : stats != null
+                    ? stats.Strength
+                    : 0f;
         }
 
         private void ConfigureCubeTrail()
