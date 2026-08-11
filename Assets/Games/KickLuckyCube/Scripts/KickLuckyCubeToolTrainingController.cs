@@ -23,6 +23,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private string toolPreviewResourcePath = "KickLuckyCube/World/KLC_StrengthToolHandPreview";
         [SerializeField] private Transform playerRoot;
         [SerializeField] private Transform playerVisual;
+        [SerializeField] private Animator playerAnimator;
         [SerializeField] private string carryAnchorName = "KLC_CarryAnchor";
         [SerializeField] private string playerRootName = "KLC_PrototypePlayer";
         [SerializeField] private string[] toolNames = DefaultToolNames;
@@ -30,11 +31,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0.1f)] private float baseStrengthPerSecond = 8f;
         [SerializeField, Min(1f)] private float strengthGainMultiplier = 1.65f;
         [SerializeField, Min(0.5f)] private float bonusIntervalSeconds = 5f;
-        [SerializeField, Min(0.1f)] private float squatFrequency = 1.8f;
-        [SerializeField, Min(0f)] private float squatDepth = 0.18f;
-        [SerializeField, Min(0f)] private float squatYOffset = 0.12f;
-        [SerializeField, Min(0f)] private float toolSquatYOffset = 0.16f;
-        [SerializeField, Min(0f)] private float toolSwingDegrees = 12f;
         [SerializeField, Min(0.1f)] private float strengthFlySeconds = 0.72f;
         [SerializeField, Min(0f)] private float movementCancelDistance = 0.08f;
         [SerializeField] private Vector3 strengthFlyWorldOffset = new(0f, 2.15f, 0f);
@@ -47,15 +43,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private GameObject toolPreview;
         private Vector3 playerVisualDefaultScale;
         private Vector3 playerVisualDefaultPosition;
-        private Vector3 toolPreviewDefaultPosition;
-        private Quaternion toolPreviewDefaultRotation = Quaternion.identity;
         private float strengthTickTimer;
         private float bonusTimer;
         private int displayedToolTier;
+        private int displayedAnimationTier;
         private Vector3 trainingStartPosition;
         private RectTransform strengthFlyLayer;
         private bool hasPlayerVisualDefaults;
-        private bool hasToolPreviewDefaults;
         private bool hasTrainingStartPosition;
         private bool subscribedToBonusPrompt;
 
@@ -66,6 +60,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public string CurrentToolName => GetToolName(CurrentToolTier);
 
         public float CurrentStrengthPerSecond => GetStrengthPerSecond(CurrentToolTier);
+        public string ActiveTrainingAnimationState { get; private set; } = string.Empty;
+        public bool UsesAuthoredToolVisual { get; private set; }
+        public int ActiveToolRendererCount { get; private set; }
 
         private void Awake()
         {
@@ -120,7 +117,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             RefreshToolPreview();
-            AnimateSquat();
+            PlayTrainingAnimation();
         }
 
         public void ToggleTraining()
@@ -149,7 +146,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             CaptureTrainingStartPosition();
             CapturePlayerVisualDefaults();
             RefreshToolPreview(true);
-            AnimateSquat();
+            PlayTrainingAnimation(true);
             Changed?.Invoke();
             return true;
         }
@@ -158,6 +155,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             if (!IsTraining && toolPreview == null)
             {
+                StopTrainingAnimation();
                 RestorePlayerVisual();
                 return;
             }
@@ -167,6 +165,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             bonusTimer = 0f;
             hasTrainingStartPosition = false;
             trainingBonusPrompt?.HideImmediate();
+            StopTrainingAnimation();
             DestroyToolPreview();
             RestorePlayerVisual();
             Changed?.Invoke();
@@ -201,11 +200,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 playerVisual = importedVisualObject.transform;
                 hasPlayerVisualDefaults = false;
+                playerAnimator = null;
             }
             else if (playerVisual == null)
             {
                 var visualObject = GameObject.Find("KLC_PlayerVisual");
                 playerVisual = visualObject != null ? visualObject.transform : null;
+            }
+
+            if (playerAnimator == null && playerVisual != null)
+            {
+                playerAnimator = playerVisual.GetComponentInChildren<Animator>(true);
             }
 
             if (playerRoot == null)
@@ -297,27 +302,34 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             hasPlayerVisualDefaults = true;
         }
 
-        private void AnimateSquat()
+        private void PlayTrainingAnimation(bool force = false)
         {
-            if (playerVisual == null)
+            if (!IsTraining || playerAnimator == null || playerAnimator.runtimeAnimatorController == null)
             {
                 return;
             }
 
-            CapturePlayerVisualDefaults();
-            var squatAmount = (Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f * squatFrequency) + 1f) * 0.5f;
-            var horizontalScale = 1f + squatAmount * squatDepth * 0.36f;
-            var verticalScale = 1f - squatAmount * squatDepth;
-            playerVisual.localScale = new Vector3(
-                playerVisualDefaultScale.x * horizontalScale,
-                playerVisualDefaultScale.y * verticalScale,
-                playerVisualDefaultScale.z * horizontalScale);
-            playerVisual.localPosition = playerVisualDefaultPosition + Vector3.down * (squatAmount * squatYOffset);
-
-            if (toolPreview != null && hasToolPreviewDefaults)
+            var tier = CurrentToolTier;
+            var state = tier % 2 != 0 ? "DumbbellTraining" : "BarbellTraining";
+            if (!force && displayedAnimationTier == tier && string.Equals(ActiveTrainingAnimationState, state, StringComparison.Ordinal))
             {
-                toolPreview.transform.localPosition = toolPreviewDefaultPosition + Vector3.down * (squatAmount * toolSquatYOffset);
-                toolPreview.transform.localRotation = toolPreviewDefaultRotation * Quaternion.Euler(squatAmount * toolSwingDegrees, 0f, 0f);
+                return;
+            }
+
+            displayedAnimationTier = tier;
+            ActiveTrainingAnimationState = state;
+            playerAnimator.speed = 1f;
+            playerAnimator.CrossFadeInFixedTime(state, 0.12f, 0, 0f);
+        }
+
+        private void StopTrainingAnimation()
+        {
+            displayedAnimationTier = 0;
+            ActiveTrainingAnimationState = string.Empty;
+            if (playerAnimator != null && playerAnimator.runtimeAnimatorController != null)
+            {
+                playerAnimator.speed = 1f;
+                playerAnimator.CrossFadeInFixedTime("Idle", 0.12f, 0, 0f);
             }
         }
 
@@ -335,7 +347,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void RefreshToolPreview(bool forceRebuild = false)
         {
             ResolveReferences();
-            if (carryAnchor == null || stats == null)
+            if (playerVisual == null || stats == null)
             {
                 return;
             }
@@ -355,24 +367,24 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var previewVisual = Instantiate(previewPrefab, carryAnchor, false);
+            var previewVisual = Instantiate(previewPrefab, playerVisual, false);
             toolPreview = previewVisual.gameObject;
             toolPreview.name = "KLC_SelectedToolHandPreview_" + CurrentToolName.Replace(" ", string.Empty);
-            toolPreview.transform.localPosition = new Vector3(0.08f, -0.02f, 0.02f);
-            toolPreview.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            toolPreview.transform.localPosition = Vector3.zero;
+            toolPreview.transform.localRotation = Quaternion.identity;
             toolPreview.transform.localScale = Vector3.one;
-            toolPreviewDefaultPosition = toolPreview.transform.localPosition;
-            toolPreviewDefaultRotation = toolPreview.transform.localRotation;
-            hasToolPreviewDefaults = true;
-
             var maxTier = ResolveBalanceConfig() != null ? ResolveBalanceConfig().MaxToolTier : 5;
-            previewVisual.Configure(selectedTier, maxTier);
+            previewVisual.Configure(selectedTier, maxTier, playerVisual);
+            UsesAuthoredToolVisual = previewVisual.UsesAuthoredModel;
+            ActiveToolRendererCount = previewVisual.ActiveRendererCount;
+            PlayTrainingAnimation(true);
         }
 
         private void DestroyToolPreview()
         {
             displayedToolTier = 0;
-            hasToolPreviewDefaults = false;
+            UsesAuthoredToolVisual = false;
+            ActiveToolRendererCount = 0;
             if (toolPreview == null)
             {
                 return;

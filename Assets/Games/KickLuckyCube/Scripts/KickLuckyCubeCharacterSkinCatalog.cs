@@ -139,8 +139,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             new(MaleBodyId, "Male", "Free male mannequin body.", KickLuckyCubeAppearanceSlot.Body, 0, new Color(0.19f, 0.68f, 0.94f), "Mannequin_Male"),
             new(FemaleBodyId, "Female", "Free female mannequin body.", KickLuckyCubeAppearanceSlot.Body, 0, new Color(0.94f, 0.30f, 0.58f), "Mannequin_Female"),
 
-            new(DefaultSkinToneId, "Light", "Free natural skin tone.", KickLuckyCubeAppearanceSlot.SkinTone, 0, new Color(0.82f, 0.58f, 0.42f)),
-            new("skin_warm", "Warm", "Free natural skin tone.", KickLuckyCubeAppearanceSlot.SkinTone, 0, new Color(0.64f, 0.40f, 0.27f)),
+            new(DefaultSkinToneId, "Light", "Free natural skin tone.", KickLuckyCubeAppearanceSlot.SkinTone, 0, new Color(0.965f, 0.765f, 0.604f)),
+            new("skin_warm", "Warm", "Free natural skin tone.", KickLuckyCubeAppearanceSlot.SkinTone, 0, new Color(0.804f, 0.576f, 0.455f)),
             new("skin_deep", "Deep", "Free natural skin tone.", KickLuckyCubeAppearanceSlot.SkinTone, 0, new Color(0.29f, 0.16f, 0.12f)),
             new("skin_green", "Neon Green", "Fantasy skin tone.", KickLuckyCubeAppearanceSlot.SkinTone, 120, new Color(0.24f, 0.88f, 0.30f)),
             new("skin_blue", "Electric Blue", "Fantasy skin tone.", KickLuckyCubeAppearanceSlot.SkinTone, 160, new Color(0.16f, 0.56f, 1f)),
@@ -292,6 +292,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return "KickLuckyCube/UI/SkinTabs/KLC_SkinTab_" + slot;
         }
 
+        public static string GetItemIconResourcePath(string itemId)
+        {
+            return "KickLuckyCube/UI/SkinItems/KLC_SkinItem_" + itemId;
+        }
+
+        public static bool RequiresWardrobeIcon(KickLuckyCubeAppearanceSlot slot)
+        {
+            return slot is KickLuckyCubeAppearanceSlot.Torso
+                or KickLuckyCubeAppearanceSlot.Legs
+                or KickLuckyCubeAppearanceSlot.Boots
+                or KickLuckyCubeAppearanceSlot.Gloves
+                or KickLuckyCubeAppearanceSlot.Hair
+                or KickLuckyCubeAppearanceSlot.Headwear
+                or KickLuckyCubeAppearanceSlot.Mask;
+        }
+
         public static IReadOnlyList<string> ValidateCatalog()
         {
             var errors = new List<string>();
@@ -327,6 +343,25 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (Get("skin_green")?.HardCost <= 0 || Get("skin_blue")?.HardCost <= 0)
             {
                 errors.Add("Fantasy skin tones must cost hard currency.");
+            }
+
+            var iconAssets = new HashSet<Sprite>();
+            foreach (var definition in Definitions)
+            {
+                if (!RequiresWardrobeIcon(definition.Slot))
+                {
+                    continue;
+                }
+
+                var icon = Resources.Load<Sprite>(GetItemIconResourcePath(definition.Id));
+                if (icon == null)
+                {
+                    errors.Add("Missing wardrobe icon: " + definition.Id);
+                }
+                else if (!iconAssets.Add(icon))
+                {
+                    errors.Add("Duplicate wardrobe icon asset: " + definition.Id);
+                }
             }
 
             return errors;

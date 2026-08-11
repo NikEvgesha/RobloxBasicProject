@@ -695,11 +695,12 @@ Character customization / skin shop:
 - green/blue skin, the unisex clothing variants, all three hats, all three masks, and the extra curly hair use hard currency;
 - owned parts can be mixed across slots; changing body type updates only free gender-default clothing/hair and preserves paid equipped pieces;
 - purchases and current selections persist independently per item/slot, and equipping an owned item never charges the wallet again;
-- `KickLuckyCubeCharacterAppearance` binds the exact Blockbench group names and exported mesh-name families from `KLC_PlayerMannequin.bbmodel`, toggles one real renderer set per slot, and applies skin colors only to materials/renderers identified as skin;
-- `KickLuckyCubeBlockbenchPlayerImporter` rebuilds the Unity FBX material remaps, 27 extracted textures, and the Idle/Walk/Classic Kick Animator Controller from the committed Blockbench source; the player controller migrates the old `SadovnicOBJ` scene settings at runtime;
+- `KickLuckyCubeCharacterAppearance` binds the exact Blockbench group names and exported mesh-name families from `KLC_PlayerMannequin.bbmodel`, toggles one real renderer set per slot, and switches natural skin texture/material families; green and blue remain explicit fantasy tints;
+- `KickLuckyCubeBlockbenchPlayerImporter` rebuilds the Unity FBX material remaps, extracted textures, runtime skin resources, and Idle/Walk/Classic Kick/DumbbellTraining/BarbellTraining Animator states from the committed Blockbench source; the player controller migrates the old `SadovnicOBJ` scene settings and applies the one documented Blockbench forward-axis correction at runtime;
 - the appearance binder is safe when the Blockbench export has not been attached yet: selection/economy/UI still work, and bindings refresh when visual children appear;
 - every runtime `KickLuckyCubeFakeOnlineBot` receives a deterministic random loadout, including premium pieces, without touching player ownership or currency;
-- the nine generated transparent tab sprites live under `Resources/KickLuckyCube/UI/SkinTabs`; `KLC_SkinGrid.prefab` is the authored layout container used by both tab and item grids.
+- the nine generated transparent tab sprites live under `Resources/KickLuckyCube/UI/SkinTabs`; 23 model-rendered item thumbnails live under `Resources/KickLuckyCube/UI/SkinItems`; `KLC_SkinGrid.prefab` is the authored layout container used by both tab and item grids;
+- `KickLuckyCubeContentThumbnailGenerator` regenerates wardrobe/tool sprites from the actual current FBX models, and catalog validation rejects missing or duplicate wardrobe sprite references.
 
 Save contract:
 
@@ -765,9 +766,9 @@ Shop:
 - strength tools now use a fixed 15-tier visual catalog that alternates odd tiers as a pair of dumbbells and even tiers as a barbell; strength-per-second and soft-currency costs remain unchanged;
 - the tier material progression is Stone Dumbbells, Iron Barbell, Steel Dumbbells, Gold Barbell, Titanium Dumbbells, Obsidian Barbell, Neon Alloy Dumbbells, Meteorite Barbell, Crystal Dumbbells, Sapphire Barbell, Amethyst Dumbbells, Voidsteel Barbell, Ruby Dumbbells, Emerald Barbell, and Arcane Godstone Dumbbells;
 - the authored Blockbench source is `E:/GitFork/BlockBench/KickLuckyCube/Props/Training/KLC_StrengthTools.bbmodel`; each tier is a separate root and every dumbbell tier contains distinct left/right attachment groups;
-- `KickLuckyCubeToolPreviewVisual` remains the lightweight Unity placeholder until the Blockbench meshes are imported, but it now mirrors the alternating compact/long silhouettes, material colors, and increasing size of the 15-tier catalog;
+- `KickLuckyCubeBlockbenchStrengthToolsImporter` rebuilds the authored FBX, 16 textures, material remaps, and all 15 tier roots; `KickLuckyCubeToolPreviewVisual` selects that model at runtime and only uses its primitive geometry as an explicit missing-resource fallback;
 - Strength boost cards buy a one-shot strength increase with soft currency;
-- runtime Style shop buys and equips kick styles from the style kiosk press-interaction anchor; every non-default style costs hard currency and adds `+10%` effective kick strength;
+- runtime Style shop buys and equips kick styles from the style kiosk press-interaction anchor; every non-default style costs hard currency and adds `+10%` effective kick strength; each card can preview the same motion with style-specific yaw, distance, pitch, FOV, lead-in, safe input locking, and camera restoration without purchasing or launching the cube;
 - Elite Mob Shop sells one-time exclusive mobs for hard currency and immediately selects the purchased mob when inventory has space;
 - the Shop window receives a prefab-backed `VIP 30 Days` card that sells the privilege pass; if IAP is supported it uses the IAP route, otherwise it spends the configured hard-currency fallback price;
 - duplicated shop cards currently point to the same first-pass purchase actions and should become distinct final catalog items later.

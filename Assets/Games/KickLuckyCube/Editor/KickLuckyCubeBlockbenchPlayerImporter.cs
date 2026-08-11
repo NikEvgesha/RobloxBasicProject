@@ -15,6 +15,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube.Editor
         private const string GeneratedRoot = "Assets/Games/KickLuckyCube/Art/BlockbenchPlayer";
         private const string TextureFolder = GeneratedRoot + "/Textures";
         private const string MaterialFolder = GeneratedRoot + "/Materials";
+        private const string RuntimeSkinRoot = "Assets/Games/KickLuckyCube/Resources/KickLuckyCube/CharacterSkin";
+        private const string RuntimeSkinTextureFolder = RuntimeSkinRoot + "/Textures";
+        private const string RuntimeSkinMaterialFolder = RuntimeSkinRoot + "/Materials";
 
         [Serializable]
         private sealed class BlockbenchProject
@@ -35,6 +38,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube.Editor
             EnsureFolder(GeneratedRoot);
             EnsureFolder(TextureFolder);
             EnsureFolder(MaterialFolder);
+            EnsureFolder(RuntimeSkinTextureFolder);
+            EnsureFolder(RuntimeSkinMaterialFolder);
 
             var project = ReadSourceProject();
             var materialNames = ExtractTexturesAndBuildMaterials(project);
@@ -84,8 +89,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube.Editor
                 }
 
                 var safeName = SanitizeFileName(entry.name);
+                var textureBytes = Convert.FromBase64String(entry.source[(marker + 7)..]);
                 var texturePath = TextureFolder + "/" + safeName + ".png";
-                File.WriteAllBytes(texturePath, Convert.FromBase64String(entry.source[(marker + 7)..]));
+                File.WriteAllBytes(texturePath, textureBytes);
                 AssetDatabase.ImportAsset(texturePath, ImportAssetOptions.ForceSynchronousImport);
 
                 if (AssetImporter.GetAtPath(texturePath) is TextureImporter textureImporter)
@@ -124,6 +130,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube.Editor
                 }
 
                 EditorUtility.SetDirty(material);
+
+                if (entry.name.StartsWith("skin", StringComparison.OrdinalIgnoreCase))
+                {
+                    BuildRuntimeSkinResource(entry.name, safeName, textureBytes, shader);
+                }
             }
 
             return project.textures
@@ -131,6 +142,49 @@ namespace RobloxBasicProject.Games.KickLuckyCube.Editor
                 .Select(entry => entry.name)
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
+        }
+
+        private static void BuildRuntimeSkinResource(string materialName, string safeName, byte[] textureBytes, Shader shader)
+        {
+            var texturePath = RuntimeSkinTextureFolder + "/" + safeName + ".png";
+            File.WriteAllBytes(texturePath, textureBytes);
+            AssetDatabase.ImportAsset(texturePath, ImportAssetOptions.ForceSynchronousImport);
+            if (AssetImporter.GetAtPath(texturePath) is TextureImporter textureImporter)
+            {
+                textureImporter.textureType = TextureImporterType.Default;
+                textureImporter.alphaIsTransparency = true;
+                textureImporter.mipmapEnabled = false;
+                textureImporter.filterMode = FilterMode.Point;
+                textureImporter.wrapMode = TextureWrapMode.Clamp;
+                textureImporter.SaveAndReimport();
+            }
+
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
+            var materialPath = RuntimeSkinMaterialFolder + "/" + safeName + ".mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material == null)
+            {
+                material = new Material(shader) { name = materialName };
+                AssetDatabase.CreateAsset(material, materialPath);
+            }
+            else
+            {
+                material.shader = shader;
+            }
+
+            material.mainTexture = texture;
+            material.color = Color.white;
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", texture);
+            }
+
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", Color.white);
+            }
+
+            EditorUtility.SetDirty(material);
         }
 
         private static void ConfigureModelImporter(string[] materialNames)
@@ -182,10 +236,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube.Editor
             var idleClip = FindClip(clips, "KLC_Idle");
             var walkClip = FindClip(clips, "KLC_Walk");
             var kickClip = FindClip(clips, "KLC_Kick_Classic");
+            var dumbbellClip = FindClip(clips, "KLC_Dumbbell_LateralLunge");
+            var barbellClip = FindClip(clips, "KLC_Barbell_BackSquat");
 
-            if (idleClip == null || walkClip == null || kickClip == null)
+            if (idleClip == null || walkClip == null || kickClip == null
+                || dumbbellClip == null || barbellClip == null)
             {
-                throw new InvalidOperationException("The Blockbench FBX must contain Idle, Walk and Classic Kick clips.");
+                throw new InvalidOperationException(
+                    "The Blockbench FBX must contain Idle, Walk, Classic Kick, Dumbbell Lunge and Barbell Squat clips.");
             }
 
             if (AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath) != null)
@@ -206,6 +264,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube.Editor
 
             var kick = stateMachine.AddState("Kick");
             kick.motion = kickClip;
+
+            var dumbbellTraining = stateMachine.AddState("DumbbellTraining");
+            dumbbellTraining.motion = dumbbellClip;
+
+            var barbellTraining = stateMachine.AddState("BarbellTraining");
+            barbellTraining.motion = barbellClip;
 
             var toWalk = idle.AddTransition(walk);
             toWalk.hasExitTime = false;

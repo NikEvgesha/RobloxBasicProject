@@ -298,12 +298,24 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var cardImage = AddImage(card.gameObject, new Color(0.08f, 0.13f, 0.18f, 0.96f));
 
             var swatch = CreateRect("Swatch", card);
-            swatch.sizeDelta = new Vector2(58f, 58f);
+            swatch.sizeDelta = new Vector2(76f, 76f);
             swatch.anchoredPosition = new Vector2(-104f, 42f);
             var swatchImage = AddImage(swatch.gameObject, definition.PreviewColor);
             if (swatchImage != null)
             {
-                swatchImage.color = definition.PreviewColor;
+                var itemIcon = KickLuckyCubeCharacterSkinCatalog.RequiresWardrobeIcon(definition.Slot)
+                    ? Resources.Load<Sprite>(KickLuckyCubeCharacterSkinCatalog.GetItemIconResourcePath(definition.Id))
+                    : null;
+                if (itemIcon != null)
+                {
+                    swatchImage.sprite = itemIcon;
+                    swatchImage.color = Color.white;
+                    swatchImage.preserveAspect = true;
+                }
+                else
+                {
+                    swatchImage.color = definition.PreviewColor;
+                }
             }
 
             CreateLabel(card, "Name", definition.DisplayName, 19, TextAnchor.MiddleLeft, new Vector2(190f, 30f), new Vector2(34f, 58f));

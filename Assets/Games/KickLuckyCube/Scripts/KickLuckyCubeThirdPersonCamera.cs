@@ -22,6 +22,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private float maxPitch = 58f;
         [SerializeField] private float sensitivity = 0.18f;
         [SerializeField] private float rotationSharpness = 22f;
+        [SerializeField] private float orbitRotationSharpness = 30f;
         [SerializeField] private float followSharpness = 18f;
         [SerializeField] private float targetSwitchSharpness = 4.5f;
         [SerializeField] private float zoomSharpness = 16f;
@@ -32,6 +33,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0.01f)] private float cameraCollisionRadius = 0.24f;
         [SerializeField, Min(0f)] private float cameraCollisionPadding = 0.18f;
         [SerializeField, Min(0.5f)] private float cameraCollisionMinimumDistance = 1.15f;
+        [SerializeField, Min(0.1f)] private float collisionRetractSharpness = 45f;
+        [SerializeField, Min(0.1f)] private float collisionRestoreSharpness = 8f;
 
         private Transform cinematicTarget;
         private float targetYaw;
@@ -41,13 +44,28 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private Vector3 smoothedFocusPoint;
         private bool hasSmoothedFocusPoint;
         private bool hasSavedCinematicSettings;
+        private float savedCinematicTargetYaw;
         private float savedCinematicTargetPitch;
         private float savedCinematicTargetDistance;
+        private float savedCinematicFieldOfView;
+        private Vector3 cinematicFocusOffset;
+        private float targetFieldOfView;
+        private Camera cameraComponent;
+        private float cinematicTransitionDuration;
+        private float cinematicTransitionElapsed;
+        private float cinematicStartYaw;
+        private float cinematicStartPitch;
+        private float cinematicStartDistance;
+        private float cinematicStartFieldOfView;
+        private AnimationCurve cinematicEasing;
+        private float smoothedCameraDistance;
+        private bool hasSmoothedCameraDistance;
 
         public Transform ActiveTarget => activeTarget;
 
         private void Awake()
         {
+            cameraComponent = GetComponent<Camera>();
             if (defaultTarget == null)
             {
                 var player = GameObject.Find("KLC_PrototypePlayer");
@@ -70,6 +88,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             targetYaw = yaw;
             targetPitch = pitch;
             targetDistance = distance;
+            targetFieldOfView = cameraComponent != null ? cameraComponent.fieldOfView : 60f;
 
             if (snapOnStart)
             {
@@ -95,11 +114,35 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 targetDistance = Mathf.Clamp(targetDistance - zoomInput * zoomStep, minDistance, maxDistance);
             }
 
-            var rotationBlend = isOrbiting ? 1f : 1f - Mathf.Exp(-rotationSharpness * deltaTime);
+            var activeRotationSharpness = isOrbiting ? orbitRotationSharpness : rotationSharpness;
+            var rotationBlend = 1f - Mathf.Exp(-activeRotationSharpness * deltaTime);
             var zoomBlend = 1f - Mathf.Exp(-zoomSharpness * deltaTime);
-            yaw = isOrbiting ? targetYaw : Mathf.LerpAngle(yaw, targetYaw, rotationBlend);
-            pitch = isOrbiting ? targetPitch : Mathf.Lerp(pitch, targetPitch, rotationBlend);
-            distance = Mathf.Lerp(distance, targetDistance, zoomBlend);
+            if (isCinematic && cinematicTransitionDuration > 0f
+                && cinematicTransitionElapsed < cinematicTransitionDuration)
+            {
+                cinematicTransitionElapsed = Mathf.Min(
+                    cinematicTransitionDuration,
+                    cinematicTransitionElapsed + deltaTime);
+                var normalized = cinematicTransitionElapsed / cinematicTransitionDuration;
+                var blend = cinematicEasing != null ? cinematicEasing.Evaluate(normalized) : normalized;
+                yaw = Mathf.LerpAngle(cinematicStartYaw, targetYaw, blend);
+                pitch = Mathf.Lerp(cinematicStartPitch, targetPitch, blend);
+                distance = Mathf.Lerp(cinematicStartDistance, targetDistance, blend);
+                if (cameraComponent != null)
+                {
+                    cameraComponent.fieldOfView = Mathf.Lerp(cinematicStartFieldOfView, targetFieldOfView, blend);
+                }
+            }
+            else
+            {
+                yaw = Mathf.LerpAngle(yaw, targetYaw, rotationBlend);
+                pitch = Mathf.Lerp(pitch, targetPitch, rotationBlend);
+                distance = Mathf.Lerp(distance, targetDistance, zoomBlend);
+                if (cameraComponent != null)
+                {
+                    cameraComponent.fieldOfView = Mathf.Lerp(cameraComponent.fieldOfView, targetFieldOfView, zoomBlend);
+                }
+            }
 
             UpdateCamera(deltaTime, false);
         }
@@ -122,6 +165,29 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public void BeginCinematicFocus(Transform target, float focusDistance, float focusPitch, float worldYaw)
         {
+            BeginCinematicFocus(
+                target,
+                focusDistance,
+                focusPitch,
+                worldYaw,
+                targetOffset,
+                cameraComponent != null ? cameraComponent.fieldOfView : 60f,
+                false,
+                0f,
+                null);
+        }
+
+        public void BeginCinematicFocus(
+            Transform target,
+            float focusDistance,
+            float focusPitch,
+            float worldYaw,
+            Vector3 focusOffset,
+            float fieldOfView,
+            bool snapOnEnter,
+            float transitionSeconds,
+            AnimationCurve easing)
+        {
             if (target == null)
             {
                 return;
@@ -129,25 +195,53 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (!hasSavedCinematicSettings)
             {
+                savedCinematicTargetYaw = targetYaw;
                 savedCinematicTargetPitch = targetPitch;
                 savedCinematicTargetDistance = targetDistance;
+                savedCinematicFieldOfView = cameraComponent != null ? cameraComponent.fieldOfView : 60f;
                 hasSavedCinematicSettings = true;
             }
 
             cinematicTarget = target;
+            cinematicFocusOffset = focusOffset;
             targetDistance = Mathf.Clamp(focusDistance, minDistance, maxDistance);
             targetPitch = Mathf.Clamp(focusPitch, minPitch, maxPitch);
             targetYaw = worldYaw;
+            targetFieldOfView = Mathf.Clamp(fieldOfView, 20f, 100f);
+            cinematicTransitionDuration = Mathf.Max(0f, transitionSeconds);
+            cinematicTransitionElapsed = 0f;
+            cinematicStartYaw = yaw;
+            cinematicStartPitch = pitch;
+            cinematicStartDistance = distance;
+            cinematicStartFieldOfView = cameraComponent != null ? cameraComponent.fieldOfView : targetFieldOfView;
+            cinematicEasing = easing;
+
+            if (snapOnEnter)
+            {
+                yaw = targetYaw;
+                pitch = targetPitch;
+                distance = targetDistance;
+                if (cameraComponent != null)
+                {
+                    cameraComponent.fieldOfView = targetFieldOfView;
+                }
+
+                UpdateCamera(1f, true);
+            }
         }
 
         public void EndCinematicFocus(bool alignYawToNextTarget)
         {
             cinematicTarget = null;
+            cinematicTransitionDuration = 0f;
+            cinematicTransitionElapsed = 0f;
 
             if (hasSavedCinematicSettings)
             {
+                targetYaw = savedCinematicTargetYaw;
                 targetPitch = Mathf.Clamp(savedCinematicTargetPitch, minPitch, maxPitch);
                 targetDistance = Mathf.Clamp(savedCinematicTargetDistance, minDistance, maxDistance);
+                targetFieldOfView = Mathf.Clamp(savedCinematicFieldOfView, 20f, 100f);
                 hasSavedCinematicSettings = false;
             }
 
@@ -179,7 +273,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             var rotation = Quaternion.Euler(pitch, yaw, 0f);
-            var desiredFocusPoint = activeTarget.position + targetOffset;
+            var desiredFocusPoint = activeTarget.position
+                + (cinematicTarget != null ? cinematicFocusOffset : targetOffset);
             var followBlend = force
                 ? 1f
                 : 1f - Mathf.Exp(-(targetChanged ? targetSwitchSharpness : followSharpness) * Mathf.Max(0f, deltaTime));
@@ -196,10 +291,24 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var desiredPosition = smoothedFocusPoint + rotation * new Vector3(0f, 0f, -distance);
             var resolvedPosition = ResolveCameraCollision(smoothedFocusPoint, desiredPosition);
+            var resolvedDistance = Vector3.Distance(smoothedFocusPoint, resolvedPosition);
+            if (force || !hasSmoothedCameraDistance)
+            {
+                smoothedCameraDistance = resolvedDistance;
+                hasSmoothedCameraDistance = true;
+            }
+            else
+            {
+                var collisionSharpness = resolvedDistance < smoothedCameraDistance
+                    ? collisionRetractSharpness
+                    : collisionRestoreSharpness;
+                var collisionBlend = 1f - Mathf.Exp(-collisionSharpness * Mathf.Max(0f, deltaTime));
+                smoothedCameraDistance = Mathf.Lerp(smoothedCameraDistance, resolvedDistance, collisionBlend);
+            }
 
-            transform.SetPositionAndRotation(
-                force ? resolvedPosition : Vector3.Lerp(transform.position, resolvedPosition, followBlend),
-                rotation);
+            var cameraPosition = smoothedFocusPoint
+                + rotation * new Vector3(0f, 0f, -smoothedCameraDistance);
+            transform.SetPositionAndRotation(cameraPosition, rotation);
         }
 
         private Vector3 ResolveCameraCollision(Vector3 focusPoint, Vector3 desiredPosition)

@@ -12,7 +12,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             int hardCost,
             float strengthMultiplier,
             float motionDuration,
-            Color accentColor)
+            Color accentColor,
+            float showcaseYawOffset,
+            float showcaseDistance,
+            float showcasePitch,
+            float showcaseFieldOfView,
+            float showcaseLeadIn)
         {
             Id = id;
             DisplayName = displayName;
@@ -21,6 +26,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             StrengthMultiplier = strengthMultiplier;
             MotionDuration = motionDuration;
             AccentColor = accentColor;
+            ShowcaseYawOffset = showcaseYawOffset;
+            ShowcaseDistance = showcaseDistance;
+            ShowcasePitch = showcasePitch;
+            ShowcaseFieldOfView = showcaseFieldOfView;
+            ShowcaseLeadIn = showcaseLeadIn;
         }
 
         public string Id { get; }
@@ -30,6 +40,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public float StrengthMultiplier { get; }
         public float MotionDuration { get; }
         public Color AccentColor { get; }
+        public float ShowcaseYawOffset { get; }
+        public float ShowcaseDistance { get; }
+        public float ShowcasePitch { get; }
+        public float ShowcaseFieldOfView { get; }
+        public float ShowcaseLeadIn { get; }
         public bool IsDefault => HardCost <= 0;
     }
 
@@ -54,12 +69,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private static readonly KickLuckyCubeKickStyleDefinition[] Styles =
         {
-            new("classic", "Classic Kick", "A clean straight kick. No bonus.", 0, 1f, 0.82f, new Color(1f, 0.82f, 0.20f)),
-            new("roundhouse", "Roundhouse", "A wide turning strike. +10% strength.", 80, PremiumStrengthMultiplier, 0.90f, new Color(1f, 0.38f, 0.16f)),
-            new("tornado", "Tornado Kick", "An airborne spinning strike. +10% strength.", 180, PremiumStrengthMultiplier, 1.00f, new Color(0.18f, 0.88f, 1f)),
-            new("bicycle", "Bicycle Kick", "A jumping overhead strike. +10% strength.", 400, PremiumStrengthMultiplier, 1.05f, new Color(0.44f, 0.60f, 1f)),
-            new("scorpion", "Scorpion Kick", "A forward dive and heel strike. +10% strength.", 850, PremiumStrengthMultiplier, 1.05f, new Color(0.80f, 0.24f, 1f)),
-            new("lightning_spiral", "Lightning Spiral", "A triple magical spin. +10% strength.", 1600, PremiumStrengthMultiplier, 1.10f, new Color(0.58f, 1f, 0.16f))
+            new("classic", "Classic Kick", "A clean straight kick. No bonus.", 0, 1f, 0.82f, new Color(1f, 0.82f, 0.20f), 150f, 4.1f, 10f, 52f, 0.12f),
+            new("roundhouse", "Roundhouse", "A wide turning strike. +10% strength.", 80, PremiumStrengthMultiplier, 0.90f, new Color(1f, 0.38f, 0.16f), 210f, 4.4f, 9f, 50f, 0.24f),
+            new("tornado", "Tornado Kick", "An airborne spinning strike. +10% strength.", 180, PremiumStrengthMultiplier, 1.00f, new Color(0.18f, 0.88f, 1f), 155f, 4.8f, 13f, 54f, 0.26f),
+            new("bicycle", "Bicycle Kick", "A jumping overhead strike. +10% strength.", 400, PremiumStrengthMultiplier, 1.05f, new Color(0.44f, 0.60f, 1f), 200f, 5.0f, 16f, 55f, 0.28f),
+            new("scorpion", "Scorpion Kick", "A forward dive and heel strike. +10% strength.", 850, PremiumStrengthMultiplier, 1.05f, new Color(0.80f, 0.24f, 1f), 165f, 4.6f, 8f, 49f, 0.26f),
+            new("lightning_spiral", "Lightning Spiral", "A triple magical spin. +10% strength.", 1600, PremiumStrengthMultiplier, 1.10f, new Color(0.58f, 1f, 0.16f), 220f, 5.2f, 14f, 56f, 0.30f)
         };
 
         public static int Count => Styles.Length;

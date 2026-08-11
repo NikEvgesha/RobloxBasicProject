@@ -37,6 +37,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0.1f)] private float importedPlayerVisualTargetHeight = 2.05f;
         [SerializeField] private Vector3 importedPlayerVisualLocalPosition = Vector3.zero;
         [SerializeField] private Vector3 importedPlayerVisualLocalEuler;
+        [SerializeField] private Vector3 blockbenchForwardCorrectionEuler = new(0f, 180f, 0f);
 
         private Rigidbody body;
         private float lockedY;
@@ -233,6 +234,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (existing != null)
             {
                 HideGeneratedPlayerVisual();
+                ApplyImportedVisualOrientation(existing);
                 ConfigureImportedAnimator(existing.gameObject);
                 return;
             }
@@ -248,11 +250,27 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var visual = Instantiate(prefab, transform);
             visual.name = importedPlayerVisualName;
             visual.transform.localPosition = importedPlayerVisualLocalPosition;
-            visual.transform.localRotation = Quaternion.Euler(importedPlayerVisualLocalEuler);
+            ApplyImportedVisualOrientation(visual.transform);
             visual.transform.localScale = Vector3.one;
             RemoveColliders(visual);
             NormalizeVisualToHeight(visual.transform, importedPlayerVisualTargetHeight);
             ConfigureImportedAnimator(visual);
+        }
+
+        private void ApplyImportedVisualOrientation(Transform visual)
+        {
+            if (visual == null)
+            {
+                return;
+            }
+
+            var correction = string.Equals(
+                importedPlayerVisualResourcePath,
+                BlockbenchPlayerVisualResourcePath,
+                System.StringComparison.Ordinal)
+                ? blockbenchForwardCorrectionEuler
+                : Vector3.zero;
+            visual.localRotation = Quaternion.Euler(importedPlayerVisualLocalEuler + correction);
         }
 
         private void MigrateLegacyPlayerVisualSettings()

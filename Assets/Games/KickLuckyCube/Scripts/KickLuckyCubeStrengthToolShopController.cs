@@ -17,11 +17,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private static readonly string[] DefaultToolNames =
         {
-            "Training Dumbbell",
-            "Iron Kettlebell",
-            "Heavy Barbell",
+            "Stone Dumbbells",
+            "Iron Barbell",
+            "Steel Dumbbells",
             "Gold Barbell",
-            "Power Trainer"
+            "Titanium Dumbbells"
         };
 
         private static readonly float[] DefaultStrengthPerSecond = { 8f, 14f, 24f, 40f, 66f };
@@ -51,6 +51,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private Text[] tierDetailTexts = Array.Empty<Text>();
         private Text[] tierButtonTexts = Array.Empty<Text>();
         private Image[] tierFrames = Array.Empty<Image>();
+        private Image[] tierIcons = Array.Empty<Image>();
 
         public bool IsOpen => windowRoot != null && windowRoot.gameObject.activeSelf;
 
@@ -276,6 +277,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             tierDetailTexts = new Text[tierCount];
             tierButtonTexts = new Text[tierCount];
             tierFrames = new Image[tierCount];
+            tierIcons = new Image[tierCount];
 
             for (var tier = 1; tier <= tierCount; tier++)
             {
@@ -306,8 +308,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var icon = CreateRect("Icon", card);
             icon.anchoredPosition = new Vector2(0f, 38f);
-            icon.sizeDelta = new Vector2(60f, 34f);
-            AddImage(icon.gameObject, ColorForTier(tier));
+            icon.sizeDelta = new Vector2(78f, 50f);
+            var iconImage = AddImage(icon.gameObject, ColorForTier(tier));
+            var iconSprite = Resources.Load<Sprite>($"KickLuckyCube/UI/StrengthTools/KLC_StrengthTool_{tier:00}");
+            if (iconSprite != null)
+            {
+                iconImage.sprite = iconSprite;
+                iconImage.color = Color.white;
+                iconImage.preserveAspect = true;
+            }
+
+            tierIcons[tier - 1] = iconImage;
 
             tierNameTexts[tier - 1] = CreateLabel(card, "Name", GetToolName(tier), 12, TextAnchor.MiddleCenter, new Vector2(122f, 26f), new Vector2(0f, 12f));
             tierDetailTexts[tier - 1] = CreateLabel(card, "Detail", string.Empty, 12, TextAnchor.MiddleCenter, new Vector2(122f, 28f), new Vector2(0f, -16f));
@@ -454,7 +465,24 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private Color ColorForTier(int tier)
         {
-            return Color.Lerp(new Color(0.58f, 0.64f, 0.78f, 1f), new Color(1f, 0.75f, 0.15f, 1f), Mathf.InverseLerp(1f, Mathf.Max(1f, ResolvedMaxToolTier), tier));
+            return Mathf.Clamp(tier, 1, 15) switch
+            {
+                1 => new Color(0.42f, 0.40f, 0.36f, 1f),
+                2 => new Color(0.24f, 0.27f, 0.30f, 1f),
+                3 => new Color(0.62f, 0.68f, 0.73f, 1f),
+                4 => new Color(1.00f, 0.68f, 0.12f, 1f),
+                5 => new Color(0.62f, 0.80f, 0.88f, 1f),
+                6 => new Color(0.14f, 0.08f, 0.19f, 1f),
+                7 => new Color(0.10f, 0.94f, 0.92f, 1f),
+                8 => new Color(0.55f, 0.25f, 0.10f, 1f),
+                9 => new Color(0.60f, 0.94f, 1.00f, 1f),
+                10 => new Color(0.10f, 0.34f, 0.94f, 1f),
+                11 => new Color(0.60f, 0.20f, 0.88f, 1f),
+                12 => new Color(0.18f, 0.05f, 0.28f, 1f),
+                13 => new Color(0.92f, 0.08f, 0.18f, 1f),
+                14 => new Color(0.06f, 0.72f, 0.36f, 1f),
+                _ => new Color(0.58f, 0.96f, 0.12f, 1f)
+            };
         }
 
         private int ResolvedMaxToolTier => ResolveBalanceConfig() != null
@@ -467,7 +495,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return balanceConfig;
         }
 
-        private void OnWalletChanged(int soft, int hard)
+        private void OnWalletChanged(long soft, long hard)
         {
             Refresh();
         }

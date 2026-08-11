@@ -296,21 +296,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             return new[]
             {
-                "Training Dumbbell",
-                "Iron Kettlebell",
-                "Heavy Barbell",
+                "Stone Dumbbells",
+                "Iron Barbell",
+                "Steel Dumbbells",
                 "Gold Barbell",
-                "Power Trainer",
-                "Titan Grip",
-                "Neon Press",
-                "Meteor Bar",
-                "Crystal Core",
-                "Rocket Rack",
-                "Void Atlas",
-                "Solar Anvil",
-                "Galaxy Press",
-                "Mythic Engine",
-                "Lucky Godweight"
+                "Titanium Dumbbells",
+                "Obsidian Barbell",
+                "Neon Alloy Dumbbells",
+                "Meteorite Barbell",
+                "Crystal Dumbbells",
+                "Sapphire Barbell",
+                "Amethyst Dumbbells",
+                "Voidsteel Barbell",
+                "Ruby Dumbbells",
+                "Emerald Barbell",
+                "Arcane Godstone Dumbbells"
             };
         }
 

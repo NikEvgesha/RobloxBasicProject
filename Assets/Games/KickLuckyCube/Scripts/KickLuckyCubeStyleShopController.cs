@@ -252,6 +252,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             accent.sizeDelta = new Vector2(176f, 30f);
             accent.anchoredPosition = new Vector2(0f, 58f);
             accentImages[index] = AddImage(accent.gameObject, style.AccentColor);
+            var previewButton = GetOrAddComponent<Button>(accent.gameObject);
+            previewButton.targetGraphic = accentImages[index];
+            previewButton.onClick.RemoveAllListeners();
+            var previewIndex = index;
+            previewButton.onClick.AddListener(() => PreviewStyle(previewIndex));
+            CreateLabel(accent, "PreviewLabel", "Preview", 13, TextAnchor.MiddleCenter, new Vector2(172f, 28f), Vector2.zero);
 
             var bonusLine = style.IsDefault ? "No strength bonus" : "+10% kick strength";
             CreateLabel(card, "Name", style.DisplayName + "\n" + bonusLine, 14, TextAnchor.MiddleCenter, new Vector2(196f, 68f), new Vector2(0f, 8f));
@@ -263,6 +269,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             button.onClick.AddListener(() => TrySelectOrBuyStyle(capturedIndex));
             actionButtons[index] = button;
             buttonTexts[index] = button.GetComponentInChildren<Text>();
+        }
+
+        private void PreviewStyle(int index)
+        {
+            var kickController = FindFirstObjectByType<KickLuckyCubeKickController>(FindObjectsInactive.Include);
+            var actor = GameObject.Find("KLC_PrototypePlayer");
+            if (kickController == null || actor == null || !kickController.TryPreviewKickStyle(index, actor))
+            {
+                SetStatus("Kick preview is unavailable right now.");
+                return;
+            }
+
+            CloseWindow();
         }
 
         private void Refresh()

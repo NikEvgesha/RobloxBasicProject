@@ -29,10 +29,11 @@ Keep game-specific mechanics, scenes, prefabs, configs, art, and UI in this fold
 - Stable slot animals, pending income, offline income, and per-slot booster levels save in PlayerPrefs during Play Mode.
 - If the player was away for 30+ minutes, the prefab-backed Offline Earnings popup can claim all player stable income; rewarded ads can double the claim, and the 30-day VIP pass skips ads while adding a temporary `x5` soft-income bonus.
 - Spend soft in the runtime Speed Upgrades and Training Equipment shops.
-- Train strength by toggling the selected bottom-bar tool: named tool tiers (dumbbell, kettlebell, barbell, and stronger variants) appear in hand, make the player squat, grant tier-based strength every second, and periodically create one `x2` claim circle.
+- Train strength by toggling the selected bottom-bar tool: the 15 authored tiers alternate dumbbells and barbells, attach to mannequin sockets, play the matching Blockbench lunge/squat state, grant tier-based strength every second, and periodically create one `x2` claim circle.
 - During tool training, claim the temporary `x2` prompt with `X` or by clicking it; a new circle will not spawn while one is already visible.
-- Kick Style shop is opened by pressing `E` near the style kiosk. Classic Kick is free; five premium motions cost hard currency, persist ownership/equipment, and add `+10%` effective kick strength.
-- The runtime player now loads the exported `KLC_PlayerMannequin.fbx` instead of the legacy `SadovnicOBJ`. Its embedded Blockbench textures, Idle/Walk/Classic Kick clips, material remaps, and Animator Controller can be rebuilt from `KLC_PlayerMannequin.bbmodel` through `Kick Lucky Cube/Assets/Rebuild Blockbench Player`.
+- Kick Style shop is opened by pressing `E` near the style kiosk. Classic Kick is free; five premium motions cost hard currency, persist ownership/equipment, add `+10%` effective kick strength, and every card has a camera-framed `Preview` action.
+- The runtime player now loads the exported `KLC_PlayerMannequin.fbx` instead of the legacy `SadovnicOBJ`. Its embedded Blockbench textures, Idle/Walk/Classic Kick/training clips, runtime skin materials, material remaps, and Animator Controller can be rebuilt from `KLC_PlayerMannequin.bbmodel` through `Kick Lucky Cube/Assets/Rebuild Blockbench Player`.
+- `Kick Lucky Cube/Assets/Rebuild Content Thumbnails` renders the 23 wardrobe and 15 strength-tool sprites from their actual authored models; missing or duplicate wardrobe references fail catalog validation.
 - Future feature spots are wired for weather rarity boosts, selected-mob exchange, exclusive epic mobs, and the one-time rating gift.
 - The leaderboard board is filled in Play Mode with local score and fake neighbor rankings.
 - Open Shop from the left-side button to buy speed, tool, and strength boost prototype cards.

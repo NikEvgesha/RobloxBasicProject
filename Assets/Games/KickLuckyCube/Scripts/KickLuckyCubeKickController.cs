@@ -19,6 +19,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeInventoryController inventory;
         [SerializeField] private KickLuckyCubeKickStrengthSettingsController kickStrengthSettings;
         [SerializeField] private KickLuckyCubeStyleShopController kickStyleShop;
+        [SerializeField] private KickLuckyCubeThirdPersonCamera showcaseCamera;
         [SerializeField] private Transform cube;
         [SerializeField] private Transform landingMarker;
         [SerializeField] private Text hudText;
@@ -46,8 +47,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0.05f)] private float powerMeterSpeed = 1.4f;
         [SerializeField, Min(0f)] private float minimumPowerMultiplier = 0.45f;
         [SerializeField, Min(0f)] private float maximumPowerMultiplier = 1.2f;
+        [SerializeField] private Vector3 kickShowcaseFocusOffset = new(0f, 1.0f, 0f);
+        [SerializeField, Min(0f)] private float kickShowcaseTransitionSeconds = 0.18f;
+        [SerializeField, Min(0f)] private float kickShowcaseContactHoldSeconds = 0.12f;
+        [SerializeField] private AnimationCurve kickShowcaseEasing = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
         private Coroutine flightRoutine;
+        private Coroutine stylePreviewRoutine;
         private bool kickLocked;
         private bool isSelectingKickPower;
         private float currentPower;
@@ -64,6 +70,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private Vector3 powerSelectionActorStartPosition;
         private int powerSelectionStartedFrame = -1;
         private bool powerMeterVisualsConfigured;
+        private bool showcaseCameraActive;
 
         public event Action<KickLuckyCubeKickResult> Landed;
 
@@ -82,7 +89,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public int LastPerformedKickStyleIndex { get; private set; } = -1;
         public float LastKickStylePeakRotationDegrees { get; private set; }
         public bool LastKickStyleMotionCompleted { get; private set; }
-        public bool CanKick => !kickLocked && !IsKicking && stats != null && cube != null && zones.Length > 0;
+        public bool IsPreviewingStyle { get; private set; }
+        public int PreviewedStyleIndex { get; private set; } = -1;
+        public bool CanKick => !kickLocked && !IsKicking && !IsPreviewingStyle && stats != null && cube != null && zones.Length > 0;
 
         private void Awake()
         {
@@ -90,6 +99,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             inventory ??= FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
             kickStrengthSettings ??= FindFirstObjectByType<KickLuckyCubeKickStrengthSettingsController>(FindObjectsInactive.Include);
             kickStyleShop ??= FindFirstObjectByType<KickLuckyCubeStyleShopController>(FindObjectsInactive.Include);
+            showcaseCamera ??= Camera.main != null
+                ? Camera.main.GetComponent<KickLuckyCubeThirdPersonCamera>()
+                : FindFirstObjectByType<KickLuckyCubeThirdPersonCamera>(FindObjectsInactive.Include);
 
             if (cube == null)
             {
@@ -196,6 +208,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             HidePowerMeter();
             SetCubeTrailEmitting(false);
+            CancelStylePreview();
+            EndKickShowcase();
         }
 
         public void Kick(GameObject actor)
@@ -353,8 +367,36 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             LastKickStyleMotionCompleted = false;
             var style = KickLuckyCubeKickStyleCatalog.Get(styleIndex);
             RefreshStatus(style.DisplayName + "...");
-            PlayKickAnimation(actor);
+            BeginKickShowcase(actor, style);
+            if (style.ShowcaseLeadIn > 0f)
+            {
+                yield return new WaitForSecondsRealtime(style.ShowcaseLeadIn);
+            }
 
+            PlayKickAnimation(actor);
+            yield return PlayStyleMotion(styleIndex, style, actor, true);
+            LastKickStyleMotionCompleted = true;
+
+            if (kickShowcaseContactHoldSeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(kickShowcaseContactHoldSeconds);
+            }
+
+            EndKickShowcase();
+            ResolveKickOrigin(actor, out lastKickOriginPosition, out lastKickOriginRotation);
+            DetachCubeFromHandsForFlight();
+            SetCubeVisible(true);
+            cube.SetPositionAndRotation(lastKickOriginPosition, lastKickOriginRotation);
+            SetCubeTrailEmitting(true);
+            yield return PlayFlight(distance, lastKickOriginPosition);
+        }
+
+        private IEnumerator PlayStyleMotion(
+            int styleIndex,
+            KickLuckyCubeKickStyleDefinition style,
+            GameObject actor,
+            bool updateMetrics)
+        {
             var visual = ResolveKickVisual(actor);
             if (visual != null)
             {
@@ -371,9 +413,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                         var pose = KickLuckyCubeKickStyleCatalog.EvaluatePose(styleIndex, normalized);
                         visual.localPosition = originalLocalPosition + pose.LocalPosition;
                         visual.localRotation = originalLocalRotation * Quaternion.Euler(pose.LocalEuler);
-                        LastKickStylePeakRotationDegrees = Mathf.Max(
-                            LastKickStylePeakRotationDegrees,
-                            Quaternion.Angle(originalLocalRotation, visual.localRotation));
+                        if (updateMetrics)
+                        {
+                            LastKickStylePeakRotationDegrees = Mathf.Max(
+                                LastKickStylePeakRotationDegrees,
+                                Quaternion.Angle(originalLocalRotation, visual.localRotation));
+                        }
                         yield return null;
                     }
                 }
@@ -390,14 +435,102 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 yield return new WaitForSecondsRealtime(Mathf.Min(0.12f, style.MotionDuration));
             }
+        }
 
-            LastKickStyleMotionCompleted = true;
-            ResolveKickOrigin(actor, out lastKickOriginPosition, out lastKickOriginRotation);
-            DetachCubeFromHandsForFlight();
-            SetCubeVisible(true);
-            cube.SetPositionAndRotation(lastKickOriginPosition, lastKickOriginRotation);
-            SetCubeTrailEmitting(true);
-            yield return PlayFlight(distance, lastKickOriginPosition);
+        public bool TryPreviewKickStyle(int styleIndex, GameObject actor = null)
+        {
+            if (IsKicking || isSelectingKickPower || kickLocked)
+            {
+                return false;
+            }
+
+            actor ??= GameObject.Find("KLC_PrototypePlayer");
+            if (actor == null)
+            {
+                return false;
+            }
+
+            CancelStylePreview();
+            stylePreviewRoutine = StartCoroutine(PreviewKickStyleRoutine(
+                Mathf.Clamp(styleIndex, 0, KickLuckyCubeKickStyleCatalog.Count - 1),
+                actor));
+            return true;
+        }
+
+        private IEnumerator PreviewKickStyleRoutine(int styleIndex, GameObject actor)
+        {
+            IsPreviewingStyle = true;
+            PreviewedStyleIndex = styleIndex;
+            var style = KickLuckyCubeKickStyleCatalog.Get(styleIndex);
+            BeginKickShowcase(actor, style);
+            if (style.ShowcaseLeadIn > 0f)
+            {
+                yield return new WaitForSecondsRealtime(style.ShowcaseLeadIn);
+            }
+
+            PlayKickAnimation(actor);
+            yield return PlayStyleMotion(styleIndex, style, actor, false);
+            if (kickShowcaseContactHoldSeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(kickShowcaseContactHoldSeconds);
+            }
+
+            EndKickShowcase();
+            IsPreviewingStyle = false;
+            PreviewedStyleIndex = -1;
+            stylePreviewRoutine = null;
+        }
+
+        private void BeginKickShowcase(GameObject actor, KickLuckyCubeKickStyleDefinition style)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            showcaseCamera ??= Camera.main != null
+                ? Camera.main.GetComponent<KickLuckyCubeThirdPersonCamera>()
+                : FindFirstObjectByType<KickLuckyCubeThirdPersonCamera>(FindObjectsInactive.Include);
+            if (showcaseCamera == null)
+            {
+                return;
+            }
+
+            showcaseCamera.BeginCinematicFocus(
+                actor.transform,
+                style.ShowcaseDistance,
+                style.ShowcasePitch,
+                actor.transform.eulerAngles.y + style.ShowcaseYawOffset,
+                kickShowcaseFocusOffset,
+                style.ShowcaseFieldOfView,
+                false,
+                kickShowcaseTransitionSeconds,
+                kickShowcaseEasing);
+            showcaseCameraActive = true;
+        }
+
+        private void EndKickShowcase()
+        {
+            if (!showcaseCameraActive)
+            {
+                return;
+            }
+
+            showcaseCamera?.EndCinematicFocus(false);
+            showcaseCameraActive = false;
+        }
+
+        private void CancelStylePreview()
+        {
+            if (stylePreviewRoutine != null)
+            {
+                StopCoroutine(stylePreviewRoutine);
+                stylePreviewRoutine = null;
+            }
+
+            IsPreviewingStyle = false;
+            PreviewedStyleIndex = -1;
+            EndKickShowcase();
         }
 
         private static Transform ResolveKickVisual(GameObject actor)
@@ -464,6 +597,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 StopCoroutine(flightRoutine);
                 flightRoutine = null;
             }
+
+            CancelStylePreview();
+            EndKickShowcase();
 
             isSelectingKickPower = false;
             HidePowerMeter();
@@ -566,6 +702,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 StopCoroutine(flightRoutine);
                 flightRoutine = null;
             }
+
+            CancelStylePreview();
+            EndKickShowcase();
 
             IsKicking = false;
             isSelectingKickPower = false;

@@ -307,7 +307,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var replacement = FindSkinMaterial(skinDefinition.Id);
+            var naturalPrefix = ResolveNaturalSkinMaterialPrefix(skinDefinition.Id);
+            var naturalTone = !string.IsNullOrWhiteSpace(naturalPrefix);
+            var materialLookup = BuildSkinMaterialLookup();
             var renderers = ResolveSkinRenderers();
             for (var rendererIndex = 0; rendererIndex < renderers.Count; rendererIndex++)
             {
@@ -327,25 +329,33 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                         continue;
                     }
 
-                    if (replacement != null)
+                    var variation = ResolveSkinMaterialVariation(sourceMaterial != null ? sourceMaterial.name : string.Empty);
+                    var targetPrefix = naturalTone ? naturalPrefix : "skin";
+                    var replacement = FindSkinMaterial(materialLookup, targetPrefix + variation)
+                        ?? FindSkinMaterial(skinDefinition.Id);
+                    if (replacement != null && materials[materialIndex] != replacement)
                     {
                         materials[materialIndex] = replacement;
                         materialsChanged = true;
+                    }
+
+                    if (naturalTone)
+                    {
                         renderer.SetPropertyBlock(null, materialIndex);
                         continue;
                     }
 
+                    var activeMaterial = replacement != null ? replacement : sourceMaterial;
                     renderer.GetPropertyBlock(propertyBlock, materialIndex);
-                    if (sourceMaterial != null && sourceMaterial.HasProperty(BaseColorId))
+                    if (activeMaterial != null && activeMaterial.HasProperty(BaseColorId))
                     {
                         propertyBlock.SetColor(BaseColorId, skinDefinition.PreviewColor);
                     }
 
-                    if (sourceMaterial != null && sourceMaterial.HasProperty(ColorId))
+                    if (activeMaterial != null && activeMaterial.HasProperty(ColorId))
                     {
                         propertyBlock.SetColor(ColorId, skinDefinition.PreviewColor);
                     }
-
                     renderer.SetPropertyBlock(propertyBlock, materialIndex);
                     propertyBlock.Clear();
                 }
@@ -355,6 +365,91 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     renderer.sharedMaterials = materials;
                 }
             }
+        }
+
+        private Dictionary<string, Material> BuildSkinMaterialLookup()
+        {
+            var lookup = new Dictionary<string, Material>(StringComparer.OrdinalIgnoreCase);
+            if (visualRoot == null)
+            {
+                return lookup;
+            }
+
+            foreach (var renderer in visualRoot.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                foreach (var material in renderer.sharedMaterials)
+                {
+                    if (material == null)
+                    {
+                        continue;
+                    }
+
+                    var materialName = NormalizeMaterialName(material.name);
+                    if (materialName.StartsWith("skin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        lookup.TryAdd(materialName, material);
+                    }
+                }
+            }
+
+            foreach (var material in Resources.LoadAll<Material>("KickLuckyCube/CharacterSkin/Materials"))
+            {
+                if (material == null)
+                {
+                    continue;
+                }
+
+                var materialName = NormalizeMaterialName(material.name);
+                if (materialName.StartsWith("skin", StringComparison.OrdinalIgnoreCase))
+                {
+                    lookup[materialName] = material;
+                }
+            }
+
+            return lookup;
+        }
+
+        private static string ResolveNaturalSkinMaterialPrefix(string skinToneId)
+        {
+            return skinToneId switch
+            {
+                KickLuckyCubeCharacterSkinCatalog.DefaultSkinToneId => "skin",
+                "skin_warm" => "skin_warm",
+                "skin_deep" => "skin_deep",
+                _ => string.Empty,
+            };
+        }
+
+        private static string ResolveSkinMaterialVariation(string materialName)
+        {
+            var normalized = NormalizeMaterialName(materialName);
+            if (normalized.Contains("head_side", StringComparison.OrdinalIgnoreCase))
+            {
+                return "_head_side";
+            }
+
+            return normalized.Contains("shadow", StringComparison.OrdinalIgnoreCase)
+                ? "_shadow"
+                : string.Empty;
+        }
+
+        private static Material FindSkinMaterial(IReadOnlyDictionary<string, Material> lookup, string materialName)
+        {
+            return lookup != null
+                && !string.IsNullOrWhiteSpace(materialName)
+                && lookup.TryGetValue(materialName, out var material)
+                ? material
+                : null;
+        }
+
+        private static string NormalizeMaterialName(string materialName)
+        {
+            return (materialName ?? string.Empty).Replace(" (Instance)", string.Empty).Trim();
         }
 
         private Material FindSkinMaterial(string skinToneId)
