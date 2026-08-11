@@ -9,8 +9,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private TextMesh ownerLabel;
         [SerializeField] private Color playerTint = new(0.2f, 0.95f, 0.42f, 1f);
         [SerializeField] private Color botTint = new(0.35f, 0.68f, 1f, 1f);
+        [SerializeField] private KickLuckyCubePlayerBaseAuthoring authoring;
 
         private MaterialPropertyBlock materialBlock;
+
+        public KickLuckyCubePlayerBaseAuthoring Authoring => authoring;
+
+        private void Reset()
+        {
+            authoring = GetComponent<KickLuckyCubePlayerBaseAuthoring>();
+        }
+
+        private void OnValidate()
+        {
+            authoring ??= GetComponent<KickLuckyCubePlayerBaseAuthoring>();
+        }
 
         public void ConfigureOwner(string ownerName, bool isPlayerOwned)
         {

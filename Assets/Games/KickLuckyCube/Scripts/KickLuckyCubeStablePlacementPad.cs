@@ -12,6 +12,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubeStableSlot stableSlot;
         [SerializeField] private TextMesh collectLabel;
+        [SerializeField] private string collectLabelResourcePath = "KickLuckyCube/World/KLC_StableCollectSpot_PendingLabel";
         [SerializeField] private Vector3 collectLabelLocalPosition = new(0f, 0.08f, 0f);
         [SerializeField] private Vector3 collectLabelLocalEuler = new(90f, 0f, 0f);
         [SerializeField, Min(1f)] private float collectLabelVisibleDistance = 22f;
@@ -25,8 +26,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void Awake()
         {
             ResolveReferences();
-            collectLabel = ResolveCollectLabel() ?? CreateCollectLabel();
-            ownsCollectLabel = collectLabel != null;
+            collectLabel = ResolveCollectLabel();
+            if (collectLabel == null)
+            {
+                collectLabel = CreateCollectLabel();
+                ownsCollectLabel = collectLabel != null;
+            }
             ApplyCollectLabelStyle(collectLabel);
             interactionTarget = GetComponent<GameKitInteractionTarget>();
             if (interactionTarget != null)
@@ -214,10 +219,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private TextMesh CreateCollectLabel()
         {
-            var labelObject = new GameObject("KLC_StableCollectSpot_PendingLabel");
-            labelObject.transform.SetParent(KickLuckyCubeWorldTextOutline.ResolveRuntimeLabelRoot(), false);
+            var labelPrefab = Resources.Load<TextMesh>(collectLabelResourcePath);
+            if (labelPrefab == null)
+            {
+                Debug.LogError($"[KLC-STABLE] Missing authored collect label at Resources/{collectLabelResourcePath}.", this);
+                return null;
+            }
 
-            var label = labelObject.AddComponent<TextMesh>();
+            var label = Instantiate(labelPrefab, KickLuckyCubeWorldTextOutline.ResolveRuntimeLabelRoot(), false);
+            label.name = "KLC_StableCollectSpot_PendingLabel";
             ownsCollectLabel = true;
             ApplyCollectLabelStyle(label);
             label.gameObject.SetActive(false);
@@ -255,17 +265,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            if (Application.isPlaying)
-            {
-                label.transform.SetParent(KickLuckyCubeWorldTextOutline.ResolveRuntimeLabelRoot(), false);
-                label.transform.position = transform.TransformPoint(collectLabelLocalPosition);
-                label.transform.rotation = transform.rotation * Quaternion.Euler(collectLabelLocalEuler);
-            }
-            else
+            if (!Application.isPlaying)
             {
                 label.transform.SetParent(transform, false);
                 label.transform.localPosition = collectLabelLocalPosition;
                 label.transform.localRotation = Quaternion.Euler(collectLabelLocalEuler);
+            }
+            else
+            {
+                label.transform.position = transform.TransformPoint(collectLabelLocalPosition);
+                label.transform.rotation = transform.rotation * Quaternion.Euler(collectLabelLocalEuler);
             }
 
             label.transform.localScale = Vector3.one;

@@ -25,13 +25,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void Awake()
         {
             source = GetComponent<TextMesh>();
-            EnsureOutlines();
+            ResolveOutlines();
             SyncOutlines();
         }
 
         private void LateUpdate()
         {
-            EnsureOutlines();
+            ResolveOutlines();
             SyncOutlines();
         }
 
@@ -58,7 +58,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             SyncOutlines();
         }
 
-        private void EnsureOutlines()
+        private void ResolveOutlines()
         {
             if (source == null)
             {
@@ -72,9 +72,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     continue;
                 }
 
-                var outlineObject = new GameObject("Outline_" + index);
-                outlineObject.transform.SetParent(transform, false);
-                outlines[index] = outlineObject.AddComponent<TextMesh>();
+                var child = transform.Find("Outline_" + index);
+                outlines[index] = child != null ? child.GetComponent<TextMesh>() : null;
             }
         }
 

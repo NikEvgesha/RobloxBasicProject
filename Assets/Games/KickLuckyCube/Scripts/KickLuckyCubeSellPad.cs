@@ -36,12 +36,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public bool CanInteract(GameObject actor)
         {
+            ResolveReferences();
             return wallet != null && (sellShop != null || runPhase != null);
         }
 
         public void Sell(GameObject actor)
         {
-            sellShop ??= FindFirstObjectByType<KickLuckyCubeSellShopController>(FindObjectsInactive.Include);
+            ResolveReferences();
             if (sellShop != null)
             {
                 sellShop.OpenWindow();
@@ -49,6 +50,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             runPhase?.TrySellCarriedAnimal(wallet);
+        }
+
+        private void ResolveReferences()
+        {
+            runPhase ??= FindFirstObjectByType<KickLuckyCubeRunPhaseController>(FindObjectsInactive.Include);
+            wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>(FindObjectsInactive.Include);
+            sellShop ??= FindFirstObjectByType<KickLuckyCubeSellShopController>(FindObjectsInactive.Include);
+            driver ??= FindFirstObjectByType<GameKitInteractionDriver>(FindObjectsInactive.Include);
         }
 
         private void CloseSellShop()

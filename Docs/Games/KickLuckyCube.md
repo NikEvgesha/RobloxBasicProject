@@ -426,6 +426,9 @@ Camera:
 - the old blocky `KLC_PlayerVisual` / `AvatarRoot` children are kept only as editor/fallback visuals when the imported prefab is not available;
 - during animal run phase it follows the current spawned animal;
 - after run/fail/sell/stable flow it falls back to the prototype player target.
+- target movement is smoothed once at the focus point; the camera transform is no longer interpolated a second time, which avoids delayed spring-like movement behind the player or animal;
+- right-mouse orbit uses `orbitRotationSharpness`, while automatic rotation uses `rotationSharpness`;
+- collision retracts quickly with `collisionRetractSharpness` and restores the requested zoom distance gradually with `collisionRestoreSharpness`, avoiding a distance jump after leaving a wall or the wave blocker.
 
 Location layout blockout:
 

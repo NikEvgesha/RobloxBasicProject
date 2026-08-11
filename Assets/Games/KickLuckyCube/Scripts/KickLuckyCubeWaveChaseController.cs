@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Globalization;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -254,10 +255,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             root.SetAsLastSibling();
 
             vignetteGroup = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<CanvasGroup>(root.gameObject);
-            CreateVignetteEdge(root, "Top", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(0f, 160f));
-            CreateVignetteEdge(root, "Bottom", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 0f), new Vector2(0f, 160f));
-            CreateVignetteEdge(root, "Left", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(0f, 0f), new Vector2(160f, 0f));
-            CreateVignetteEdge(root, "Right", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(0f, 0f), new Vector2(160f, 0f));
+            ConfigureVignetteEdge(root, "Top", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(0f, 160f));
+            ConfigureVignetteEdge(root, "Bottom", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 0f), new Vector2(0f, 160f));
+            ConfigureVignetteEdge(root, "Left", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(0f, 0f), new Vector2(160f, 0f));
+            ConfigureVignetteEdge(root, "Right", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(0f, 0f), new Vector2(160f, 0f));
         }
 
         private void EnsureCameraBlocker()
@@ -270,31 +271,35 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (cameraBlocker == null)
             {
                 var blockerTransform = waveVisual.Find("KLC_WaveCameraBlocker");
-                var blockerObject = blockerTransform != null
-                    ? blockerTransform.gameObject
-                    : new GameObject("KLC_WaveCameraBlocker");
-                blockerObject.transform.SetParent(waveVisual, false);
-                blockerObject.transform.localRotation = Quaternion.identity;
-                blockerObject.transform.localScale = Vector3.one;
-                cameraBlocker = blockerObject.GetComponent<BoxCollider>();
+                cameraBlocker = blockerTransform != null
+                    ? blockerTransform.GetComponent<BoxCollider>()
+                    : waveVisual.GetComponent<BoxCollider>();
                 if (cameraBlocker == null)
                 {
-                    cameraBlocker = blockerObject.AddComponent<BoxCollider>();
+                    Debug.LogError("[KLC-WAVE] The authored wave prefab is missing its camera-blocker BoxCollider.", waveVisual);
+                    return;
                 }
             }
 
-            cameraBlocker.transform.localPosition = cameraBlockerOffset;
-            cameraBlocker.transform.localRotation = Quaternion.identity;
-            cameraBlocker.transform.localScale = Vector3.one;
             cameraBlocker.isTrigger = true;
-            cameraBlocker.center = Vector3.zero;
+            if (cameraBlocker.transform == waveVisual)
+            {
+                cameraBlocker.center = cameraBlockerOffset;
+            }
+            else
+            {
+                cameraBlocker.transform.localPosition = cameraBlockerOffset;
+                cameraBlocker.transform.localRotation = Quaternion.identity;
+                cameraBlocker.transform.localScale = Vector3.one;
+                cameraBlocker.center = Vector3.zero;
+            }
             cameraBlocker.size = new Vector3(
                 Mathf.Max(0.1f, cameraBlockerSize.x),
                 Mathf.Max(0.1f, cameraBlockerSize.y),
                 Mathf.Max(0.1f, cameraBlockerSize.z));
         }
 
-        private static void CreateVignetteEdge(
+        private static void ConfigureVignetteEdge(
             RectTransform parent,
             string edgeName,
             Vector2 anchorMin,
@@ -303,14 +308,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Vector2 anchoredPosition,
             Vector2 sizeDelta)
         {
-            var edge = KickLuckyCubeUiPrefabFactory.CreateRect("KLC_WaveDangerVignette_" + edgeName, parent);
+            var edge = KickLuckyCubeUiPrefabFactory.FindChildRecursive(parent, "KLC_WaveDangerVignette_" + edgeName);
+            if (edge == null)
+            {
+                Debug.LogError($"[KLC-WAVE] The vignette prefab is missing its authored {edgeName} edge.", parent);
+                return;
+            }
             edge.anchorMin = anchorMin;
             edge.anchorMax = anchorMax;
             edge.pivot = pivot;
             edge.anchoredPosition = anchoredPosition;
             edge.sizeDelta = sizeDelta;
 
-            var image = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<Image>(edge.gameObject);
+            var image = KickLuckyCubeUiPrefabFactory.GetRequiredComponent<Image>(edge.gameObject);
             image.color = new Color(1f, 0f, 0f, 0.62f);
             image.raycastTarget = false;
         }
@@ -401,16 +411,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var labelObject = new GameObject("KLC_WaveSpeedLabel");
-            labelObject.transform.SetParent(waveVisual, false);
-            labelObject.transform.localPosition = speedLabelOffset;
-
-            speedLabel = labelObject.AddComponent<TextMesh>();
-            speedLabel.anchor = TextAnchor.MiddleCenter;
-            speedLabel.alignment = TextAlignment.Center;
-            speedLabel.fontSize = speedLabelFontSize;
-            speedLabel.characterSize = speedLabelCharacterSize;
-            KickLuckyCubeUiTheme.StyleWorldText(speedLabel, speedLabelColor, 0.025f);
+            speedLabel = waveVisual.GetComponentsInChildren<TextMesh>(true)
+                .FirstOrDefault(label => label != null && label.name == "KLC_WaveSpeedLabel");
+            if (speedLabel == null)
+            {
+                Debug.LogError("[KLC-WAVE] The authored wave prefab is missing KLC_WaveSpeedLabel.", waveVisual);
+            }
         }
 
         private void RefreshSpeedLabel()

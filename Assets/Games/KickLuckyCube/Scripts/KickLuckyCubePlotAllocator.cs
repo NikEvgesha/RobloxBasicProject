@@ -21,6 +21,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private bool hideTemplateAtRuntime = true;
         [SerializeField] private bool hideStaticPreviewInstancesAtRuntime = true;
         [SerializeField] private bool populateBotStableVisuals = true;
+        [SerializeField] private KickLuckyCubeFakeOnlineBot botActorPrefab;
+        [SerializeField] private string botActorResourcePath = "KickLuckyCube/World/KLC_FakeOnlineBotActor";
+        [SerializeField] private string botStableLabelResourcePath = "KickLuckyCube/World/KLC_BotStableLabel";
         [SerializeField, Min(0)] private int maximumBotPlots = 4;
         [SerializeField, Min(0)] private int botStableVisualsPerPlot = 3;
         [SerializeField, Min(0.1f)] private float botStableAnimalTargetHeight = 1.05f;
@@ -177,10 +180,43 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (!isPlayerOwned)
             {
                 PopulateBotStableVisuals(instance.transform, botIndex);
+                SpawnBotActor(instance.transform, ownerName, botIndex);
             }
 
             spawnedPlots.Add(instance);
             return instance;
+        }
+
+        private void SpawnBotActor(Transform plotRoot, string ownerName, int botIndex)
+        {
+            if (plotRoot == null)
+            {
+                return;
+            }
+
+            var prefab = botActorPrefab;
+            if (prefab == null && !string.IsNullOrWhiteSpace(botActorResourcePath))
+            {
+                prefab = Resources.Load<KickLuckyCubeFakeOnlineBot>(botActorResourcePath);
+            }
+
+            if (prefab == null)
+            {
+                Debug.LogError($"Fake-online bot prefab is missing at Resources/{botActorResourcePath}.prefab.", this);
+                return;
+            }
+
+            var anchors = plotRoot.GetComponentInChildren<KickLuckyCubeBotActivityAnchors>(true);
+            if (anchors == null)
+            {
+                Debug.LogWarning($"Bot plot '{plotRoot.name}' has no {nameof(KickLuckyCubeBotActivityAnchors)}; actor was not spawned.", plotRoot);
+                return;
+            }
+
+            var actor = Instantiate(prefab, plotRoot, false);
+            actor.name = "KLC_FakeOnlineBotActor_" + ownerName;
+            actor.gameObject.SetActive(true);
+            actor.Configure(ownerName, anchors, botIndex * 3.7f);
         }
 
         private void PopulateBotStableVisuals(Transform plotRoot, int botIndex)
@@ -245,24 +281,23 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             visualRoot.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
 
-        private static void CreateBotStableLabel(Transform visualRoot, KickLuckyCubeAnimalOption option)
+        private void CreateBotStableLabel(Transform visualRoot, KickLuckyCubeAnimalOption option)
         {
             if (visualRoot == null)
             {
                 return;
             }
 
-            var labelObject = new GameObject("KLC_BotStableLabel");
-            labelObject.transform.SetParent(visualRoot, false);
-            labelObject.transform.localPosition = new Vector3(0f, 1.35f, 0f);
-            labelObject.transform.localRotation = Quaternion.Euler(60f, 0f, 0f);
-            labelObject.transform.localScale = Vector3.one * 0.22f;
+            var labelPrefab = Resources.Load<TextMesh>(botStableLabelResourcePath);
+            if (labelPrefab == null)
+            {
+                Debug.LogError($"[KLC-PLOTS] Missing authored bot stable label at Resources/{botStableLabelResourcePath}.", this);
+                return;
+            }
 
-            var label = labelObject.AddComponent<TextMesh>();
+            var label = Instantiate(labelPrefab, visualRoot, false);
+            label.name = "KLC_BotStableLabel";
             label.text = $"{option.AnimalName}\n+{option.IncomePerSecond}/s";
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.characterSize = 0.16f;
             KickLuckyCubeUiTheme.StyleWorldText(label, Color.white, 0.012f);
         }
 

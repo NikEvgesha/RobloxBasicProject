@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97c55c77fc4ce0a4b9816466eca6269a, type: 3}
+  m_Name: KickLuckyCubeCameraChoreographyConfig
+  m_EditorClassIdentifier: Assembly-CSharp::RobloxBasicProject.Games.KickLuckyCube.KickLuckyCubeCameraChoreographyConfig
+  waveReveal:
+    displayName: Wave Reveal
+    focusOffset: {x: 0, y: 3.6, z: 0}
+    distance: 8.5
+    pitch: 9
+    yawBasis: 0
+    yawOffset: 0
+    transitionSeconds: 1.15
+    holdSeconds: 0.45
+    fieldOfView: 54
+    easing:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    snapOnEnter: 0
+  runnerReady:
+    displayName: Runner Ready
+    focusOffset: {x: 0, y: 1, z: 0}
+    distance: 6.2
+    pitch: 14
+    yawBasis: 2
+    yawOffset: 0
+    transitionSeconds: 0.9
+    holdSeconds: 0.3
+    fieldOfView: 60
+    easing:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    snapOnEnter: 0
+  revealToWaveDelay: 0.12
+  runnerGroundingPause: 0.08

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 
 namespace RobloxBasicProject.Games.KickLuckyCube
@@ -7,6 +8,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     {
         private const string SoftKey = "Soft";
         private const string HardKey = "Hard";
+        private const string SoftLongKey = "Soft64";
+        private const string HardLongKey = "Hard64";
 
         [SerializeField] private string saveKeyPrefix = "KickLuckyCube.Wallet.";
         [SerializeField, Min(0)] private int initialSoftCurrency;
@@ -14,18 +17,18 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(1f)] private float initialSoftGainMultiplier = 1f;
         [SerializeField] private bool saveInPlayerPrefs = true;
 
-        private int softCurrency;
-        private int hardCurrency;
+        private long softCurrency;
+        private long hardCurrency;
         private float baseSoftGainMultiplier;
         private float bonusSoftGainMultiplier = 1f;
         private bool initialized;
 
-        public event Action<int, int> Changed;
-        public event Action<int, int> CurrencyGained;
-        public event Action<int, int> CurrencySpent;
+        public event Action<long, long> Changed;
+        public event Action<long, long> CurrencyGained;
+        public event Action<long, long> CurrencySpent;
 
-        public int SoftCurrency => initialized ? softCurrency : initialSoftCurrency;
-        public int HardCurrency => initialized ? hardCurrency : initialHardCurrency;
+        public long SoftCurrency => initialized ? softCurrency : initialSoftCurrency;
+        public long HardCurrency => initialized ? hardCurrency : initialHardCurrency;
         public float SoftGainMultiplier => Mathf.Max(1f, BaseSoftGainMultiplier * BonusSoftGainMultiplier);
         public float BaseSoftGainMultiplier => initialized ? baseSoftGainMultiplier : Mathf.Max(1f, initialSoftGainMultiplier);
         public float BonusSoftGainMultiplier => initialized ? bonusSoftGainMultiplier : 1f;
@@ -35,7 +38,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Load();
         }
 
-        public void AddSoft(int amount)
+        public void AddSoft(long amount)
         {
             if (amount <= 0)
             {
@@ -44,12 +47,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             EnsureInitialized();
             var gainedAmount = PreviewSoftGain(amount);
-            softCurrency += gainedAmount;
+            softCurrency = SaturatingAdd(softCurrency, gainedAmount);
             CurrencyGained?.Invoke(gainedAmount, 0);
             Save();
         }
 
-        public void AddHard(int amount)
+        public void AddHard(long amount)
         {
             if (amount <= 0)
             {
@@ -57,12 +60,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             EnsureInitialized();
-            hardCurrency += amount;
+            hardCurrency = SaturatingAdd(hardCurrency, amount);
             CurrencyGained?.Invoke(0, amount);
             Save();
         }
 
-        public bool TrySpendSoft(int amount)
+        public bool TrySpendSoft(long amount)
         {
             EnsureInitialized();
             if (amount <= 0 || softCurrency < amount)
@@ -76,7 +79,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return true;
         }
 
-        public bool TrySpendHard(int amount)
+        public bool TrySpendHard(long amount)
         {
             EnsureInitialized();
             if (amount <= 0 || hardCurrency < amount)
@@ -100,14 +103,22 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Save();
         }
 
-        public int PreviewSoftGain(int amount)
+        public long PreviewSoftGain(long amount)
         {
             if (amount <= 0)
             {
                 return 0;
             }
 
-            return Mathf.Max(1, Mathf.RoundToInt(amount * SoftGainMultiplier));
+            var multiplied = amount * (double)SoftGainMultiplier;
+            if (double.IsNaN(multiplied) || multiplied <= 0d)
+            {
+                return 0L;
+            }
+
+            return multiplied >= long.MaxValue
+                ? long.MaxValue
+                : Math.Max(1L, (long)Math.Round(multiplied, MidpointRounding.AwayFromZero));
         }
 
         public void SetSoftGainMultiplier(float value)
@@ -143,8 +154,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (Application.isPlaying && saveInPlayerPrefs)
             {
-                softCurrency = PlayerPrefs.GetInt(saveKeyPrefix + SoftKey, initialSoftCurrency);
-                hardCurrency = PlayerPrefs.GetInt(saveKeyPrefix + HardKey, initialHardCurrency);
+                softCurrency = LoadCurrency(SoftLongKey, SoftKey, initialSoftCurrency, "soft");
+                hardCurrency = LoadCurrency(HardLongKey, HardKey, initialHardCurrency, "hard");
             }
             else
             {
@@ -153,6 +164,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             initialized = true;
+            if (Application.isPlaying && saveInPlayerPrefs)
+            {
+                PersistCurrency();
+            }
+
             Changed?.Invoke(softCurrency, hardCurrency);
         }
 
@@ -160,12 +176,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             if (Application.isPlaying && saveInPlayerPrefs)
             {
-                PlayerPrefs.SetInt(saveKeyPrefix + SoftKey, softCurrency);
-                PlayerPrefs.SetInt(saveKeyPrefix + HardKey, hardCurrency);
-                PlayerPrefs.Save();
+                PersistCurrency();
             }
 
             Changed?.Invoke(softCurrency, hardCurrency);
+        }
+
+        private void PersistCurrency()
+        {
+            PlayerPrefs.SetString(saveKeyPrefix + SoftLongKey, softCurrency.ToString(CultureInfo.InvariantCulture));
+            PlayerPrefs.SetString(saveKeyPrefix + HardLongKey, hardCurrency.ToString(CultureInfo.InvariantCulture));
+            PlayerPrefs.DeleteKey(saveKeyPrefix + SoftKey);
+            PlayerPrefs.DeleteKey(saveKeyPrefix + HardKey);
+            PlayerPrefs.Save();
         }
 
         private void EnsureInitialized()
@@ -180,6 +203,42 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             baseSoftGainMultiplier = Mathf.Max(1f, initialSoftGainMultiplier);
             bonusSoftGainMultiplier = 1f;
             initialized = true;
+        }
+
+        private long LoadCurrency(string longKey, string legacyKey, int fallback, string label)
+        {
+            var fullLongKey = saveKeyPrefix + longKey;
+            var value = (long)Mathf.Max(0, fallback);
+            if (PlayerPrefs.HasKey(fullLongKey))
+            {
+                var stored = PlayerPrefs.GetString(fullLongKey, string.Empty);
+                if (long.TryParse(stored, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
+                {
+                    value = parsed;
+                }
+            }
+            else
+            {
+                value = PlayerPrefs.GetInt(saveKeyPrefix + legacyKey, fallback);
+            }
+
+            if (value >= 0L)
+            {
+                return value;
+            }
+
+            Debug.LogWarning($"Kick Lucky Cube repaired negative {label} currency ({value}) to 0 during save load.");
+            return 0L;
+        }
+
+        private static long SaturatingAdd(long current, long amount)
+        {
+            if (amount <= 0L)
+            {
+                return Math.Max(0L, current);
+            }
+
+            return current > long.MaxValue - amount ? long.MaxValue : current + amount;
         }
     }
 }

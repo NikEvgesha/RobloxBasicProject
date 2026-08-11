@@ -141,14 +141,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var normalizedLevels = Mathf.Max(1, levels);
             var totalCost = GetTotalCostForNextLevels(normalizedLevels);
-            if (totalCost > int.MaxValue || wallet.SoftCurrency < totalCost)
+            if (totalCost <= 0L || wallet.SoftCurrency < totalCost)
             {
                 SetStatus($"No money for +{normalizedLevels} speed levels.");
                 Refresh();
                 return false;
             }
 
-            if (!wallet.TrySpendSoft((int)totalCost))
+            if (!wallet.TrySpendSoft(totalCost))
             {
                 SetStatus($"No money for +{normalizedLevels} speed levels.");
                 Refresh();
@@ -508,7 +508,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return cost.ToString();
         }
 
-        private void OnWalletChanged(int soft, int hard)
+        private void OnWalletChanged(long soft, long hard)
         {
             Refresh();
         }

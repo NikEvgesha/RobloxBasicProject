@@ -5,6 +5,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     internal static class KickLuckyCubeAnimalVisualFactory
     {
         private static readonly Vector3 ImportedVisualLocalEuler = Vector3.zero;
+        private const string FallbackVisualResourcePath = "KickLuckyCube/Animals/KLC_AnimalFallbackVisual";
+        private const string GradeVisualResourceRoot = "KickLuckyCube/Animals/KLC_AnimalGradeVfx_";
 
         public static Renderer CreateVisual(
             Transform parent,
@@ -39,7 +41,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return bodyRenderer;
             }
 
-            bodyRenderer = CreateFallbackCapsule(parent);
+            bodyRenderer = CreateFallbackVisual(parent);
             NormalizeToHeight(bodyRenderer != null ? bodyRenderer.transform : parent, visualTargetHeight);
             ApplyGradeVisuals(parent, option, visualTargetHeight, includeGradeEffects);
             return bodyRenderer;
@@ -79,22 +81,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             root.position += Vector3.up * (root.parent.position.y - bounds.min.y);
         }
 
-        private static Renderer CreateFallbackCapsule(Transform parent)
+        private static Renderer CreateFallbackVisual(Transform parent)
         {
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body";
-            body.transform.SetParent(parent, false);
-            body.transform.localPosition = Vector3.zero;
-            body.transform.localRotation = Quaternion.identity;
-            body.transform.localScale = new Vector3(0.72f, 0.58f, 1.05f);
-
-            var bodyCollider = body.GetComponent<Collider>();
-            if (bodyCollider != null)
+            var prefab = Resources.Load<GameObject>(FallbackVisualResourcePath);
+            if (prefab == null)
             {
-                DestroyUnityObject(bodyCollider);
+                Debug.LogError($"Animal fallback prefab is missing at Resources/{FallbackVisualResourcePath}.prefab.");
+                return null;
             }
 
-            return body.GetComponent<Renderer>();
+            var body = Object.Instantiate(prefab, parent, false);
+            body.name = "KLC_AnimalFallbackVisual";
+            RemoveColliders(body);
+            return body.GetComponentInChildren<Renderer>(true);
         }
 
         private static void ApplyGradeVisuals(
@@ -114,10 +113,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var radius = Mathf.Clamp(targetHeight * 0.42f, 0.42f, 1.65f);
-            CreateGroundGlow(root, option.Grade, radius);
-            CreateGradeParticles(root, option.Grade, radius, targetHeight);
-            CreateGradeLight(root, option.Grade, targetHeight);
+            var resourcePath = GradeVisualResourceRoot + option.Grade;
+            var prefab = Resources.Load<KickLuckyCubeAnimalGradeVisual>(resourcePath);
+            if (prefab == null)
+            {
+                Debug.LogError($"Animal grade VFX prefab is missing at Resources/{resourcePath}.prefab.");
+                return;
+            }
+
+            var gradeVisual = Object.Instantiate(prefab, root, false);
+            gradeVisual.name = "KLC_AnimalGradeVfx_" + option.Grade;
+            gradeVisual.Configure(option.Grade, targetHeight);
         }
 
         private static void ApplyGradeTint(Transform root, KickLuckyCubeAnimalGrade grade)
@@ -158,109 +164,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
                 targetRenderer.materials = materials;
             }
-        }
-
-        private static void CreateGroundGlow(Transform root, KickLuckyCubeAnimalGrade grade, float radius)
-        {
-            var glow = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            glow.name = "KLC_AnimalGradeGlow_" + grade;
-            glow.transform.SetParent(root, false);
-            glow.transform.localPosition = new Vector3(0f, 0.015f, 0f);
-            glow.transform.localRotation = Quaternion.identity;
-            glow.transform.localScale = new Vector3(radius, 0.012f, radius);
-
-            var collider = glow.GetComponent<Collider>();
-            if (collider != null)
-            {
-                DestroyUnityObject(collider);
-            }
-
-            var renderer = glow.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.sharedMaterial = CreateUnlitMaterial(KickLuckyCubeAnimalGradeUtility.GetGlowColor(grade), true);
-                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                renderer.receiveShadows = false;
-            }
-        }
-
-        private static void CreateGradeParticles(
-            Transform root,
-            KickLuckyCubeAnimalGrade grade,
-            float radius,
-            float targetHeight)
-        {
-            var particlesObject = new GameObject("KLC_AnimalGradeVfx_" + grade);
-            particlesObject.transform.SetParent(root, false);
-            particlesObject.transform.localPosition = new Vector3(0f, Mathf.Max(0.18f, targetHeight * 0.42f), 0f);
-            particlesObject.transform.localRotation = Quaternion.identity;
-
-            var particles = particlesObject.AddComponent<ParticleSystem>();
-            var main = particles.main;
-            main.loop = true;
-            main.playOnAwake = true;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.65f, 1.25f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.12f, 0.42f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.045f, 0.105f);
-            main.startColor = KickLuckyCubeAnimalGradeUtility.GetGlowColor(grade);
-            main.simulationSpace = ParticleSystemSimulationSpace.Local;
-
-            var emission = particles.emission;
-            emission.rateOverTime = grade == KickLuckyCubeAnimalGrade.Fire ? 22f : 14f;
-
-            var shape = particles.shape;
-            shape.enabled = true;
-            shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = Mathf.Max(0.16f, radius * 0.72f);
-            shape.arc = 360f;
-
-            var velocity = particles.velocityOverLifetime;
-            velocity.enabled = true;
-            velocity.space = ParticleSystemSimulationSpace.Local;
-            velocity.x = new ParticleSystem.MinMaxCurve(0f);
-            velocity.y = new ParticleSystem.MinMaxCurve(0.22f);
-            velocity.z = new ParticleSystem.MinMaxCurve(0f);
-
-            var colorOverLifetime = particles.colorOverLifetime;
-            colorOverLifetime.enabled = true;
-            var gradient = new Gradient();
-            var glow = KickLuckyCubeAnimalGradeUtility.GetGlowColor(grade);
-            gradient.SetKeys(
-                new[]
-                {
-                    new GradientColorKey(glow, 0f),
-                    new GradientColorKey(Color.white, 0.5f),
-                    new GradientColorKey(glow, 1f),
-                },
-                new[]
-                {
-                    new GradientAlphaKey(0f, 0f),
-                    new GradientAlphaKey(0.85f, 0.18f),
-                    new GradientAlphaKey(0f, 1f),
-                });
-            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(gradient);
-
-            var renderer = particlesObject.GetComponent<ParticleSystemRenderer>();
-            if (renderer != null)
-            {
-                renderer.sharedMaterial = CreateUnlitMaterial(glow, true);
-                renderer.renderMode = ParticleSystemRenderMode.Billboard;
-            }
-
-            particles.Play();
-        }
-
-        private static void CreateGradeLight(Transform root, KickLuckyCubeAnimalGrade grade, float targetHeight)
-        {
-            var lightObject = new GameObject("KLC_AnimalGradeLight_" + grade);
-            lightObject.transform.SetParent(root, false);
-            lightObject.transform.localPosition = new Vector3(0f, Mathf.Max(0.3f, targetHeight * 0.55f), 0f);
-            var gradeLight = lightObject.AddComponent<Light>();
-            gradeLight.type = LightType.Point;
-            gradeLight.color = KickLuckyCubeAnimalGradeUtility.GetTintColor(grade);
-            gradeLight.range = Mathf.Clamp(targetHeight * 1.8f, 1.2f, 4f);
-            gradeLight.intensity = grade == KickLuckyCubeAnimalGrade.Fire ? 1.15f : 0.72f;
-            gradeLight.shadows = LightShadows.None;
         }
 
         private static Material CreateUnlitMaterial(Color color, bool transparent)
@@ -344,7 +247,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 animator.applyRootMotion = false;
                 animator.keepAnimatorStateOnDisable = true;
                 animator.Rebind();
-                animator.Play(0, 0, Random.value);
+                animator.Play(0, 0, 0f);
                 animator.Update(0f);
             }
         }

@@ -428,23 +428,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 ? options[UnityEngine.Random.Range(0, options.Length)]
                 : KickLuckyCubeAnimalSpawner.CreateDefaultOptions()[0];
 
-            var incomeDelta = Mathf.Clamp(
-                Mathf.RoundToInt(removedAnimal.IncomePerSecond * UnityEngine.Random.Range(-0.2f, 0.24f)),
-                -Mathf.Max(1, removedAnimal.IncomePerSecond / 2),
-                Mathf.Max(1, removedAnimal.IncomePerSecond / 2));
-            var income = Mathf.Max(1, option.IncomePerSecond + incomeDelta);
-            var sellValue = Mathf.Max(1, option.SellValue + incomeDelta * 18);
-            var color = Color.Lerp(option.BodyColor, removedAnimal.BodyColor, UnityEngine.Random.Range(0.18f, 0.42f));
-            var rarity = income > removedAnimal.IncomePerSecond ? BoostRarity(removedAnimal.Rarity) : SoftenRarity(removedAnimal.Rarity);
-
             return new KickLuckyCubeInventoryAnimal(
                 Guid.NewGuid().ToString("N"),
                 option.CatalogId,
-                option.AnimalName + " Trade",
-                rarity,
-                color,
-                sellValue,
-                income,
+                option.AnimalName,
+                option.Rarity,
+                option.BodyColor,
+                option.SellValue,
+                option.IncomePerSecond,
                 option.Grade);
         }
 

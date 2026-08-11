@@ -91,7 +91,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
-        private void OnCurrencyGained(int soft, int hard)
+        private void OnCurrencyGained(long soft, long hard)
         {
             if (soft > 0 || hard > 0)
             {
@@ -99,7 +99,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
-        private void OnCurrencySpent(int soft, int hard)
+        private void OnCurrencySpent(long soft, long hard)
         {
             if (soft > 0 || hard > 0)
             {

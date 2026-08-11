@@ -16,6 +16,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
         [SerializeField] private Transform animalAnchor;
         [SerializeField] private TextMesh statusLabel;
+        [SerializeField] private string statusLabelResourcePath = "KickLuckyCube/World/KLC_StableSlot_StatusLabel";
         [SerializeField] private string stableSlotId;
         [SerializeField] private string saveKeyPrefix = "KickLuckyCube.Stable.";
         [SerializeField, Min(1f)] private float saveIntervalSeconds = 5f;
@@ -684,13 +685,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private TextMesh CreateStatusLabel()
         {
-            var labelObject = new GameObject("KLC_StableSlot_StatusLabel");
-            labelObject.transform.SetParent(transform, false);
-            labelObject.transform.localPosition = new Vector3(0f, 2.1f, 0f);
-            labelObject.transform.localRotation = Quaternion.identity;
-            labelObject.transform.localScale = Vector3.one;
+            var labelPrefab = Resources.Load<TextMesh>(statusLabelResourcePath);
+            if (labelPrefab == null)
+            {
+                Debug.LogError($"[KLC-STABLE] Missing authored status label at Resources/{statusLabelResourcePath}.", this);
+                return null;
+            }
 
-            var label = labelObject.AddComponent<TextMesh>();
+            var label = Instantiate(labelPrefab, transform, false);
+            label.name = "KLC_StableSlot_StatusLabel";
             ApplyStatusLabelStyle(label);
             return label;
         }

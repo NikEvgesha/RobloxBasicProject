@@ -7,9 +7,14 @@ This document is the practical entry point for a developer joining the current K
 - Branch: `develop`.
 - Unity editor: `6000.3.9f1`.
 - Main scene: `Assets/Games/KickLuckyCube/Scenes/KickLuckyCubeOverview.unity`.
-- Status: playable vertical-slice prototype with a complete core loop, persistent progression, prefab-backed UI, imported animal/player art, and a generated ProBuilder world pass.
+- Status: playable vertical-slice prototype with persistent progression and a broad prefab/UI pass, but not production-ready. The latest manual product review found core-loop, economy, feature-regression, and prefab-ownership work that must be completed before release.
 - Primary target: WebGL with desktop and touch controls. Mobile store builds are a later extension.
 - Save backend: local `PlayerPrefs` prototype. It is not a production cloud-save implementation.
+- Production source of truth: `Docs/Games/KickLuckyCubeProductionBacklog.md`.
+
+Do not treat older smoke-test entries as proof that a feature still works. They are historical checkpoints; current acceptance status belongs in the production backlog and must be confirmed through a fresh Play Mode pass.
+
+The backlog also defines three execution classes: human-owned, agent-owned, and agent-tooling-then-human-finish. Check that assignment before editing a target prefab so Codex and a human do not change the same hierarchy concurrently.
 
 ## First Run
 
@@ -114,7 +119,9 @@ FirstLocationStart = 7
 LocationSpacing = 48.4
 ```
 
-There are 15 regular kick animals with linearly increasing base income. Every regular animal can appear as Normal, Golden, Diamond, or Fire. Grade income multipliers are `x1`, `x2`, `x5`, and `x10`. Three former top animals are elite shop exclusives.
+The complete 30-location world-design brief, including landmark silhouettes, small props, ambient VFX, exact animal pools, income, and sell values, is `Docs/Games/KickLuckyCubeLocations.md`.
+
+There are 15 regular kick animals and 60 ordered kick variants across Normal, Golden, Diamond, and Fire. Runtime income currently increases linearly by progression index through `KickLuckyCubeBalanceConfig`; grades change tint, VFX, and size rather than applying a second income multiplier. Three former top animals are elite shop exclusives. Keep this documentation and `KickLuckyCubeAnimalGradeUtility` aligned if multiplicative grade income is restored.
 
 Do not independently change scene zone spacing, kick distance conversion, wave tier calculation, and editor decor generation. They all depend on the shared corridor constants.
 
@@ -165,6 +172,8 @@ When adding or replacing an animal:
 5. Verify silhouette roulette orientation, revealed runner orientation, carry preview, stable placement, album card, and animation fallback.
 6. Confirm the animal discovery key is recorded after obtaining it.
 
+Run `Tools > Kick Lucky Cube > Validation > Validate Animal Catalog` before commit. The validator checks all 22 catalog ids, model/icon loads, Animator controllers, and all four grade round-trips. Exchange and shop code must preserve canonical catalog identity; do not append a new display name while reusing an existing catalog id.
+
 Some imported animals use authored animation; `KickLuckyCubeAnimalProceduralMotion` is the fallback for visuals without a usable animation setup.
 
 ## Controls
@@ -189,9 +198,19 @@ Desktop defaults:
 
 Touch controls provide a virtual joystick, jump, and hold-interaction button. They are hidden on desktop unless device simulation is enabled.
 
+## Authoring Workspace
+
+Open `Tools > Kick Lucky Cube > Authoring Workspace` for camera-shot preview, connected-prefab extraction, biome corridor preview, world-shop/base contracts, UI state previews, Lucky Cube anchors, and training animation grip tools. Full instructions and safety rules are in `Docs/Games/KickLuckyCubeAuthoringTools.md`.
+
+`KLC_CorridorGameplayData_DoNotDelete` is functional, non-visual scene data. Its 30 trigger-only location zones select the animal progression pool after a kick. `MOVE_KickLine_YellowBar` also owns the player-only corridor boundary. `KLC_ExtendedCorridorFloor_30Zones` is the editable ProBuilder fallback floor and collider for the full kick distance until all biome prefabs provide validated floors. Keep these objects when deleting old blockout decoration; `Install / Repair Tools` can restore them without restoring generated biome art.
+
+Use the workspace instead of the broad legacy `Apply World Polish` command for normal manual editing. `Validate All` reports the exact remaining biome slots, stable-slot bindings, animation contacts, and prefab contract problems.
+
 ## Persistence
 
 Prototype persistence uses `PlayerPrefs`. Major key families cover wallet, progression, inventory, stable slots, animal discovery, settings, rewards, styles, wheel cooldown, offline reward timestamps, and privilege-pass state.
+
+Wallet schema uses invariant string-backed `KickLuckyCube.Wallet.Soft64` and `Hard64` values. Old integer `Soft`/`Hard` keys are migrated and deleted after load. Do not reintroduce integer wallet arithmetic or subtract currency outside `TrySpendSoft` / `TrySpendHard`.
 
 Stable slots persist a serialized animal payload, pending soft currency, last real-world timestamp, and upgrade level. Fake-online stable slots must not use the player's persistent slot ids.
 
@@ -224,7 +243,9 @@ For a release candidate, also create a WebGL development build and test browser 
 - Full UI TextMeshPro migration and full EN/RU localization coverage are not complete.
 - The overview scene is large and contains generated visual content, so scene merges are high risk.
 - Fake online players and plots are ambience only; they do not represent networking.
+- Fake-online runtime actors come from `Resources/KickLuckyCube/World/KLC_FakeOnlineBotActor.prefab`; bot activity anchors live under the plot template and never write player persistence.
 - Several systems bootstrap runtime controllers by code. Manager-only bootstrap objects are acceptable, but new visible UI should remain prefab-backed.
+- Run the runtime-created visual audit from the Validation menu and consult `Docs/Games/KickLuckyCubeRuntimeVisualAudit.md`; runtime visual migration is clear and new visual or unclassified construction is blocked.
 - Generated ProBuilder visuals are a first art pass, not final optimized WebGL geometry.
 - `Resources/KickLuckyCube/StealBrainrot/Models/Player/Root.prefab` is a legacy imported skeleton with missing component references. The active runtime player uses `SadovnicOBJ`; do not use `Root.prefab` until it is reimported or repaired.
 

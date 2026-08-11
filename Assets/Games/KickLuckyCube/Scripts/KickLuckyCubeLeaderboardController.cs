@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 namespace RobloxBasicProject.Games.KickLuckyCube
@@ -14,15 +15,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeInventoryController inventory;
         [SerializeField] private string boardName = "KLC_Board_05_Leaderboard";
         [SerializeField] private string visualResourcePath = "KickLuckyCube/World/KLC_LeaderboardBoardVisual";
-        [SerializeField] private Vector3 headerLocalPosition = new(0f, 2.15f, -0.08f);
-        [SerializeField] private Vector3 firstLineLocalPosition = new(0f, 1.55f, -0.08f);
-        [SerializeField] private float lineSpacing = 0.34f;
         [SerializeField, Min(1)] private int lineCount = 5;
         [SerializeField] private Color textColor = new(1f, 0.95f, 0.78f);
 
         private TextMesh headerText;
         private TextMesh[] lineTexts = Array.Empty<TextMesh>();
         private float refreshTimer;
+
+        public bool IsBound => headerText != null && lineTexts != null && Array.Exists(lineTexts, line => line != null);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -68,24 +68,74 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void BuildBoardText()
         {
-            var board = GameObject.Find(boardName);
+            var board = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .FirstOrDefault(candidate => candidate != null
+                    && candidate.gameObject.scene.IsValid()
+                    && string.Equals(candidate.name, boardName, StringComparison.Ordinal))
+                ?.gameObject;
             if (board == null)
             {
                 return;
             }
 
+            if (TryBindAuthoredBoardText(board.transform))
+            {
+                return;
+            }
+
             var visualRoot = ResolveVisualRoot(board.transform);
-            headerText = CreateOrGetLine(visualRoot, HeaderLineName, headerLocalPosition, 0.18f, TextAnchor.MiddleCenter);
+            headerText = CreateOrGetLine(visualRoot, HeaderLineName, TextAnchor.MiddleCenter);
             lineTexts = new TextMesh[lineCount];
             for (var index = 0; index < lineCount; index++)
             {
                 lineTexts[index] = CreateOrGetLine(
                     visualRoot,
                     LineNamePrefix + (index + 1).ToString("00"),
-                    firstLineLocalPosition + Vector3.down * (lineSpacing * index),
-                    0.12f,
                     TextAnchor.MiddleLeft);
             }
+        }
+
+        private bool TryBindAuthoredBoardText(Transform board)
+        {
+            var texts = board.GetComponentsInChildren<TextMesh>(true);
+            headerText = Array.Find(texts, text => text != null
+                && (string.Equals(text.name, HeaderLineName, StringComparison.Ordinal)
+                    || text.name.EndsWith("_Leaderboard_Header", StringComparison.Ordinal)));
+
+            var authoredLines = texts
+                .Where(text => text != null
+                    && (text.name.StartsWith(LineNamePrefix, StringComparison.Ordinal)
+                        || text.name.IndexOf("_Leaderboard_RankLine_", StringComparison.Ordinal) >= 0))
+                .OrderBy(text => ResolveTrailingNumber(text.name))
+                .Take(Mathf.Max(1, lineCount))
+                .ToArray();
+
+            if (headerText == null || authoredLines.Length == 0)
+            {
+                headerText = null;
+                return false;
+            }
+
+            lineTexts = new TextMesh[Mathf.Max(1, lineCount)];
+            for (var index = 0; index < lineTexts.Length && index < authoredLines.Length; index++)
+            {
+                lineTexts[index] = authoredLines[index];
+            }
+
+            return true;
+        }
+
+        private static int ResolveTrailingNumber(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return int.MaxValue;
+            }
+
+            var lastSeparator = value.LastIndexOf('_');
+            return lastSeparator >= 0 && int.TryParse(value.Substring(lastSeparator + 1), out var number)
+                ? number
+                : int.MaxValue;
         }
 
         private Transform ResolveVisualRoot(Transform board)
@@ -106,40 +156,33 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return instance;
             }
 
-            var fallback = new GameObject(VisualRootName).transform;
-            fallback.SetParent(board, false);
-            fallback.localPosition = Vector3.zero;
-            fallback.localRotation = Quaternion.identity;
-            fallback.localScale = Vector3.one;
-            return fallback;
+            Debug.LogError($"Leaderboard visual prefab is missing at Resources/{visualResourcePath}.prefab.", this);
+            return null;
         }
 
-        private TextMesh CreateOrGetLine(Transform parent, string name, Vector3 localPosition, float characterSize, TextAnchor anchor)
+        private TextMesh CreateOrGetLine(Transform parent, string name, TextAnchor anchor)
         {
-            var existing = parent.Find(name);
-            var created = existing == null;
-            var textTransform = created ? new GameObject(name).transform : existing;
-            if (created)
+            if (parent == null)
             {
-                textTransform.SetParent(parent, false);
-                textTransform.localPosition = localPosition;
-                textTransform.localRotation = Quaternion.identity;
-                textTransform.localScale = Vector3.one;
+                return null;
+            }
+
+            var textTransform = parent.Find(name);
+            if (textTransform == null)
+            {
+                Debug.LogError($"Leaderboard prefab is missing authored text '{name}'.", parent);
+                return null;
             }
 
             var text = textTransform.GetComponent<TextMesh>();
             if (text == null)
             {
-                text = textTransform.gameObject.AddComponent<TextMesh>();
+                Debug.LogError($"Leaderboard prefab object '{name}' has no TextMesh component.", textTransform);
+                return null;
             }
 
             text.anchor = anchor;
             text.alignment = anchor == TextAnchor.MiddleLeft ? TextAlignment.Left : TextAlignment.Center;
-            if (created)
-            {
-                text.characterSize = characterSize;
-            }
-
             text.fontSize = 48;
             text.color = textColor;
             KickLuckyCubeUiTheme.StyleWorldText(text, textColor, Mathf.Max(0.003f, text.characterSize * 0.07f));
@@ -160,40 +203,33 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var strength = stats != null ? Mathf.RoundToInt(stats.Strength) : 0;
             var soft = wallet != null ? wallet.SoftCurrency : 0;
             var mobs = inventory != null ? inventory.HotbarAnimalCount + inventory.StoredAnimalCount : 0;
-            var score = Mathf.Max(strength, 0) + soft / 10 + mobs * 250;
+            var score = Math.Max(strength, 0L) + soft / 10L + mobs * 250L;
 
             headerText.text = "TOP KICKERS";
-            var lines = new[]
+            var entries = new[]
             {
-                $"1. You   {FormatScore(score)}",
-                $"2. BoxLord   {FormatScore(score + 1850)}",
-                $"3. CubeQueen   {FormatScore(score + 940)}",
-                $"4. LuckyNoob   {FormatScore(Mathf.Max(0, score - 420))}",
-                $"5. GrassRunner   {FormatScore(Mathf.Max(0, score - 980))}",
+                (Name: "You", Score: score),
+                (Name: "BoxLord", Score: Math.Max(0L, score + 1850L)),
+                (Name: "CubeQueen", Score: Math.Max(0L, score + 940L)),
+                (Name: "LuckyNoob", Score: Math.Max(0L, score - 420L)),
+                (Name: "GrassRunner", Score: Math.Max(0L, score - 980L)),
             };
+            Array.Sort(entries, (left, right) => right.Score.CompareTo(left.Score));
 
             for (var index = 0; index < lineTexts.Length; index++)
             {
                 if (lineTexts[index] != null)
                 {
-                    lineTexts[index].text = index < lines.Length ? lines[index] : string.Empty;
+                    lineTexts[index].text = index < entries.Length
+                        ? $"{index + 1}. {entries[index].Name}   {FormatScore(entries[index].Score)}"
+                        : string.Empty;
                 }
             }
         }
 
-        private static string FormatScore(int score)
+        private static string FormatScore(long score)
         {
-            if (score >= 1000000)
-            {
-                return (score / 1000000f).ToString("0.0M");
-            }
-
-            if (score >= 1000)
-            {
-                return (score / 1000f).ToString("0.0K");
-            }
-
-            return score.ToString();
+            return KickLuckyCubeNumberFormatter.FormatCompact(score);
         }
     }
 }

@@ -4,8 +4,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 {
     public sealed class KickLuckyCubeHomeIconMarker : MonoBehaviour
     {
-        private const string RuntimeCanvasName = "KLC_HomeIconCanvas_Runtime";
-
         [SerializeField] private Transform target;
         [SerializeField] private Canvas canvas;
         [SerializeField] private string targetName = "KLC_PlotInstance_MOVE_PlotSlot_01";
@@ -14,6 +12,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private bool clampToScreenEdge = true;
         [SerializeField, Min(0f)] private float screenPadding = 48f;
         [SerializeField] private bool useRendererBounds = true;
+        [SerializeField, Min(0f)] private float minimumVisibleDistance;
+        [SerializeField, Min(0f)] private float maximumVisibleDistance = 10000f;
+        [SerializeField] private Vector2 distanceScaleRange = new(12f, 120f);
+        [SerializeField] private Vector2 iconScaleRange = new(1f, 0.68f);
 
         private RectTransform iconRoot;
         private Transform cachedTarget;
@@ -53,7 +55,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var screenPosition = GetClampedScreenPosition(camera.WorldToScreenPoint(GetTargetWorldPosition()), out var visible);
+            var targetWorldPosition = GetTargetWorldPosition();
+            var distanceToTarget = Vector3.Distance(camera.transform.position, targetWorldPosition);
+            var inDistanceRange = distanceToTarget >= minimumVisibleDistance
+                && (maximumVisibleDistance <= 0f || distanceToTarget <= maximumVisibleDistance);
+            var screenPosition = GetClampedScreenPosition(camera.WorldToScreenPoint(targetWorldPosition), out var visible);
+            visible &= inDistanceRange;
             iconRoot.gameObject.SetActive(visible);
             if (!visible)
             {
@@ -76,6 +83,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             iconRoot.SetAsLastSibling();
+            var scaleT = Mathf.InverseLerp(distanceScaleRange.x, Mathf.Max(distanceScaleRange.x + 0.01f, distanceScaleRange.y), distanceToTarget);
+            var scale = Mathf.Lerp(iconScaleRange.x, iconScaleRange.y, scaleT);
+            iconRoot.localScale = Vector3.one * Mathf.Max(0.05f, scale);
         }
 
         private Vector3 GetClampedScreenPosition(Vector3 screenPosition, out bool visible)
@@ -119,7 +129,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
                 if (targetObject != null)
                 {
-                    target = targetObject.transform;
+                    var authoring = targetObject.GetComponentInChildren<KickLuckyCubePlayerBaseAuthoring>(true);
+                    target = authoring != null && authoring.HomeMarkerAnchor != null
+                        ? authoring.HomeMarkerAnchor
+                        : targetObject.transform;
                 }
             }
 
@@ -128,21 +141,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var existingCanvasObject = GameObject.Find(RuntimeCanvasName);
-            if (existingCanvasObject != null)
-            {
-                canvas = existingCanvasObject.GetComponent<Canvas>();
-            }
-
+            canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas(canvas);
             if (canvas == null)
             {
-                var canvasObject = new GameObject(RuntimeCanvasName, typeof(RectTransform), typeof(Canvas));
-                canvas = canvasObject.GetComponent<Canvas>();
+                Debug.LogError("[KLC-HOME] Main gameplay Canvas is missing; the home marker cannot be displayed.", this);
             }
-
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = 5000;
         }
 
         private void EnsureIcon()

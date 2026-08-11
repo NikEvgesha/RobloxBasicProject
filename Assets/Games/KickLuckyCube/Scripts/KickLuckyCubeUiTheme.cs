@@ -52,7 +52,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var image = target.GetComponent<Image>();
             if (image == null)
             {
-                image = target.AddComponent<Image>();
+                Debug.LogError($"[KLC-UI] '{target.name}' is missing an authored Image component.", target);
+                return null;
             }
 
             image.color = ResolveImageColor(target.name, color);
@@ -102,7 +103,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 image = button.GetComponent<Image>();
                 if (image == null)
                 {
-                    image = button.gameObject.AddComponent<Image>();
+                    Debug.LogError($"[KLC-UI] Button '{button.name}' is missing an authored Image component.", button);
+                    return;
                 }
 
                 button.targetGraphic = image;
@@ -262,9 +264,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             textMesh.fontStyle = FontStyle.Bold;
             KickLuckyCubeWorldTextOutline.ApplyTextColor(textMesh, color);
 
-            var outline = textMesh.GetComponent<KickLuckyCubeWorldTextOutline>()
-                ?? textMesh.gameObject.AddComponent<KickLuckyCubeWorldTextOutline>();
-            outline.Configure(Outline, Mathf.Max(0.003f, outlineDistance));
+            var outline = textMesh.GetComponent<KickLuckyCubeWorldTextOutline>();
+            if (outline != null)
+            {
+                outline.Configure(Outline, Mathf.Max(0.003f, outlineDistance));
+            }
         }
 
         public static Color CardColorForRarity(KickLuckyCubeRarity rarity, bool discovered = true)

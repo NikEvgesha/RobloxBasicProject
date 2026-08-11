@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,7 +7,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 {
     public sealed class KickLuckyCubeWheelController : MonoBehaviour
     {
-        private const string NextSpinAtKey = "KickLuckyCube.Wheel.NextSpinAt";
+        private const string NextSpinAtUnixKey = "KickLuckyCube.Wheel.NextSpinAtUnix";
+        private const string LegacyNextSpinAtKey = "KickLuckyCube.Wheel.NextSpinAt";
 
         public enum RewardType
         {
@@ -47,7 +49,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private float visualSpinVelocity;
 
-        public float RemainingCooldownSeconds => Mathf.Max(0f, GetNextSpinAt() - Time.unscaledTime);
+        public float RemainingCooldownSeconds => Mathf.Max(0f, (float)(GetNextSpinAtUnix() - GetUnixNow()));
         public bool CanSpin => RemainingCooldownSeconds <= 0f;
 
         private void Awake()
@@ -88,7 +90,10 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var reward = PickReward();
             GrantReward(reward);
-            PlayerPrefs.SetFloat(NextSpinAtKey, Time.unscaledTime + cooldownSeconds);
+            PlayerPrefs.SetString(
+                NextSpinAtUnixKey,
+                (GetUnixNow() + cooldownSeconds).ToString(CultureInfo.InvariantCulture));
+            PlayerPrefs.DeleteKey(LegacyNextSpinAtKey);
             PlayerPrefs.Save();
             visualSpinVelocity = 920f;
 
@@ -103,7 +108,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public void ResetCooldownForPrototype()
         {
-            PlayerPrefs.DeleteKey(NextSpinAtKey);
+            PlayerPrefs.DeleteKey(NextSpinAtUnixKey);
+            PlayerPrefs.DeleteKey(LegacyNextSpinAtKey);
             PlayerPrefs.Save();
             Refresh();
         }
@@ -219,9 +225,26 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
-        private float GetNextSpinAt()
+        private static double GetNextSpinAtUnix()
         {
-            return PlayerPrefs.GetFloat(NextSpinAtKey, 0f);
+            var stored = PlayerPrefs.GetString(NextSpinAtUnixKey, string.Empty);
+            if (double.TryParse(stored, NumberStyles.Float, CultureInfo.InvariantCulture, out var nextSpinAtUnix))
+            {
+                return nextSpinAtUnix;
+            }
+
+            if (PlayerPrefs.HasKey(LegacyNextSpinAtKey))
+            {
+                PlayerPrefs.DeleteKey(LegacyNextSpinAtKey);
+                PlayerPrefs.Save();
+            }
+
+            return 0d;
+        }
+
+        private static double GetUnixNow()
+        {
+            return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000d;
         }
 
         private static string FormatReward(WheelReward reward)

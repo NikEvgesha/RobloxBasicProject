@@ -350,7 +350,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
-        private void OnWalletChanged(int soft, int hard)
+        private void OnWalletChanged(long soft, long hard)
         {
             Refresh();
         }

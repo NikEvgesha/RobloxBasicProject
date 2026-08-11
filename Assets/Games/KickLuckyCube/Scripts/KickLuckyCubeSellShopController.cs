@@ -28,11 +28,23 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public bool IsOpen => windowRoot != null && windowRoot.gameObject.activeSelf;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Bootstrap()
+        {
+            if (!Application.isPlaying
+                || FindFirstObjectByType<KickLuckyCubeSellShopController>(FindObjectsInactive.Include) != null)
+            {
+                return;
+            }
+
+            new GameObject("KLC_SellShopController_Runtime").AddComponent<KickLuckyCubeSellShopController>();
+        }
+
         private void Awake()
         {
             inventory ??= FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
             wallet ??= FindFirstObjectByType<KickLuckyCubeWallet>(FindObjectsInactive.Include);
-            canvas ??= FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas(canvas);
             ResolveUiFont();
 
             if (buildRuntimeUi)
@@ -201,7 +213,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (canvas == null)
             {
-                canvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+                canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas(canvas);
             }
 
             if (canvas == null)
@@ -232,7 +244,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             viewport.anchoredPosition = new Vector2(0f, -14f);
             viewport.sizeDelta = new Vector2(620f, 412f);
             AddImage(viewport.gameObject, new Color(0.02f, 0.018f, 0.014f, 0.34f));
-            viewport.gameObject.AddComponent<RectMask2D>();
+            KickLuckyCubeUiPrefabFactory.GetOrAddComponent<RectMask2D>(viewport.gameObject);
 
             listRoot = CreateRect("KLC_SellShopGrid", viewport);
             listRoot.anchorMin = new Vector2(0.5f, 1f);

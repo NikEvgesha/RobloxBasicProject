@@ -7,8 +7,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
     [DefaultExecutionOrder(-150)]
     public sealed class KickLuckyCubeCurrencyFxController : MonoBehaviour
     {
-        private const string RuntimeCanvasName = "KLC_CurrencyFxCanvas_Runtime";
-
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private Canvas canvas;
         [SerializeField] private RectTransform softTarget;
@@ -63,7 +61,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
-        private void OnCurrencyGained(int soft, int hard)
+        private void OnCurrencyGained(long soft, long hard)
         {
             if (soft > 0)
             {
@@ -76,7 +74,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
         }
 
-        private void SpawnCurrencyFx(int amount, string label, Color color, Vector2 target)
+        private void SpawnCurrencyFx(long amount, string label, Color color, Vector2 target)
         {
             ResolveReferences();
             if (amount <= 0 || canvasRect == null)
@@ -94,7 +92,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private void CreateCurrencyText(
             RectTransform parent,
-            int amount,
+            long amount,
             string label,
             Color color,
             Vector2 start,
@@ -109,9 +107,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = isMain ? new Vector2(190f, 56f) : new Vector2(104f, 36f);
 
-            var text = KickLuckyCubeUiPrefabFactory.GetOrAddComponent<Text>(textObject);
+            var text = KickLuckyCubeUiPrefabFactory.GetRequiredComponent<Text>(textObject);
             text.font = uiFont;
-            text.text = isMain ? $"+{amount:0} {label}" : $"+{Mathf.Max(1, amount / burstCount):0}";
+            text.text = isMain
+                ? $"+{KickLuckyCubeNumberFormatter.FormatCompact(amount)} {label}"
+                : $"+{KickLuckyCubeNumberFormatter.FormatCompact(Math.Max(1L, amount / burstCount))}";
             text.alignment = TextAnchor.MiddleCenter;
             text.fontSize = isMain ? 38 : 24;
             KickLuckyCubeUiTheme.StyleFloatingText(text, color);
@@ -126,8 +126,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var delay = isMain ? 0f : UnityEngine.Random.Range(0.025f, 0.16f);
             var duration = flySeconds + UnityEngine.Random.Range(-0.06f, 0.1f);
             rect.anchoredPosition = start;
-            KickLuckyCubeUiPrefabFactory.GetOrAddComponent<CurrencyFlyTextMotion>(textObject)
-                .Initialize(rect, group, start, burst, target, duration, delay, isMain ? 1.3f : 0.95f);
+            var motion = textObject.GetComponent<CurrencyFlyTextMotion>()
+                ?? textObject.AddComponent<CurrencyFlyTextMotion>();
+            motion.Initialize(rect, group, start, burst, target, duration, delay, isMain ? 1.3f : 0.95f);
         }
 
         private void ResolveReferences()
@@ -146,26 +147,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var existingCanvas = GameObject.Find(RuntimeCanvasName);
-            if (existingCanvas != null)
+            canvas = KickLuckyCubeUiPrefabFactory.ResolveMainCanvas(canvas);
+            canvasRect = canvas != null ? canvas.transform as RectTransform : null;
+            if (canvasRect == null)
             {
-                canvas = existingCanvas.GetComponent<Canvas>();
+                Debug.LogError("[KLC-CURRENCY-FX] Main gameplay Canvas is missing; currency FX requires the authored KLC_PrototypeCanvas.", this);
             }
-
-            if (canvas == null)
-            {
-                var canvasObject = new GameObject(RuntimeCanvasName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-                canvas = canvasObject.GetComponent<Canvas>();
-                var scaler = canvasObject.GetComponent<CanvasScaler>();
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1600f, 900f);
-                scaler.matchWidthOrHeight = 0.5f;
-            }
-
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = 5200;
-            canvasRect = canvas.transform as RectTransform;
         }
 
         private void ResolveSource()

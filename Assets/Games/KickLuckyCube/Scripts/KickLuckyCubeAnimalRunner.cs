@@ -18,7 +18,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private bool controlEnabled;
         [SerializeField] private float returnLineZ;
         [SerializeField, Min(0f)] private float returnTolerance = 0.8f;
-        [SerializeField, Min(0f)] private float groundOffset = 0.58f;
+        [SerializeField, Min(0f)] private float groundOffset;
         [SerializeField, Min(0.1f)] private float groundRayHeight = 8f;
         [SerializeField, Min(0.1f)] private float groundRayDistance = 24f;
         [SerializeField, Min(0f)] private float groundSnapSharpness = 22f;
@@ -38,10 +38,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private bool hasSideBounds;
         private float sideMinX;
         private float sideMaxX;
+        private KickLuckyCubeRiverTraversalZone[] riverTraversalZones = Array.Empty<KickLuckyCubeRiverTraversalZone>();
+        private float traversalSpeedMultiplier = 1f;
+        private float traversalSinkOffset;
 
         public KickLuckyCubeSpawnedAnimal Animal => animal;
         public bool ControlEnabled => controlEnabled;
         public float Speed => speed;
+        public float TraversalSpeedMultiplier => traversalSpeedMultiplier;
+        public float TraversalSinkOffset => traversalSinkOffset;
 
         private void Awake()
         {
@@ -56,6 +61,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             CacheActiveRendererGroundSurfaces();
             CacheSideBounds();
+            CacheRiverTraversalZones();
         }
 
         public void Configure(KickLuckyCubeSpawnedAnimal spawnedAnimal, float runnerSpeed)
@@ -67,15 +73,33 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public void BeginRun(float targetReturnLineZ)
         {
             returnLineZ = targetReturnLineZ;
+            SnapToGroundImmediate();
             controlEnabled = true;
             verticalVelocity = -1f;
             isGrounded = true;
             ResolveCameraTransform();
+            CacheRiverTraversalZones();
+        }
+
+        public bool SnapToGroundImmediate()
+        {
+            var position = transform.position;
+            if (!TryResolveGroundY(position, out var groundY))
+            {
+                return false;
+            }
+
+            position.y = groundY + groundOffset;
+            transform.position = position;
+            verticalVelocity = -1f;
+            isGrounded = true;
+            return true;
         }
 
         public void StopRun()
         {
             controlEnabled = false;
+            ResetTraversalModifier();
         }
 
         public void ForceReturnForPrototype()
@@ -93,6 +117,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var deltaTime = Time.unscaledDeltaTime;
             ResolveCameraTransform();
+            UpdateTraversalModifier();
 
             var input = ReadMoveInput();
             if (mobileInput != null && mobileInput.MoveInput.sqrMagnitude > input.sqrMagnitude)
@@ -106,7 +131,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 movement.Normalize();
             }
 
-            var nextPosition = transform.position + movement * (speed * deltaTime);
+            var nextPosition = transform.position + movement * (speed * traversalSpeedMultiplier * deltaTime);
             ClampToSideBounds(ref nextPosition);
             ApplyVerticalMotion(ref nextPosition, deltaTime);
             ClampToSideBounds(ref nextPosition);
@@ -123,6 +148,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             if (transform.position.z <= returnLineZ + returnTolerance)
             {
                 controlEnabled = false;
+                ResetTraversalModifier();
                 ReturnedToLine?.Invoke(this);
             }
         }
@@ -163,13 +189,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 #endif
         }
 
-        private static bool ReadJumpPressed()
+        private bool ReadJumpPressed()
         {
 #if ENABLE_INPUT_SYSTEM
             var keyboard = Keyboard.current;
-            return keyboard != null && keyboard.spaceKey.wasPressedThisFrame;
+            return (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+                || (mobileInput != null && mobileInput.ConsumeJumpPressed());
 #else
-            return Input.GetKeyDown(KeyCode.Space);
+            return Input.GetKeyDown(KeyCode.Space)
+                || (mobileInput != null && mobileInput.ConsumeJumpPressed());
 #endif
         }
 
@@ -220,7 +248,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var targetY = groundY + groundOffset;
+            var targetY = groundY + groundOffset + traversalSinkOffset;
             if (isGrounded && ReadJumpPressed())
             {
                 isGrounded = false;
@@ -255,34 +283,20 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private bool TryResolveGroundY(Vector3 position, out float groundY)
         {
-            var hasGround = false;
-            groundY = 0f;
-
-            var rayOrigin = new Vector3(position.x, position.y + groundRayHeight, position.z);
-            var hits = Physics
-                .RaycastAll(rayOrigin, Vector3.down, groundRayHeight + groundRayDistance, ~0, QueryTriggerInteraction.Ignore)
-                .OrderBy(hit => hit.distance);
-
-            foreach (var hit in hits)
+            if (KickLuckyCubeGroundResolver.TryResolveGroundY(
+                    position,
+                    transform,
+                    groundRayHeight,
+                    groundRayDistance,
+                    1.5f,
+                    out groundY))
             {
-                if (hit.collider == null || ShouldIgnoreGroundCollider(hit.collider))
-                {
-                    continue;
-                }
-
-                groundY = hit.point.y;
-                hasGround = true;
-                break;
+                return true;
             }
 
             if (TryResolveActiveRendererGroundY(position, out var rendererGroundY))
             {
-                groundY = hasGround ? Mathf.Max(groundY, rendererGroundY) : rendererGroundY;
-                hasGround = true;
-            }
-
-            if (hasGround)
-            {
+                groundY = rendererGroundY;
                 return true;
             }
 
@@ -378,6 +392,37 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             hasSideBounds = sideMinX < sideMaxX;
         }
 
+        private void CacheRiverTraversalZones()
+        {
+            riverTraversalZones = FindObjectsByType<KickLuckyCubeRiverTraversalZone>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+        }
+
+        private void UpdateTraversalModifier()
+        {
+            traversalSpeedMultiplier = 1f;
+            traversalSinkOffset = 0f;
+
+            foreach (var zone in riverTraversalZones)
+            {
+                if (zone == null
+                    || !zone.TryGetAnimalModifier(transform.position, out var speedMultiplier, out var sinkOffset))
+                {
+                    continue;
+                }
+
+                traversalSpeedMultiplier = Mathf.Min(traversalSpeedMultiplier, speedMultiplier);
+                traversalSinkOffset = Mathf.Min(traversalSinkOffset, sinkOffset);
+            }
+        }
+
+        private void ResetTraversalModifier()
+        {
+            traversalSpeedMultiplier = 1f;
+            traversalSinkOffset = 0f;
+        }
+
         private void ClampToSideBounds(ref Vector3 position)
         {
             if (!hasSideBounds)
@@ -403,8 +448,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                     continue;
                 }
 
-                groundY = foundGround ? Mathf.Max(groundY, bounds.max.y) : bounds.max.y;
-                foundGround = true;
+                var candidateY = bounds.max.y;
+                if (candidateY <= position.y + 1.5f
+                    && (!foundGround || Mathf.Abs(position.y - candidateY) < Mathf.Abs(position.y - groundY)))
+                {
+                    groundY = candidateY;
+                    foundGround = true;
+                }
             }
 
             return foundGround;

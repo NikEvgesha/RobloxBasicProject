@@ -15,6 +15,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private KickLuckyCubeWallet wallet;
         [SerializeField] private KickLuckyCubeRunPhaseController runPhase;
         [SerializeField] private TextMesh statusLabel;
+        [SerializeField] private string statusLabelResourcePath = "KickLuckyCube/World/KLC_StableUpgradeBoard_StatusLabel";
         [SerializeField, Min(1f)] private float clickRayDistance = 200f;
         [SerializeField, Min(0.01f)] private float labelCharacterSizeToBoardHeight = 0.075f;
 
@@ -135,7 +136,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 var existingLabel = ResolveStatusLabel();
                 statusLabel = existingLabel != null ? existingLabel : CreateStatusLabel();
-                ownsStatusLabel = statusLabel != null;
+                ownsStatusLabel = existingLabel == null && statusLabel != null;
             }
 
             ApplyBoardLabelStyle(statusLabel);
@@ -159,10 +160,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private TextMesh CreateStatusLabel()
         {
-            var labelObject = new GameObject("KLC_StableUpgradeBoard_StatusLabel");
-            labelObject.transform.SetParent(KickLuckyCubeWorldTextOutline.ResolveRuntimeLabelRoot(), false);
+            var labelPrefab = Resources.Load<TextMesh>(statusLabelResourcePath);
+            if (labelPrefab == null)
+            {
+                Debug.LogError($"[KLC-STABLE] Missing authored upgrade label at Resources/{statusLabelResourcePath}.", this);
+                return null;
+            }
 
-            var label = labelObject.AddComponent<TextMesh>();
+            var label = Instantiate(labelPrefab, KickLuckyCubeWorldTextOutline.ResolveRuntimeLabelRoot(), false);
+            label.name = "KLC_StableUpgradeBoard_StatusLabel";
             ownsStatusLabel = true;
             ApplyBoardLabelStyle(label);
             return label;
@@ -213,17 +219,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             var localPosition = new Vector3(0f, 0.68f, -0.075f);
             var localRotation = Quaternion.Euler(60f, 0f, 0f);
-            if (Application.isPlaying)
-            {
-                label.transform.SetParent(KickLuckyCubeWorldTextOutline.ResolveRuntimeLabelRoot(), false);
-                label.transform.position = transform.TransformPoint(localPosition);
-                label.transform.rotation = transform.rotation * localRotation;
-            }
-            else
+            if (!Application.isPlaying)
             {
                 label.transform.SetParent(transform, false);
                 label.transform.localPosition = localPosition;
                 label.transform.localRotation = localRotation;
+            }
+            else
+            {
+                label.transform.position = transform.TransformPoint(localPosition);
+                label.transform.rotation = transform.rotation * localRotation;
             }
 
             label.transform.localScale = Vector3.one;

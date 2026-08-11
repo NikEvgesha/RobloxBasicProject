@@ -72,7 +72,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             UnwireButton(strengthTileButton, ShowMasteryInfo);
             UnwireButton(softTileButton, OpenSoftShop);
             UnwireButton(hardTileButton, OpenHardShop);
-            UnwireButton(kickPowerSettingsButton, ShowMasteryInfo);
+            UnwireButton(kickPowerSettingsButton, OpenKickStrengthSettings);
             UnwireButton(speedInfoButton, OpenSpeedShop);
 
             if (masteryInfoButton != null)
@@ -114,7 +114,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Refresh();
         }
 
-        private void OnWalletChanged(int soft, int hard)
+        private void OnWalletChanged(long soft, long hard)
         {
             Refresh();
         }
@@ -208,7 +208,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             WireButton(strengthTileButton, ShowMasteryInfo);
             WireButton(softTileButton, OpenSoftShop);
             WireButton(hardTileButton, OpenHardShop);
-            WireButton(kickPowerSettingsButton, ShowMasteryInfo);
+            WireButton(kickPowerSettingsButton, OpenKickStrengthSettings);
             WireButton(speedInfoButton, OpenSpeedShop);
 
             if (masteryInfoButton != null)
@@ -253,6 +253,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private void OpenKickShop()
         {
             OpenWindowController("KLC_ShopWindowController");
+        }
+
+        private void OpenKickStrengthSettings()
+        {
+            var settings = FindFirstObjectByType<KickLuckyCubeKickStrengthSettingsController>(FindObjectsInactive.Include);
+            settings?.OpenWindow();
         }
 
         private void ShowMasteryInfo()
@@ -349,35 +355,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private static string FormatCompact(float value)
         {
-            return FormatCompact(Mathf.RoundToInt(Mathf.Max(0f, value)));
+            return KickLuckyCubeNumberFormatter.FormatCompact((long)Mathf.Round(Mathf.Max(0f, value)));
         }
 
-        private static string FormatCompact(int value)
+        private static string FormatCompact(long value)
         {
-            var abs = Mathf.Abs(value);
-            if (abs >= 1000000000)
-            {
-                return FormatCompactScaled(value, 1000000000f, "B");
-            }
-
-            if (abs >= 1000000)
-            {
-                return FormatCompactScaled(value, 1000000f, "M");
-            }
-
-            if (abs >= 1000)
-            {
-                return FormatCompactScaled(value, 1000f, "K");
-            }
-
-            return value.ToString(CultureInfo.InvariantCulture);
-        }
-
-        private static string FormatCompactScaled(int value, float scale, string suffix)
-        {
-            var scaled = value / scale;
-            var format = scaled >= 100f ? "0" : "0.#";
-            return scaled.ToString(format, CultureInfo.InvariantCulture) + suffix;
+            return KickLuckyCubeNumberFormatter.FormatCompact(value);
         }
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using InvalidOperationException = System.InvalidOperationException;
 
 namespace RobloxBasicProject.Games.KickLuckyCube
 {
@@ -31,19 +32,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var kind = GuessKind(name);
             var elementTemplate = LoadElementTemplate(name);
             var template = elementTemplate != null ? elementTemplate : LoadTemplate(kind);
-            RectTransform rect;
+            if (template == null)
+            {
+                throw MissingPrefab(name);
+            }
 
-            if (template != null)
-            {
-                rect = Object.Instantiate(template, parent, false);
-                rect.name = name;
-            }
-            else
-            {
-                var gameObject = new GameObject(name, typeof(RectTransform));
-                rect = gameObject.GetComponent<RectTransform>();
-                rect.SetParent(parent, false);
-            }
+            var rect = Object.Instantiate(template, parent, false);
+            rect.name = name;
 
             if (elementTemplate == null)
             {
@@ -58,19 +53,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var kind = GuessKind(templateName);
             var elementTemplate = LoadElementTemplate(templateName);
             var template = elementTemplate != null ? elementTemplate : LoadTemplate(kind);
-            RectTransform rect;
+            if (template == null)
+            {
+                throw MissingPrefab(templateName);
+            }
 
-            if (template != null)
-            {
-                rect = Object.Instantiate(template, parent, false);
-                rect.name = string.IsNullOrWhiteSpace(instanceName) ? templateName : instanceName;
-            }
-            else
-            {
-                var gameObject = new GameObject(string.IsNullOrWhiteSpace(instanceName) ? templateName : instanceName, typeof(RectTransform));
-                rect = gameObject.GetComponent<RectTransform>();
-                rect.SetParent(parent, false);
-            }
+            var rect = Object.Instantiate(template, parent, false);
+            rect.name = string.IsNullOrWhiteSpace(instanceName) ? templateName : instanceName;
 
             if (elementTemplate == null)
             {
@@ -131,7 +120,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             where T : Component
         {
             var component = target != null ? target.GetComponent<T>() : null;
-            return component != null ? component : target.AddComponent<T>();
+            if (component == null)
+            {
+                throw new InvalidOperationException(
+                    $"Authored UI object '{target?.name ?? "<null>"}' is missing required component {typeof(T).Name}. Fix its prefab instead of adding the component at runtime.");
+            }
+
+            return component;
+        }
+
+        public static T GetRequiredComponent<T>(GameObject target)
+            where T : Component
+        {
+            return GetOrAddComponent<T>(target);
         }
 
         public static Canvas ResolveMainCanvas(Canvas current = null)
@@ -192,12 +193,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             var existing = FindDirectChild(parent, name);
             var rect = existing ?? CreateRect(name, parent);
-            if (existing != null && rect.GetComponent<TMP_Text>() == null && rect.GetComponent<Text>() != null)
-            {
-                rect = ReplaceWithPlainRect(rect, parent, name);
-                existing = null;
-            }
-
             if (existing == null)
             {
                 rect.anchorMin = new Vector2(0.5f, 0.5f);
@@ -208,16 +203,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             var text = GetOrAddTmpText(rect.gameObject);
-            if (text == null)
-            {
-                rect = ReplaceWithPlainRect(rect, parent, name);
-                text = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            }
-
-            if (text == null)
-            {
-                return null;
-            }
 
             text.text = value;
             text.font = KickLuckyCubeUiTheme.TmpFont;
@@ -246,7 +231,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var button = GetOrAddComponent<Button>(rect.gameObject);
             button.targetGraphic = image;
             KickLuckyCubeUiTheme.StyleButton(button, name);
-            GetOrCreateTmpLabel(rect, "Label", value, labelFontSize, TextAnchor.MiddleCenter, size, Vector2.zero);
+            var labelRect = FindDirectChild(rect, "Label");
+            if (labelRect != null && labelRect.GetComponent<TMP_Text>() != null)
+            {
+                GetOrCreateTmpLabel(rect, "Label", value, labelFontSize, TextAnchor.MiddleCenter, size, Vector2.zero);
+            }
+            else if (labelRect != null && labelRect.GetComponent<Text>() != null)
+            {
+                GetOrCreateLabel(rect, "Label", font, value, labelFontSize, TextAnchor.MiddleCenter, size, Vector2.zero);
+            }
+            else
+            {
+                // Icon-only buttons intentionally own no text child.
+            }
             return button;
         }
 
@@ -286,16 +283,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var text = target.GetComponent<Text>();
             if (text == null)
             {
-                text = target.AddComponent<Text>();
-            }
-
-            var graphics = target.GetComponents<Graphic>();
-            foreach (var graphic in graphics)
-            {
-                if (graphic != null && graphic is not Text && graphic is not TMP_Text)
-                {
-                    DestroyComponent(graphic);
-                }
+                throw new InvalidOperationException(
+                    $"Authored UI object '{target.name}' is missing a legacy Text component.");
             }
 
             return text;
@@ -306,58 +295,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var text = target.GetComponent<TMP_Text>();
             if (text == null)
             {
-                text = target.AddComponent<TextMeshProUGUI>();
-            }
-
-            var legacyText = target.GetComponent<Text>();
-            if (legacyText != null)
-            {
-                DestroyComponent(legacyText);
-            }
-
-            var graphics = target.GetComponents<Graphic>();
-            foreach (var graphic in graphics)
-            {
-                if (graphic != null && graphic is not TMP_Text && graphic is not Text)
-                {
-                    DestroyComponent(graphic);
-                }
+                throw new InvalidOperationException(
+                    $"Authored UI object '{target.name}' is missing a TMP_Text component.");
             }
 
             return text;
-        }
-
-        private static RectTransform ReplaceWithPlainRect(RectTransform source, Transform parent, string name)
-        {
-            var siblingIndex = source.GetSiblingIndex();
-            var anchorMin = source.anchorMin;
-            var anchorMax = source.anchorMax;
-            var pivot = source.pivot;
-            var sizeDelta = source.sizeDelta;
-            var anchoredPosition = source.anchoredPosition;
-            var localScale = source.localScale;
-            var localRotation = source.localRotation;
-
-            DestroyObject(source.gameObject);
-
-            var replacement = CreatePlainRect(name, parent);
-            replacement.SetSiblingIndex(Mathf.Min(siblingIndex, parent.childCount - 1));
-            replacement.anchorMin = anchorMin;
-            replacement.anchorMax = anchorMax;
-            replacement.pivot = pivot;
-            replacement.sizeDelta = sizeDelta;
-            replacement.anchoredPosition = anchoredPosition;
-            replacement.localScale = localScale;
-            replacement.localRotation = localRotation;
-            return replacement;
-        }
-
-        private static RectTransform CreatePlainRect(string name, Transform parent)
-        {
-            var gameObject = new GameObject(name, typeof(RectTransform));
-            var rect = gameObject.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
         }
 
         private static TextAlignmentOptions ToTmpAlignment(TextAnchor anchor)
@@ -375,30 +317,6 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 TextAnchor.LowerRight => TextAlignmentOptions.BottomRight,
                 _ => TextAlignmentOptions.Center,
             };
-        }
-
-        private static void DestroyComponent(Component component)
-        {
-            if (component == null)
-            {
-                return;
-            }
-
-            DestroyObject(component);
-        }
-
-        private static void DestroyObject(Object target)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-#if UNITY_EDITOR
-            Object.DestroyImmediate(target);
-#else
-            Object.Destroy(target);
-#endif
         }
 
         private static RectTransform LoadTemplate(KickLuckyCubeUiTemplateKind kind)
@@ -552,6 +470,27 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return "KLC_WaveDangerVignette_Edge";
             }
 
+            if (Contains(sanitizedName, "Label")
+                || Contains(sanitizedName, "Text")
+                || Contains(sanitizedName, "Title")
+                || Contains(sanitizedName, "Status")
+                || Contains(sanitizedName, "Detail")
+                || Contains(sanitizedName, "Requirement")
+                || Contains(sanitizedName, "Timer")
+                || Contains(sanitizedName, "Charges")
+                || Contains(sanitizedName, "Price")
+                || Contains(sanitizedName, "Value")
+                || Contains(sanitizedName, "Income")
+                || Contains(sanitizedName, "Level")
+                || Contains(sanitizedName, "Name")
+                || Contains(sanitizedName, "Rarity")
+                || Contains(sanitizedName, "Hint")
+                || Contains(sanitizedName, "Summary")
+                || Contains(sanitizedName, "Source"))
+            {
+                return "Label";
+            }
+
             return sanitizedName;
         }
 
@@ -563,6 +502,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private static bool IsRuntimeFxCanvas(Canvas canvas)
         {
             return canvas != null && canvas.name == "KLC_CurrencyFxCanvas_Runtime";
+        }
+
+        private static InvalidOperationException MissingPrefab(string elementName)
+        {
+            return new InvalidOperationException(
+                $"No authored UI prefab exists for '{elementName}'. Add it under Resources/{ElementRoot} instead of constructing visual UI at runtime.");
         }
     }
 }

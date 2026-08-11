@@ -207,7 +207,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            var multiplied = ClampToInt(baseAmount * (long)Mathf.Max(1, multiplier));
+            var multiplied = baseAmount > long.MaxValue / Mathf.Max(1, multiplier)
+                ? long.MaxValue
+                : baseAmount * Mathf.Max(1, multiplier);
             wallet.AddSoft(multiplied);
             SetStatus(status);
             SaveLastSeenNow();
@@ -228,12 +230,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             RefreshWindow();
         }
 
-        private int GetTotalPendingSoft()
+        private long GetTotalPendingSoft()
         {
-            return ResolvePlayerStableSlots().Sum(slot => slot != null ? slot.PendingSoft : 0);
+            return ResolvePlayerStableSlots().Aggregate(0L, (total, slot) => total + (slot != null ? slot.PendingSoft : 0));
         }
 
-        private int CollectAllPendingSoft()
+        private long CollectAllPendingSoft()
         {
             var total = 0L;
             var slots = ResolvePlayerStableSlots();
@@ -246,7 +248,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 }
             }
 
-            return ClampToInt(total);
+            return total;
         }
 
         private KickLuckyCubeStableSlot[] ResolvePlayerStableSlots()
@@ -261,7 +263,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             ResolveReferences();
             var pending = GetTotalPendingSoft();
             var normalReward = wallet != null ? wallet.PreviewSoftGain(pending) : pending;
-            var doubledReward = wallet != null ? wallet.PreviewSoftGain(ClampToInt(pending * 2L)) : ClampToInt(pending * 2L);
+            var doubledBase = pending > long.MaxValue / 2L ? long.MaxValue : pending * 2L;
+            var doubledReward = wallet != null ? wallet.PreviewSoftGain(doubledBase) : doubledBase;
 
             if (titleText != null)
             {
@@ -522,24 +525,9 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return value >= int.MaxValue ? int.MaxValue : (int)value;
         }
 
-        private static string FormatCompact(int value)
+        private static string FormatCompact(long value)
         {
-            if (value >= 1000000000)
-            {
-                return (value / 1000000000f).ToString("0.#", CultureInfo.InvariantCulture) + "B";
-            }
-
-            if (value >= 1000000)
-            {
-                return (value / 1000000f).ToString("0.#", CultureInfo.InvariantCulture) + "M";
-            }
-
-            if (value >= 1000)
-            {
-                return (value / 1000f).ToString("0.#", CultureInfo.InvariantCulture) + "K";
-            }
-
-            return value.ToString(CultureInfo.InvariantCulture);
+            return KickLuckyCubeNumberFormatter.FormatCompact(value);
         }
 
         private static string FormatDuration(float seconds)

@@ -35,6 +35,24 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public string BotName => botName;
 
+        public void Configure(string displayName, KickLuckyCubeBotActivityAnchors anchors, float activityPhaseOffset)
+        {
+            botName = string.IsNullOrWhiteSpace(displayName) ? "Player" : displayName;
+            phaseOffset = Mathf.Max(0f, activityPhaseOffset);
+            if (anchors != null)
+            {
+                trainingPoint = anchors.TrainingPoint;
+                kickPoint = anchors.KickPoint;
+                kickStart = anchors.KickStart;
+                kickEnd = anchors.KickEnd;
+                patrolPoints = anchors.PatrolPoints;
+                transform.SetPositionAndRotation(anchors.SpawnPoint.position, anchors.SpawnPoint.rotation);
+            }
+
+            CacheRestState();
+            ResetKickCube();
+        }
+
         private void Awake()
         {
             CacheRestState();

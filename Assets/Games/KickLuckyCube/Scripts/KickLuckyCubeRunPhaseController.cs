@@ -6,6 +6,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 {
     public sealed class KickLuckyCubeRunPhaseController : MonoBehaviour
     {
+        public enum IntroState
+        {
+            Idle,
+            Roulette,
+            SpawningRunner,
+            WaveReveal,
+            RunnerReady,
+            Chase,
+        }
+
         [SerializeField] private KickLuckyCubeKickController kickController;
         [SerializeField] private KickLuckyCubePlayerStats stats;
         [SerializeField] private KickLuckyCubeAnimalSpawner animalSpawner;
@@ -23,12 +33,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private Vector3 animalRoulettePreviewOffset = new(0f, 0.58f, 0f);
         [SerializeField] private Vector3 animalRoulettePreviewScale = new(0.72f, 0.58f, 1.05f);
         [SerializeField] private Color animalRouletteShadowColor = new(0.06f, 0.06f, 0.08f, 0.86f);
-        [SerializeField, Min(0f)] private float returnedPlayerGroundOffset = 0.58f;
+        [SerializeField] private string roulettePreviewResourcePath = "KickLuckyCube/World/KLC_AnimalRoulettePreview";
         [SerializeField, Min(0f)] private float waveIntroSeconds = 2.2f;
         [SerializeField, Min(0f)] private float waveIntroHoldSeconds = 0.35f;
         [SerializeField, Min(0f)] private float waveIntroCameraDistance = 4.8f;
         [SerializeField] private float waveIntroCameraPitch = 13f;
         [SerializeField] private float waveIntroCameraYawOffset;
+        [SerializeField] private KickLuckyCubeCameraChoreographyConfig cameraChoreography;
 
         private KickLuckyCubeAnimalRunner currentRunner;
         private KickLuckyCubeSpawnedAnimal carriedAnimal;
@@ -42,12 +53,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private Vector3 currentReturnPosition;
         private bool hasCurrentReturnPosition;
         private string carriedInventoryAnimalId;
+        private IntroState introState;
 
         public bool HasActiveRun => currentRunner != null && currentRunner.ControlEnabled;
         public bool HasCarriedAnimal => carriedAnimal != null;
         public KickLuckyCubeSpawnedAnimal CarriedAnimal => carriedAnimal;
         public bool IsSelectingAnimal => runStartRoutine != null && roulettePreview != null;
         public Transform RoulettePreviewTransform => roulettePreview != null ? roulettePreview.transform : null;
+        public IntroState CurrentIntroState => introState;
+        public event System.Action<IntroState> IntroStateChanged;
 
         private void Awake()
         {
@@ -58,6 +72,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             inventory ??= FindFirstObjectByType<KickLuckyCubeInventoryController>(FindObjectsInactive.Include);
             waveChase ??= FindFirstObjectByType<KickLuckyCubeWaveChaseController>();
             thirdPersonCamera ??= FindFirstObjectByType<KickLuckyCubeThirdPersonCamera>(FindObjectsInactive.Include);
+            cameraChoreography ??= Resources.Load<KickLuckyCubeCameraChoreographyConfig>(
+                "KickLuckyCube/KickLuckyCubeCameraChoreographyConfig");
 
             if (prototypePlayer == null)
             {
@@ -135,6 +151,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             waveChase?.StopChase();
             kickController?.SetKickLocked(false);
             kickController?.ResetCubeToOrigin();
+            thirdPersonCamera?.EndCinematicFocus(true);
+            SetIntroState(IntroState.Idle);
 
             if (prototypePlayer != null)
             {
@@ -224,6 +242,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             hasCurrentReturnPosition = true;
             kickController?.SetKickLocked(true);
             SetStatus($"Cube landed in {result.Rarity}.\nChoosing animal...");
+            SetIntroState(IntroState.Roulette);
             return true;
         }
 
@@ -241,36 +260,108 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         private IEnumerator StartRunWithAnimalAfterIntro(KickLuckyCubeKickResult result, KickLuckyCubeAnimalOption selectedOption)
         {
+            SetIntroState(IntroState.SpawningRunner);
             if (!TrySpawnRunner(result, selectedOption, out var spawnedAnimal))
             {
+                SetIntroState(IntroState.Idle);
                 yield break;
             }
 
             waveChase.PrepareChase(currentRunner, result.Distance);
 
-            var introFocusTarget = currentRunner != null
-                ? currentRunner.transform
-                : waveChase.WaveVisual;
-            if (thirdPersonCamera != null && introFocusTarget != null && waveIntroSeconds > 0f)
+            if (cameraChoreography != null)
             {
-                thirdPersonCamera.BeginCinematicFocus(
-                    introFocusTarget,
-                    waveIntroCameraDistance,
-                    waveIntroCameraPitch,
-                    waveIntroCameraYawOffset);
-                SetStatus($"Wave is rising...\n{waveChase.WaveSpeedTierName} | Location {waveChase.WaveLocationIndex}\nSpeed: {waveChase.WaveSpeed:0.0} m/s\nGet ready!");
-                yield return waveChase.PlayPreparedRise(waveIntroSeconds);
-
-                if (waveIntroHoldSeconds > 0f)
+                if (cameraChoreography.RevealToWaveDelay > 0f)
                 {
-                    yield return new WaitForSeconds(waveIntroHoldSeconds);
+                    yield return new WaitForSeconds(cameraChoreography.RevealToWaveDelay);
                 }
+
+                yield return PlayConfiguredIntro();
+            }
+            else
+            {
+                yield return PlayLegacyIntro();
+            }
+
+            currentRunner.SnapToGroundImmediate();
+            if (cameraChoreography != null && cameraChoreography.RunnerGroundingPause > 0f)
+            {
+                yield return new WaitForSeconds(cameraChoreography.RunnerGroundingPause);
             }
 
             currentRunner.BeginRun(GetReturnLineZ());
             thirdPersonCamera?.EndCinematicFocus(true);
             waveChase.StartPreparedChase();
+            SetIntroState(IntroState.Chase);
             SetRunStartedStatus(spawnedAnimal);
+        }
+
+        private IEnumerator PlayConfiguredIntro()
+        {
+            var waveShot = cameraChoreography.WaveReveal;
+            var waveTarget = waveChase.WaveVisual != null ? waveChase.WaveVisual : currentRunner.transform;
+            SetIntroState(IntroState.WaveReveal);
+            BeginConfiguredShot(waveTarget, waveShot);
+            SetStatus($"Wave is rising...\n{waveChase.WaveSpeedTierName} | Location {waveChase.WaveLocationIndex}\nSpeed: {waveChase.WaveSpeed:0.0} m/s\nGet ready!");
+            yield return waveChase.PlayPreparedRise(Mathf.Max(0.01f, waveShot.TransitionSeconds));
+            if (waveShot.HoldSeconds > 0f)
+            {
+                yield return new WaitForSeconds(waveShot.HoldSeconds);
+            }
+
+            var runnerShot = cameraChoreography.RunnerReady;
+            SetIntroState(IntroState.RunnerReady);
+            BeginConfiguredShot(currentRunner.transform, runnerShot);
+            var runnerShotSeconds = runnerShot.TransitionSeconds + runnerShot.HoldSeconds;
+            if (runnerShotSeconds > 0f)
+            {
+                yield return new WaitForSeconds(runnerShotSeconds);
+            }
+        }
+
+        private IEnumerator PlayLegacyIntro()
+        {
+            var introFocusTarget = currentRunner != null ? currentRunner.transform : waveChase.WaveVisual;
+            if (thirdPersonCamera == null || introFocusTarget == null || waveIntroSeconds <= 0f)
+            {
+                yield break;
+            }
+
+            SetIntroState(IntroState.WaveReveal);
+            thirdPersonCamera.BeginCinematicFocus(
+                introFocusTarget,
+                waveIntroCameraDistance,
+                waveIntroCameraPitch,
+                waveIntroCameraYawOffset);
+            yield return waveChase.PlayPreparedRise(waveIntroSeconds);
+            if (waveIntroHoldSeconds > 0f)
+            {
+                yield return new WaitForSeconds(waveIntroHoldSeconds);
+            }
+        }
+
+        private void BeginConfiguredShot(
+            Transform target,
+            KickLuckyCubeCameraChoreographyConfig.Shot shot)
+        {
+            if (thirdPersonCamera == null || target == null || shot == null)
+            {
+                return;
+            }
+
+            var homePosition = hasCurrentReturnPosition
+                ? currentReturnPosition
+                : returnLine != null ? returnLine.position : target.position - Vector3.forward;
+            thirdPersonCamera.BeginCinematicFocus(
+                target,
+                shot.Distance,
+                shot.Pitch,
+                shot.ResolveYaw(target, homePosition),
+                shot.FocusOffset,
+                shot.FieldOfView,
+                shot.SnapOnEnter,
+                shot.TransitionSeconds,
+                shot.Easing);
         }
 
         private bool TrySpawnRunner(
@@ -286,6 +377,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             currentRunner.ReturnedToLine += OnAnimalReturned;
+            currentRunner.SnapToGroundImmediate();
 
             if (prototypePlayer != null)
             {
@@ -340,7 +432,15 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         {
             DestroyRoulettePreview();
 
-            roulettePreview = new GameObject("KLC_AnimalRoulettePreview");
+            var prefab = Resources.Load<GameObject>(roulettePreviewResourcePath);
+            if (prefab == null)
+            {
+                Debug.LogError($"Animal roulette prefab is missing at Resources/{roulettePreviewResourcePath}.prefab.", this);
+                return;
+            }
+
+            roulettePreview = Instantiate(prefab);
+            roulettePreview.name = "KLC_AnimalRoulettePreview";
             roulettePreview.transform.SetPositionAndRotation(
                 landingPosition,
                 Quaternion.LookRotation(Vector3.back, Vector3.up));
@@ -348,15 +448,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             roulettePreviewShowsSelected = false;
             roulettePreviewRenderers = null;
 
-            var labelObject = new GameObject("RouletteLabel");
-            labelObject.transform.SetParent(roulettePreview.transform, false);
-            labelObject.transform.localPosition = new Vector3(0f, 1.75f, 0f);
-            roulettePreviewLabel = labelObject.AddComponent<TextMesh>();
-            roulettePreviewLabel.anchor = TextAnchor.MiddleCenter;
-            roulettePreviewLabel.alignment = TextAlignment.Center;
-            roulettePreviewLabel.fontSize = 64;
-            roulettePreviewLabel.characterSize = 0.055f;
-            roulettePreviewLabel.color = Color.white;
+            roulettePreviewBody = roulettePreview.transform.Find("ModelAnchor");
+            roulettePreviewLabel = roulettePreview.GetComponentInChildren<TextMesh>(true);
+            if (roulettePreviewBody == null || roulettePreviewLabel == null)
+            {
+                Debug.LogError("Animal roulette prefab must contain ModelAnchor and a TextMesh label.", roulettePreview);
+                DestroyRoulettePreview();
+            }
         }
 
         private void ApplyRoulettePreview(KickLuckyCubeAnimalOption option, bool selected)
@@ -406,29 +504,31 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return;
             }
 
-            if (roulettePreviewBody != null)
+            if (roulettePreviewBody == null)
             {
-                DestroyUnityObject(roulettePreviewBody.gameObject);
-                roulettePreviewBody = null;
+                return;
             }
 
-            var visualRoot = new GameObject("RouletteVisual_" + Sanitize(option.AnimalName));
-            visualRoot.transform.SetParent(roulettePreview.transform, false);
-            visualRoot.transform.localPosition = Vector3.zero;
-            visualRoot.transform.localRotation = Quaternion.identity;
-            visualRoot.transform.localScale = Vector3.one;
-            roulettePreviewBody = visualRoot.transform;
+            for (var index = roulettePreviewBody.childCount - 1; index >= 0; index--)
+            {
+                var child = roulettePreviewBody.GetChild(index).gameObject;
+                child.SetActive(false);
+                DestroyUnityObject(child);
+            }
+
+            roulettePreviewBody.localRotation = Quaternion.identity;
+            roulettePreviewBody.localScale = Vector3.one;
             roulettePreviewVariantId = option.VariantId;
             roulettePreviewShowsSelected = selected;
 
             var targetHeight = selected ? 1.48f : 1.28f;
             var bodyRenderer = KickLuckyCubeAnimalVisualFactory.CreateVisual(
-                visualRoot.transform,
+                roulettePreviewBody,
                 option,
                 targetHeight,
                 out var usedImportedVisual,
                 selected);
-            roulettePreviewRenderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+            roulettePreviewRenderers = roulettePreviewBody.GetComponentsInChildren<Renderer>(true);
 
             if (!selected)
             {
@@ -529,6 +629,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             return new string(chars);
         }
 
+        private void SetIntroState(IntroState value)
+        {
+            if (introState == value)
+            {
+                return;
+            }
+
+            introState = value;
+            IntroStateChanged?.Invoke(value);
+        }
+
         private void StopRunStartRoutine()
         {
             if (runStartRoutine != null)
@@ -617,10 +728,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             if (prototypePlayer != null)
             {
-                var playerPosition = new Vector3(
-                    returnedPosition.x,
-                    returnedPosition.y - returnedPlayerGroundOffset,
-                    returnedPosition.z);
+                var playerPosition = returnedPosition;
                 prototypePlayer.SetActive(true);
                 if (prototypePlayer.TryGetComponent<KickLuckyCubePlayerController>(out var playerController))
                 {
@@ -658,6 +766,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
             kickController?.SetKickLocked(false);
             kickController?.ResetCubeToOrigin();
+            SetIntroState(IntroState.Idle);
             SetStatus(hasReturnedAnimal
                 ? addedToInventory
                     ? $"{returnedAnimalName} returned!\nAdded to inventory and selected."
@@ -674,6 +783,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             carriedInventoryAnimalId = null;
             kickController?.SetKickLocked(false);
             kickController?.ResetCubeToOrigin();
+            thirdPersonCamera?.EndCinematicFocus(true);
+            SetIntroState(IntroState.Idle);
 
             if (prototypePlayer != null)
             {
@@ -704,6 +815,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             StopRunStartRoutine();
             kickController?.SetKickLocked(false);
             kickController?.ResetCubeToOrigin();
+            SetIntroState(IntroState.Idle);
 
             if (prototypePlayer != null)
             {
