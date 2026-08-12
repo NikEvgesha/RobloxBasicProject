@@ -3,10 +3,50 @@ guid: 9e8982313a332e348b0af27daeeb3607
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Bank_Brass
+    second: {fileID: 2100000, guid: 65725ba7022121f48a645076a894d219, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Bank_BrassLight
+    second: {fileID: 2100000, guid: b741fd8f1f0db3842bcfbc7012823cec, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Bank_Coin
+    second: {fileID: 2100000, guid: 6c20995ba81cc6a45893db8caf8768f3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Bank_Cream
+    second: {fileID: 2100000, guid: 1b338ec0f1513394f85b56232c008f08, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Bank_Felt
+    second: {fileID: 2100000, guid: 6adf4f0bed7f24549ac1764d3f18366b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Bank_Stone
+    second: {fileID: 2100000, guid: d85ddce2b88af064ab6a482fb53222a1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Bank_StoneDark
+    second: {fileID: 2100000, guid: d67b27dfabdd1c8458c251356bfa30aa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Bank_Wood
+    second: {fileID: 2100000, guid: 521eecd0c48f89441a0c60ca82d3dbcc, type: 2}
   materials:
-    materialImportMode: 2
-    materialName: 0
+    materialImportMode: 1
+    materialName: 1
     materialSearch: 1
     materialLocation: 1
   animations:

@@ -3,10 +3,60 @@ guid: 0a6c5a4ad821e4a4a87390bd138b2fad
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Blue
+    second: {fileID: 2100000, guid: 6e4bca84998e0f9488daab1071aaf15d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Bronze
+    second: {fileID: 2100000, guid: 513d5817bfa87f043ae7c5e9a8e73b26, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Cream
+    second: {fileID: 2100000, guid: 8dc39d171de414d4584c2fd99ad50c17, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Gold
+    second: {fileID: 2100000, guid: f71fd9254073c944a9c3aac373c5e144, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Grass
+    second: {fileID: 2100000, guid: 4c6e971edd7db9f48995c71b1febce60, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Iron
+    second: {fileID: 2100000, guid: 56b16ba80cd580a45aeed665f7c452b8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Navy
+    second: {fileID: 2100000, guid: 58851d43eb8b627499607894029577b9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Red
+    second: {fileID: 2100000, guid: 1519fee77d380bb489b717fd7382e56d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Silver
+    second: {fileID: 2100000, guid: 2bdebb057d1a90b47a7a9b9c786d394a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Board_Wood
+    second: {fileID: 2100000, guid: 20f74cb895a80a0489f3725cb0ca8c60, type: 2}
   materials:
-    materialImportMode: 2
-    materialName: 0
+    materialImportMode: 1
+    materialName: 1
     materialSearch: 1
     materialLocation: 1
   animations:

@@ -3,10 +3,50 @@ guid: 414b8c5bcf1b52a4498b07fbc4c22e3d
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gift_Blue
+    second: {fileID: 2100000, guid: 174212af5bcef1a4bac0c6c14e071283, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gift_Cream
+    second: {fileID: 2100000, guid: a3cbc84b4dbc510469b4beb9a7b421a1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gift_Gold
+    second: {fileID: 2100000, guid: 336e382c720428d4788b6dacb63ab7c5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gift_Green
+    second: {fileID: 2100000, guid: 56eaec1da7bd0b24fb504df9db949283, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gift_Red
+    second: {fileID: 2100000, guid: a27d1380cbeb1bc4da39449627096507, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gift_Wood
+    second: {fileID: 2100000, guid: 66bf274a69b784641b2c7f8beb45a0a0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gift_WoodDark
+    second: {fileID: 2100000, guid: 55e833c0ae2b011449fb4f736219dced, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gift_Wrap
+    second: {fileID: 2100000, guid: 45310ca7f7cf974438c14479ac1bb5fb, type: 2}
   materials:
-    materialImportMode: 2
-    materialName: 0
+    materialImportMode: 1
+    materialName: 1
     materialSearch: 1
     materialLocation: 1
   animations:

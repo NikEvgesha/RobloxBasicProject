@@ -3,10 +3,55 @@ guid: cd5a0f644c0e5c0449e795cf4e78c94d
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Zoo_Cream
+    second: {fileID: 2100000, guid: c0229854101f7014dad8724c51c7ced9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Zoo_Fur
+    second: {fileID: 2100000, guid: 3277d892a6a76df40b30e867e3f10e6e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Zoo_Iron
+    second: {fileID: 2100000, guid: 99626d29f94bae948b74ea33f5bcfa74, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Zoo_Leaf
+    second: {fileID: 2100000, guid: d6eccad5fbc53834e9b0347ddf2dd725, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Zoo_Red
+    second: {fileID: 2100000, guid: e3ed4136a9818464bb49558ed79cc8da, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Zoo_RedDark
+    second: {fileID: 2100000, guid: 7f2d271c658a824418688a866850a573, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Zoo_Straw
+    second: {fileID: 2100000, guid: bae95906840667847b00455f6864dce4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Zoo_Wood
+    second: {fileID: 2100000, guid: 074c666d76b30e7478af615ac2cf971b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Zoo_WoodDark
+    second: {fileID: 2100000, guid: 25194bec5c993694b810f5bafc796082, type: 2}
   materials:
-    materialImportMode: 2
-    materialName: 0
+    materialImportMode: 1
+    materialName: 1
     materialSearch: 1
     materialLocation: 1
   animations:

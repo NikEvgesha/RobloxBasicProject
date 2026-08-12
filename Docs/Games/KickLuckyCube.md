@@ -1070,3 +1070,21 @@ Before the current shared checkpoint was committed:
 The concise contributor workflow and ownership map are maintained in `Docs/Games/KickLuckyCubeHandoff.md`.
 
 The manual world/UI/animation workflow is maintained in `Docs/Games/KickLuckyCubeAuthoringTools.md`. Open it from Unity through `Tools > Kick Lucky Cube > Authoring Workspace`; the workspace is the supported replacement for broad procedural world rebuilding during the human art pass.
+
+## Modular Player Plot Floors
+
+The player plot visual is authored as three independent Blockbench/Unity floor modules. Every floor contains ten mob positions: five along the left side and five along the right side, leaving the centre aisle clear. Each position has a matching Blockbench podium plus colour-coded collect and upgrade pads.
+
+`KickLuckyCubePlotFloorStack` owns the installed state of the three module GameObjects. New plots currently install all floors for visual testing; progression can later call `SetFloorInstalled(floorNumber, installed)` without replacing the plot or its stable persistence objects. Stable, collect, and upgrade anchors remain direct children of the plot root for compatibility with the existing allocator and runtime binder.
+
+Four authored plot layouts are available under `Prefabs/World/Plots/Variants`: Rustic Tower, Stone Atrium, Forest Treehouse, and Industrial Depot. Each layout provides two mob anchors on every floor and two continuous stair/ramp routes tagged with `KickLuckyCubeGroundSurface`. `KickLuckyCubePlotVariantCollection.SetVariant` changes the active layout, while `KickLuckyCubePlotVariantController` aligns the existing persistent stable-slot objects with the selected layout's mob anchors.
+
+Player ground movement samples intermediate positions along every horizontal frame step. This prevents high walk or sprint speed from skipping narrow stair steps, and explicitly tagged plot ramps remain valid ground even when their parent variant name contains decorative words such as `Treehouse` or `Depot`.
+
+The selected production layout is now the enlarged Forest plot under `Prefabs/World/Plots/ForestModular`. Its three floors are separate Blockbench sources, FBX assets, and Unity prefabs. The first floor has a centred opening in the front fence. All floor transitions share one straight vertical ladder column at the far centre of the plot, and every rear fence has a matching opening at that column. Floor 1 owns the ladder segment toward floor 2, floor 2 owns the segment toward floor 3, and floor 3 owns only the arrival opening. The canopy and upper tree crowns belong only to floor 3, so a one-floor plot cannot display a floating roof.
+
+`KickLuckyCubeClimbableLadder` controls the aligned vertical rope-ladder segments. While the player remains inside the ladder trigger, forward/up climbs, backward/down descends, normal ground movement is suspended, and reaching an exit places the player on the corresponding deck. `KickLuckyCubePlotFloorStack.SetInstalledFloorCount` installs the contiguous progression states `1`, `1+2`, or `1+2+3` and enables the ten authored mob positions owned by every installed floor.
+
+The Forest FBX importers explicitly remap their embedded Blockbench material names to the external `KLC_Base_*` Unity materials under `Art/BlockbenchWorld/Plots/PlayerBase/Materials`. This remap is required: using the FBX-embedded fallback materials makes the plot render white even though the Blockbench source contains its palette textures.
+
+The editable Forest Blockbench sources are versioned under `ArtSource/Blockbench/World/Plots/PlayerBase/ForestModular`. `E:/GitFork/BlockBench` remains the local Blockbench working folder; copy completed source revisions into `ArtSource` with the matching relative layout before a shared checkpoint.

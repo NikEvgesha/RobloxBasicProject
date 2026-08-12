@@ -43,6 +43,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             "LuckyCube",
         };
 
+        private static readonly string[] AllowedGroundNames =
+        {
+            "Walkable",
+            "Ramp",
+            "Stair",
+            "Floor",
+            "Platform",
+            "Plot",
+            "Base",
+        };
+
         public static bool TryResolveGroundY(
             Vector3 position,
             Transform ignoredRoot,
@@ -109,13 +120,19 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 return false;
             }
 
+            var hasExplicitGroundSurface = collider.GetComponentInParent<KickLuckyCubeGroundSurface>() != null;
+            var hasAllowedGroundName = false;
+
             var cursor = collider.transform;
             while (cursor != null)
             {
                 var objectName = cursor.name;
+                hasAllowedGroundName |= ContainsAny(objectName, AllowedGroundNames);
                 if (objectName.StartsWith("GUIDE_", StringComparison.Ordinal)
                     || objectName.StartsWith("KLC_Zone_", StringComparison.Ordinal)
-                    || ContainsAny(objectName, RejectedGroundNames))
+                    || (!hasExplicitGroundSurface
+                        && !hasAllowedGroundName
+                        && ContainsAny(objectName, RejectedGroundNames)))
                 {
                     return false;
                 }

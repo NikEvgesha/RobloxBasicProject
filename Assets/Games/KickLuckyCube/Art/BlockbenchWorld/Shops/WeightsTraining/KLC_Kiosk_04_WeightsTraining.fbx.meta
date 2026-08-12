@@ -3,10 +3,50 @@ guid: b3874e1678c04b6468c9f71be59c72e4
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gym_Amber
+    second: {fileID: 2100000, guid: 4657cef2dd5de40479e17556787af043, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gym_Brick
+    second: {fileID: 2100000, guid: 6e2973a3ee3e4914ab1e8736d90e10fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gym_BrickDark
+    second: {fileID: 2100000, guid: dcd2a2eb2b1544649ae6962a36c2b396, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gym_Cream
+    second: {fileID: 2100000, guid: dda1f1e4c9c3cae46a31a6b20afa8f82, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gym_Iron
+    second: {fileID: 2100000, guid: d5229a8361c019d428797045e8241504, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gym_Rubber
+    second: {fileID: 2100000, guid: 4a8d1de0497efdd4a987e89c852959e0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gym_Steel
+    second: {fileID: 2100000, guid: 102da3f10fc2f75469a22df6e6bc401e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Gym_Wood
+    second: {fileID: 2100000, guid: df783fb39516ec04eaab4541918f2a02, type: 2}
   materials:
-    materialImportMode: 2
-    materialName: 0
+    materialImportMode: 1
+    materialName: 1
     materialSearch: 1
     materialLocation: 1
   animations:

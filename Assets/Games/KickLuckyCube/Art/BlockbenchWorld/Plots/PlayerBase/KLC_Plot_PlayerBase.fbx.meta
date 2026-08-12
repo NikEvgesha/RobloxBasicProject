@@ -7,6 +7,56 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: KLC_Base_BarnRed
+    second: {fileID: 2100000, guid: 0a80f8c0d4e1f99438390882038f65ca, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Base_Cream
+    second: {fileID: 2100000, guid: fa7e946e9fd84cf4499714a48693d9f5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Base_Dirt
+    second: {fileID: 2100000, guid: 853993220658acc469cf388ff3082d44, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Base_Grass
+    second: {fileID: 2100000, guid: c9a05341f1379db45b072e2e5ce80341, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Base_Iron
+    second: {fileID: 2100000, guid: c351bca2599542041bd97deb34ee0a34, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Base_Stone
+    second: {fileID: 2100000, guid: be6a29f7162886444b886aaa47d7ea60, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Base_StoneLight
+    second: {fileID: 2100000, guid: bfdb2bc29e34f2a4b856d17ba24f34bb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Base_Straw
+    second: {fileID: 2100000, guid: e29628fea9145b84cbb9eff046da20aa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Base_Wood
+    second: {fileID: 2100000, guid: e8c73c6f1d461224796d48682ec0808c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KLC_Base_WoodDark
+    second: {fileID: 2100000, guid: 3ca922003fcba3149a2da386a9d77b49, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: KLC_Plot_Cyan
     second: {fileID: 2100000, guid: 095ab94ce37ad634eaa5a152cae42e2f, type: 2}
   - first:
@@ -46,7 +96,7 @@ ModelImporter:
     second: {fileID: 2100000, guid: 77c5ed81eda59434e866c01b9b695cf2, type: 2}
   materials:
     materialImportMode: 1
-    materialName: 0
+    materialName: 1
     materialSearch: 1
     materialLocation: 1
   animations:

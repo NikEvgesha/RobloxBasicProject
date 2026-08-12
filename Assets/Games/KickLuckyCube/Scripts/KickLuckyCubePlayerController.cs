@@ -24,6 +24,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField, Min(0f)] private float upwardGroundSnapSpeed = 7f;
         [SerializeField, Min(0f)] private float downwardGroundSnapSpeed = 20f;
         [SerializeField, Min(0f)] private float groundedTolerance = 0.06f;
+        [SerializeField, Min(0.05f)] private float groundSampleSpacing = 0.22f;
+        [SerializeField, Min(1)] private int maximumGroundSamples = 20;
         private const string LegacyPlayerVisualResourcePath = "KickLuckyCube/StealBrainrot/Models/Player/SadovnicOBJ";
         private const string LegacyPlayerVisualName = "KLC_StealBrainrotPlayerVisual";
         private const string BlockbenchPlayerVisualResourcePath = "KickLuckyCube/KLC_PlayerMannequin";
@@ -43,6 +45,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private float lockedY;
         private float verticalVelocity;
         private bool isGrounded = true;
+        private bool externalMovementLock;
 
         private static readonly int MoveSpeedHash = Animator.StringToHash("MoveSpeed");
         private static readonly int IsMovingHash = Animator.StringToHash("IsMoving");
@@ -53,6 +56,16 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         public Vector2 MoveInput { get; private set; }
         public bool IsSprinting { get; private set; }
         public bool IsGrounded => isGrounded;
+
+        public void SetExternalMovementLock(bool locked)
+        {
+            externalMovementLock = locked;
+            if (locked)
+            {
+                verticalVelocity = 0f;
+                isGrounded = false;
+            }
+        }
 
         public void TeleportTo(Vector3 position, Quaternion rotation)
         {
@@ -97,6 +110,12 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             MoveInput = GetMoveInput();
             IsSprinting = ReadSprintInput();
 
+            if (externalMovementLock)
+            {
+                UpdateAnimator(0f);
+                return;
+            }
+
             var movement = GetCameraRelativeMove(MoveInput);
             if (movement.sqrMagnitude > 1f)
             {
@@ -104,7 +123,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             var speed = IsSprinting ? sprintSpeed : walkSpeed;
-            var nextPosition = transform.position + movement * (speed * deltaTime);
+            var horizontalDelta = movement * (speed * deltaTime);
+            var nextPosition = ResolveWalkableHorizontalPosition(horizontalDelta);
             ApplyVerticalMotion(ref nextPosition, deltaTime);
 
             transform.position = nextPosition;
@@ -119,6 +139,45 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             UpdateAnimator(movement.magnitude * speed);
+        }
+
+        private Vector3 ResolveWalkableHorizontalPosition(Vector3 horizontalDelta)
+        {
+            if (horizontalDelta.sqrMagnitude <= 0.000001f)
+            {
+                return transform.position;
+            }
+
+            var distance = horizontalDelta.magnitude;
+            var sampleCount = Mathf.Clamp(
+                Mathf.CeilToInt(distance / Mathf.Max(0.05f, groundSampleSpacing)),
+                1,
+                Mathf.Max(1, maximumGroundSamples));
+            var origin = transform.position;
+            var lastWalkable = origin;
+            var lastGroundY = origin.y;
+
+            for (var sampleIndex = 1; sampleIndex <= sampleCount; sampleIndex++)
+            {
+                var candidate = origin + horizontalDelta * (sampleIndex / (float)sampleCount);
+                candidate.y = lastGroundY;
+
+                if (!TryResolveGroundY(candidate, out var candidateGroundY))
+                {
+                    break;
+                }
+
+                if (candidateGroundY - lastGroundY > maximumGroundStepUp + groundedTolerance)
+                {
+                    break;
+                }
+
+                lastGroundY = candidateGroundY;
+                candidate.y = candidateGroundY;
+                lastWalkable = candidate;
+            }
+
+            return lastWalkable;
         }
 
         private void ApplyVerticalMotion(ref Vector3 nextPosition, float deltaTime)
