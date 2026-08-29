@@ -71,7 +71,8 @@ The Mirra Hub project `BlockKick` uses the isolated branch `codex-dev` and runti
 - guest authentication;
 - the `Unity Editor Development` analytics platform;
 - Remote Config fields `cloud_sync_enabled`, `cloud_save_interval_seconds`, `leaderboard_submit_interval_seconds`, `analytics_enabled`, and `soft_gain_multiplier`;
-- chat and profanity-filter services, filter group `klc-chat`, and moderated template `klc-global` in the development draft;
+- chat and profanity-filter services plus filter group `klc-chat` in the development branch;
+- Remote Config fields `chat_enabled=true` and `chat_channel_id=00d3778c-7526-42ff-888a-f7357981faf3`;
 - Cloud Save player data for wallet and progression;
 - Economy currencies `soft` and `hard`;
 - leaderboard `klc_score` (`Top Kickers`, highest/best score).
@@ -95,9 +96,9 @@ Optional Remote Config overrides are `cloud_save_debounce_seconds`, `cloud_save_
 
 ## Social Presence And Chat
 
-Presence keys `presence_nickname`, `presence_position_x`, `presence_position_y`, `presence_position_z`, and `presence_seen_at_utc` are owner-writable and readable by other players. A snapshot older than 14 days is ignored. `KickLuckyCubeMirraGhostIdentity` keeps the Mirra profile id on every loaded ghost and exposes `RequestFriendship()` for the interaction UI. The current implementation prefers friends and uses real project profiles only as a fallback.
+Presence keys `presence_nickname`, `presence_position_x`, `presence_position_y`, `presence_position_z`, and `presence_seen_at_utc` are owner-writable and readable by other players. A snapshot older than 14 days is ignored. `KickLuckyCubeMirraGhostIdentity` keeps the Mirra profile id on every loaded ghost. A nearby non-friend can receive one friend request per session through `F` or a click. The current implementation prefers friends and uses real project profiles only as a fallback.
 
-The `codex-dev` Hub draft contains the chat service, profanity-filter service, filter group `klc-chat`, and moderated template `klc-global`. Mirra channels resolve templates from the production branch, so no real channel was created or promoted automatically. After explicitly promoting the template, create the channel and set Remote Config `chat_enabled=true` and `chat_channel_id=<channel id>`. Until both values exist, `KickLuckyCubeMirraChatController` makes zero chat requests and opens no WebSocket.
+The production `main` branch contains the moderated template `klc-global`, deployed separately without promoting unrelated development services. Active room channel `Kick Lucky Cube Global` uses that template and has id `00d3778c-7526-42ff-888a-f7357981faf3`. The `codex-dev` Remote Config enables it. The runtime creates a visible `CHAT` window, but still makes zero chat requests and opens no WebSocket until the player opens it; closing the window disconnects it again.
 
 As of Cloud SDK `0.2.2`, leaderboard join succeeds but score submission can return the beta backend error `PlayerId was not present in the dictionary`. The integration disables further leaderboard submissions for that session and keeps the local leaderboard fallback active. Re-test this route after a Mirra backend or SDK update.
 
