@@ -71,13 +71,37 @@ The Mirra Hub project `BlockKick` uses the isolated branch `codex-dev` and runti
 - guest authentication;
 - the `Unity Editor Development` analytics platform;
 - Remote Config fields `cloud_sync_enabled`, `cloud_save_interval_seconds`, `leaderboard_submit_interval_seconds`, `analytics_enabled`, and `soft_gain_multiplier`;
+- chat and profanity-filter services, filter group `klc-chat`, and moderated template `klc-global` in the development draft;
 - Cloud Save player data for wallet and progression;
 - Economy currencies `soft` and `hard`;
 - leaderboard `klc_score` (`Top Kickers`, highest/best score).
 
 `KickLuckyCubeMirraCloudGameplaySync` keeps PlayerPrefs as the offline fallback, restores Cloud Save after authentication, mirrors the wallet into Economy, applies Remote Config values, and submits the calculated player score. The authored leaderboard board displays Mirra results when available and retains its local preview data otherwise.
 
+## Network Budget
+
+Mirra's public agreement says API-request quotas can depend on the tariff, but does not publish a single numeric request limit. The client therefore uses conservative defaults that can be tuned through Remote Config:
+
+- Remote Config, Cloud Save, and Economy inventory are loaded once after authentication, not polled every frame.
+- Progress is written as one combined Cloud Save snapshot after a 10-second quiet period, no more often than once per 60 seconds, with a maximum dirty-data delay of 180 seconds.
+- Economy configuration is cached for the session. Only currencies whose balances changed are written; an unchanged snapshot causes no request.
+- Leaderboard refresh/submission is limited to once per 180 seconds, and an unchanged score is not submitted again.
+- Failed synchronization retries after 5 seconds and doubles the delay up to 300 seconds. This also protects the service when it responds with `common.rate_limited` or HTTP 429.
+- Analytics uses the SDK queue and its built-in batching rather than issuing an HTTP request for each gameplay event.
+- Social presence is a login snapshot, not live tracking: nickname, XYZ position, and UTC timestamp share the combined Cloud Save write. The client loads friends once and reads at most four presence snapshots; when there are no friends, one random-profile request supplies at most four candidates. Nothing is polled afterward.
+- Chat keeps its WebSocket disconnected by default. Opening it performs join, one 25-message history load, connect, and subscribe. Closing it stops the connection and SDK heartbeat; outgoing messages are capped at 180 characters and one send every three seconds.
+
+Optional Remote Config overrides are `cloud_save_debounce_seconds`, `cloud_save_max_delay_seconds`, and `network_retry_max_delay_seconds`. Client-side lower bounds remain in force so an accidental configuration cannot create request spam.
+
+## Social Presence And Chat
+
+Presence keys `presence_nickname`, `presence_position_x`, `presence_position_y`, `presence_position_z`, and `presence_seen_at_utc` are owner-writable and readable by other players. A snapshot older than 14 days is ignored. `KickLuckyCubeMirraGhostIdentity` keeps the Mirra profile id on every loaded ghost and exposes `RequestFriendship()` for the interaction UI. The current implementation prefers friends and uses real project profiles only as a fallback.
+
+The `codex-dev` Hub draft contains the chat service, profanity-filter service, filter group `klc-chat`, and moderated template `klc-global`. Mirra channels resolve templates from the production branch, so no real channel was created or promoted automatically. After explicitly promoting the template, create the channel and set Remote Config `chat_enabled=true` and `chat_channel_id=<channel id>`. Until both values exist, `KickLuckyCubeMirraChatController` makes zero chat requests and opens no WebSocket.
+
 As of Cloud SDK `0.2.2`, leaderboard join succeeds but score submission can return the beta backend error `PlayerId was not present in the dictionary`. The integration disables further leaderboard submissions for that session and keeps the local leaderboard fallback active. Re-test this route after a Mirra backend or SDK update.
+
+The Friends list endpoint also returned HTTP 500 during the first `codex-dev` Play Mode test. Presence loading falls back to the SDK's capped random-profile endpoint for that session and does not retry Friends in a loop. Re-test Friends after a backend update.
 
 ## Remaining External Setup
 

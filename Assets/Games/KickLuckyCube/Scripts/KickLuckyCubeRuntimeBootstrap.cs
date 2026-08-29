@@ -170,6 +170,11 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             {
                 cloudObject.AddComponent<KickLuckyCubeMirraCloudGameplaySync>();
             }
+
+            if (cloudObject.GetComponent<KickLuckyCubeMirraChatController>() == null)
+            {
+                cloudObject.AddComponent<KickLuckyCubeMirraChatController>();
+            }
         }
 
         private void EnsureAudioListener()
