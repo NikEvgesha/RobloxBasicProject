@@ -74,6 +74,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
 
         public static KickLuckyCubeMirraCloudGameplaySync Instance { get; private set; }
         public bool IsOperational { get; private set; }
+        public bool AnalyticsEnabled => analyticsEnabled;
         public IReadOnlyList<LeaderboardEntryDto> TopEntries { get; private set; } = Array.Empty<LeaderboardEntryDto>();
 
         private void Awake()
@@ -309,6 +310,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
                 cloud.Sdk.Analytics.EnqueueEvent("klc_cloud_save", new Dictionary<string, string>
                 {
                     ["save_version"] = "1",
+                    ["soft_balance"] = wallet.SoftCurrency.ToString(CultureInfo.InvariantCulture),
+                    ["hard_balance"] = wallet.HardCurrency.ToString(CultureInfo.InvariantCulture),
                 });
             }
         }
@@ -349,6 +352,41 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             }
 
             economyReady = true;
+        }
+
+        public void RefreshEconomyAfterExternalGrant()
+        {
+            if (cloud != null && cloud.IsAuthenticated)
+            {
+                StartCoroutine(RefreshEconomyAfterExternalGrantRoutine());
+            }
+        }
+
+        private IEnumerator RefreshEconomyAfterExternalGrantRoutine()
+        {
+            var operation = cloud.Sdk.Economy.LoadInventoryAsync();
+            yield return operation;
+            if (!operation.Result.IsSuccess)
+            {
+                LogWarning("Economy grant refresh", operation.Result.Error?.Message);
+                yield break;
+            }
+
+            var remoteWallet = operation.Result.Data?.Wallet;
+            if (remoteWallet == null)
+            {
+                yield break;
+            }
+
+            var soft = remoteWallet.FirstOrDefault(entry => entry.CurrencyId == "soft");
+            var hard = remoteWallet.FirstOrDefault(entry => entry.CurrencyId == "hard");
+            lastEconomySoft = soft != null ? (long)soft.Balance : wallet.SoftCurrency;
+            lastEconomyHard = hard != null ? (long)hard.Balance : wallet.HardCurrency;
+
+            applyingCloudState = true;
+            wallet.RestoreCloudBalances(lastEconomySoft, lastEconomyHard);
+            applyingCloudState = false;
+            MarkLocalStateDirty();
         }
 
         private IEnumerator SynchronizeEconomy()

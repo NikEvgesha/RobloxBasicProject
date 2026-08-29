@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,6 +29,8 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private bool saveInPlayerPrefs = true;
 
         private int rebirthCount;
+
+        public event Action<int> Rebirthed;
 
         public int RebirthCount => rebirthCount;
         public float MoneyMultiplier => 1f + rebirthCount;
@@ -119,6 +122,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             stats.ResetStrengthForRebirth();
             ApplyMoneyMultiplier();
             Save();
+            Rebirthed?.Invoke(rebirthCount);
             Refresh("Rebirth complete.");
             return true;
         }

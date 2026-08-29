@@ -171,6 +171,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             IsOpen = true;
             opening = false;
             SetStatus("Connected");
+            KickLuckyCubeMirraAnalyticsController.Track("klc_chat_opened", "result", "connected");
         }
 
         private IEnumerator SendMessageRoutine(string body)

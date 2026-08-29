@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "game": "KickLuckyCube",
+  "environment": "codex-dev",
+  "dailyRewardCalendar": "klc_welcome_week",
+  "promoCampaign": "klc_welcome_test",
+  "tournament": "klc_weekly_score",
+  "segment": "klc_all_testers",
+  "abTest": "klc_social_ui"
+}

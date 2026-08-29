@@ -76,6 +76,17 @@ The Mirra Hub project `BlockKick` uses the isolated branch `codex-dev` and runti
 - Cloud Save player data for wallet and progression;
 - Economy currencies `soft` and `hard`;
 - leaderboard `klc_score` (`Top Kickers`, highest/best score).
+- Economy items `starter_crate`, `speed_token`, and `style_ticket`, plus regenerating `kick_energy` (100 maximum, one point per five minutes).
+- seven-day sequential calendar `klc_welcome_week`, with manual claims and a repeatable weekly cycle;
+- active tester campaign `klc_welcome_test` with promo code `KLC-CODEX-TEST` (one redemption per profile/account, 100 total redemptions);
+- segment `klc_all_testers`, experiment `klc_social_ui` (20% audience, equal A/B split), repeating event `klc_weekend_boost_test`, and tournament `klc_weekly_score`;
+- English/Russian localization collection `Kick Lucky Cube LiveOps UI`;
+- draft WebGL hosting instance `Kick Lucky Cube Dev WebGL`;
+- inactive test purchase `klc_starter_pack_test`, intentionally left without a payment provider or price.
+
+The development analytics schema includes cloud-save, kick, sale, currency, rebirth, chat, friend, daily-reward, promo, and Cloud Code test events. Currency changes are aggregated for ten seconds before sending, and funnel `KLC First Kick` measures `SessionsStarted -> klc_kick_completed`.
+
+WebGL build `codex-dev-2026-08-29` is uploaded to the staging channel at `https://hosting.cloud.godreams.io/hosting/games/6a9322d19052ffd94edc5070/?env=staging`. It is a Development build (195.2 MB, including a 163 MB uncompressed wasm), so it is suitable for integration diagnostics but must be replaced by an optimized release build before public rollout. The CDN serves the wasm with `application/wasm`; the embedded browser can take a long time to instantiate this diagnostic build.
 
 `KickLuckyCubeMirraCloudGameplaySync` keeps PlayerPrefs as the offline fallback, restores Cloud Save after authentication, mirrors the wallet into Economy, applies Remote Config values, and submits the calculated player score. The authored leaderboard board displays Mirra results when available and retains its local preview data otherwise.
 
@@ -92,6 +103,8 @@ Mirra's public agreement says API-request quotas can depend on the tariff, but d
 - Social presence is a login snapshot, not live tracking: nickname, XYZ position, and UTC timestamp share the combined Cloud Save write. The client loads friends once and reads at most four presence snapshots; when there are no friends, one random-profile request supplies at most four candidates. Nothing is polled afterward.
 - Chat keeps its WebSocket disconnected by default. Opening it performs join, one 25-message history load, connect, and subscribe. Closing it stops the connection and SDK heartbeat; outgoing messages are capped at 180 characters and one send every three seconds.
 
+The `LIVE` panel is also lazy. Daily Rewards loads only when its tab is opened, has a 60-second automatic refresh cooldown, and otherwise refreshes only on explicit user action. Promo redemption and friend-list operations are likewise user-triggered. Successful Daily Rewards and Promo grants reload the authoritative Economy inventory before updating the local wallet, preventing a later Cloud Save write from replacing a server grant with an older balance.
+
 Optional Remote Config overrides are `cloud_save_debounce_seconds`, `cloud_save_max_delay_seconds`, and `network_retry_max_delay_seconds`. Client-side lower bounds remain in force so an accidental configuration cannot create request spam.
 
 ## Social Presence And Chat
@@ -104,10 +117,23 @@ As of Cloud SDK `0.2.2`, leaderboard join succeeds but score submission can retu
 
 The Friends list endpoint also returned HTTP 500 during the first `codex-dev` Play Mode test. Presence loading falls back to the SDK's capped random-profile endpoint for that session and does not retry Friends in a loop. Re-test Friends after a backend update.
 
-## Remaining External Setup
+## Test Matrix And Remaining Setup
 
-- Register production analytics events and their parameter schemas.
-- Add Cloud Code scripts for authoritative rewards, purchases, upgrades, and rebirths.
-- Add inventory item definitions, daily rewards, promo codes, and LiveOps events.
-- Configure purchase-provider credentials and catalog mappings.
-- Create hosting instances and staging/production routing.
+Completed with one development account:
+
+- SDK initialization, guest session restore/login, Remote Config, Cloud Save, Economy, Analytics, and leaderboard fallback;
+- visible lazy Chat and LiveOps UI, presence ghosts, and rate-limited network behavior;
+- Unity compilation, Play Mode smoke test, and WebGL build validation;
+- development Hub configuration and deployment through the `codex-dev` branch.
+
+Still requires either external configuration or a second account:
+
+- validate two-player chat delivery, presence/nickname visibility, friend request/accept/remove, and friend-first ghost selection with two concurrent accounts;
+- configure a real purchase provider, prices, and catalog mappings before activating `klc_starter_pack_test`;
+- create authoritative Cloud Code flows. The current beta graph editor rejects its default graph until a valid path reaches a Return node;
+- attach an Economy override to `klc_weekend_boost_test`; the current Hub editor exposes the target selector but no editable override value;
+- upload versioned remote content to Asset Storage when its file uploader is available;
+- replace the diagnostic hosting artifact with an optimized release build and verify startup in target desktop/mobile browsers before promoting the staging channel;
+- promote selected schemas/configuration to production only after development verification. No development test setup should be copied to `main` implicitly.
+
+Known beta backend issues remain unchanged: Friends GET can return HTTP 500, and leaderboard score submission can fail because the backend omits `PlayerId`. Both paths fail closed and avoid retry loops.

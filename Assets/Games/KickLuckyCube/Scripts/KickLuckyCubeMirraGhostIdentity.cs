@@ -92,11 +92,13 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             FriendRequestInFlight = false;
             if (!operation.Result.IsSuccess)
             {
+                KickLuckyCubeMirraAnalyticsController.Track("klc_friend_request", "result", "failed");
                 Debug.LogWarning($"Kick Lucky Cube: friend request to {Nickname} failed: {operation.Result.Error?.Message}");
                 yield break;
             }
 
             FriendRequestSent = true;
+            KickLuckyCubeMirraAnalyticsController.Track("klc_friend_request", "result", "sent");
         }
 
         private bool IsPlayerNearby()
