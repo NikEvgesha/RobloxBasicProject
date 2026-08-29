@@ -206,6 +206,30 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var score = Math.Max(strength, 0L) + soft / 10L + mobs * 250L;
 
             headerText.text = "TOP KICKERS";
+            var cloudEntries = KickLuckyCubeMirraCloudGameplaySync.Instance?.TopEntries;
+            if (cloudEntries != null && cloudEntries.Count > 0)
+            {
+                for (var index = 0; index < lineTexts.Length; index++)
+                {
+                    if (lineTexts[index] == null)
+                    {
+                        continue;
+                    }
+
+                    if (index >= cloudEntries.Count)
+                    {
+                        lineTexts[index].text = string.Empty;
+                        continue;
+                    }
+
+                    var entry = cloudEntries[index];
+                    var playerName = string.IsNullOrWhiteSpace(entry.playerName) ? "Guest" : entry.playerName;
+                    lineTexts[index].text = $"{entry.position}. {playerName}   {FormatScore(entry.value)}";
+                }
+
+                return;
+            }
+
             var entries = new[]
             {
                 (Name: "You", Score: score),
@@ -230,6 +254,17 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         private static string FormatScore(long score)
         {
             return KickLuckyCubeNumberFormatter.FormatCompact(score);
+        }
+
+        private static string FormatScore(double score)
+        {
+            if (double.IsNaN(score) || score <= 0d)
+            {
+                return "0";
+            }
+
+            return KickLuckyCubeNumberFormatter.FormatCompact(
+                score >= long.MaxValue ? long.MaxValue : (long)Math.Round(score));
         }
     }
 }

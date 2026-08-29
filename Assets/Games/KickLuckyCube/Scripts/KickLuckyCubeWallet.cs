@@ -103,6 +103,14 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             Save();
         }
 
+        public void RestoreCloudBalances(long soft, long hard)
+        {
+            EnsureInitialized();
+            softCurrency = Math.Max(0L, soft);
+            hardCurrency = Math.Max(0L, hard);
+            Save();
+        }
+
         public long PreviewSoftGain(long amount)
         {
             if (amount <= 0)

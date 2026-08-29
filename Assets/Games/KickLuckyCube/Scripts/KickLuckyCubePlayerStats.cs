@@ -121,6 +121,21 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             CommitChange();
         }
 
+        public void RestoreCloudProgression(
+            float restoredStrength,
+            float restoredAnimalSpeed,
+            int restoredStrengthToolTier,
+            int restoredSelectedStrengthToolTier,
+            int restoredSpeedUpgradeLevel)
+        {
+            strength = Mathf.Max(0f, restoredStrength);
+            animalSpeed = Mathf.Max(0f, restoredAnimalSpeed);
+            strengthToolTier = Mathf.Max(1, restoredStrengthToolTier);
+            selectedStrengthToolTier = Mathf.Clamp(restoredSelectedStrengthToolTier, 1, strengthToolTier);
+            speedUpgradeLevel = Mathf.Max(0, restoredSpeedUpgradeLevel);
+            CommitChange();
+        }
+
         private void LoadProgression()
         {
             if (Application.isPlaying && saveInPlayerPrefs)

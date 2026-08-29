@@ -1,10 +1,11 @@
 {
   "dependencies": {
-    "com.ivanmurzak.unity.mcp": "0.87.0",
+    "com.ivanmurzak.unity.mcp": "0.90.0",
     "com.ivanmurzak.unity.mcp.animation": "1.2.30",
     "com.ivanmurzak.unity.mcp.inputsystem": "1.0.16",
     "com.ivanmurzak.unity.mcp.particlesystem": "1.2.30",
     "com.ivanmurzak.unity.mcp.probuilder": "1.2.30",
+    "com.mirrahub.cloud-sdk": "https://github.com/Mirra-Hub/Unity-Cloud-Sdk.git?path=/Packages/com.mirrahub.cloud-sdk#v0.2.2",
     "com.romanlee17.mirrasdk5": "https://github.com/MirraSDK/SDK5.git",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.navigation": "2.0.10",

@@ -16,6 +16,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
         [SerializeField] private bool ensureToolTraining = true;
         [SerializeField] private bool ensureInventoryUi = true;
         [SerializeField] private bool ensureSellShopUi = true;
+        [SerializeField] private bool ensureMirraCloud = true;
         [SerializeField] private bool ensureAudioListener = true;
         [SerializeField, Min(0)] private int startupFramesToNormalize = 5;
 
@@ -26,6 +27,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             EnsureToolTrainingController();
             EnsureInventoryController();
             EnsureSellShopController();
+            EnsureMirraCloudService();
             EnsureAudioListener();
             remainingStartupFrames = startupFramesToNormalize;
             NormalizeTimeScale();
@@ -41,6 +43,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             EnsureToolTrainingController();
             EnsureInventoryController();
             EnsureSellShopController();
+            EnsureMirraCloudService();
             EnsureAudioListener();
             NormalizeTimeScale();
         }
@@ -56,6 +59,7 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             EnsureToolTrainingController();
             EnsureInventoryController();
             EnsureSellShopController();
+            EnsureMirraCloudService();
             EnsureAudioListener();
             NormalizeTimeScale();
         }
@@ -148,6 +152,24 @@ namespace RobloxBasicProject.Games.KickLuckyCube
             var sellShopObject = new GameObject("KLC_SellShopController_Runtime");
             sellShopObject.transform.SetParent(canvas.transform, false);
             sellShopObject.AddComponent<KickLuckyCubeSellShopController>();
+        }
+
+        private void EnsureMirraCloudService()
+        {
+            if (!Application.isPlaying || !ensureMirraCloud)
+            {
+                return;
+            }
+
+            var service = FindFirstObjectByType<KickLuckyCubeMirraCloudService>(FindObjectsInactive.Include);
+            var cloudObject = service != null
+                ? service.gameObject
+                : new GameObject("KLC_MirraCloudService_Runtime");
+            service ??= cloudObject.AddComponent<KickLuckyCubeMirraCloudService>();
+            if (cloudObject.GetComponent<KickLuckyCubeMirraCloudGameplaySync>() == null)
+            {
+                cloudObject.AddComponent<KickLuckyCubeMirraCloudGameplaySync>();
+            }
         }
 
         private void EnsureAudioListener()

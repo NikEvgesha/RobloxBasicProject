@@ -1088,3 +1088,9 @@ The selected production layout is now the enlarged Forest plot under `Prefabs/Wo
 The Forest FBX importers explicitly remap their embedded Blockbench material names to the external `KLC_Base_*` Unity materials under `Art/BlockbenchWorld/Plots/PlayerBase/Materials`. This remap is required: using the FBX-embedded fallback materials makes the plot render white even though the Blockbench source contains its palette textures.
 
 The editable Forest Blockbench sources are versioned under `ArtSource/Blockbench/World/Plots/PlayerBase/ForestModular`. `E:/GitFork/BlockBench` remains the local Blockbench working folder; copy completed source revisions into `ArtSource` with the matching relative layout before a shared checkpoint.
+
+## Mirra Cloud
+
+Mirra Cloud SDK `0.2.2` is installed alongside the existing MirraSDK5 platform-provider package. Runtime initialization and guest-session restore are owned by `KickLuckyCubeMirraCloudService`; the service remains dormant until the local project is connected through `Tools > Mirra Cloud > Manager`.
+
+The integration map, credential rules, rollout order, and Hub-side prerequisites are documented in `Docs/Games/KickLuckyCubeMirraCloud.md`.
